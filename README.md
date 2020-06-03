@@ -1,2 +1,2 @@
 # Harpoon
-A staker dashboard built using ConseilJS
+A Tezos staking dashboard built using ConseilJS
