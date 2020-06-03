@@ -317,19 +317,18 @@ async function updateBakerInfo(baker) {
 	.then(async function(d) { 
 	    let topTen = d.slice(0,10)
 	    topTen.forEach((baker, i) => {
-		baker["name"] = searchRegistry(baker.pkh).name
-		baker["staking_balance"] = convertFromUtezToTez(baker.staking_balance),
-		baker["rank"] = i+1
+		baker["name"] = `#${i+1} ${searchRegistry(baker.pkh).name}`
+		baker["staking_balance"] = convertFromUtezToTez(baker.staking_balance)
 	    });
 	    if (!topTen.map(d => d.pkh).includes(baker)) {
 		let bakerAcc = await getBakerAccount(baker);
-		bakerAcc.name = `You (${searchRegistry(bakerAcc.pkh).name})`;
+		bakerAcc.name = `#${d.findIndex(baker => baker.pkh == bakerAcc.pkh)+1} ` +
+		    `You (${searchRegistry(bakerAcc.pkh).name})`;
 		bakerAcc.staking_balance = convertFromUtezToTez(bakerAcc.staking_balance);
-		bakerAcc["rank"] = d.findIndex(baker => baker.pkh == bakerAcc.pkh) + 1
 		topTen.push(bakerAcc);
 	    }
 	    let sum = d3.sum(topTen, d => d.staking_balance)
-	    let other = ({"name":"Other", "staking_balance":(await getRollsStaked()) * tezPerRoll - sum, "rank":""})
+	    let other = ({"name":"Other", "staking_balance":(await getRollsStaked()) * tezPerRoll - sum})
 	    topTen.push(other)
 	    sum += other.staking_balance;
 	    topTen.forEach(d => d["percent"] = d.staking_balance/sum)
@@ -369,8 +368,6 @@ async function updateBakerInfo(baker) {
 		`Luck in current cycle: ${(percentStaked-percentBaked < 0) ? "You've been lucky!" : "You've been unlucky!"}`)
 	    set("baker_blocks_baked_last_cycle", `Blocks baked in cycle ${lastFullCycle}: ${d}`);
 	});
-
-    //set("time", timings)
 }
 
 async function updateNetworkInfo() {
@@ -410,4 +407,5 @@ function initialize() {
     updateNetworkInfo();
     getBlock("head").then(head => updateBakerInfo(head.baker));
     setTimeout(updateNetworkInfo, 60000);
+    setTimeout(set, 5000, "time", timings);
 }

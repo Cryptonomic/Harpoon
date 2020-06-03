@@ -28,13 +28,17 @@ let lineGenerator = (x, y, outline) => d3.line()
     .y(d => y(outline.yValue(d)));
 
 
+
 function stackedBarGraph(id, data, values) {
     let toGraph = outline(id, data, values, {top:0, left: 10, right:0, bottom:15});
 
+	
     const render = graph => {
 	const sum = d3.sum(graph.data, graph.xValue)
+	let tooltipHeight = 10    
+
 	graph.data.forEach((d, i) => d["sum"] = d3.sum(graph.data.slice(0,i), graph.xValue))
-	console.log(graph.data)
+
 	const x = d3.scaleLinear()
 	      .domain([0, sum])
 	      .range([0, graph.innerWidth])
@@ -48,21 +52,29 @@ function stackedBarGraph(id, data, values) {
 	const g = graph.svg.append("g")
 	      .attr("transform", `translate(${graph.margin.left}, ${graph.margin.top})`)
 	
+
+	// let tooltip = g.append("g")
+	//     .attr("class", "tooltip")
+	//     .attr("transform", `translate(0, ${graph.inneHeight-graph.margin.bottom})`)
+	// tooltip.append("rect")
+	//     .attr("width", graph.innerWidth)
+	//     .attr("height", tooltipHeight)
+	//     .style("fill", "black");
+
 	g.selectAll("rect").data(graph.data)
 	    .enter().append('rect')
 	    .attr("fill", d => color(graph.yValue(d)))
 	    .attr("y", 0)
 	    .attr("x", d => x(d.sum))
 	    .attr("width", d => graph.xValue(d)*graph.innerWidth)
-	    .attr("height", graph.innerHeight);
+	    .attr("height", graph.innerHeight - tooltipHeight);
 
 	g.selectAll("rect")
 	    .on("mouseover", function(d) {
 		let rect = d3.select(this)
-		let midx = ((+rect.attr("width"))/2) + (+rect.attr("x"))
 		rect.style("fill", d3.rgb(rect.attr("fill")).darker())
 		let tooltip = g.append("text")
-		    .text("#" + d.rank + " " + d.name)
+		    .text(graph.yValue(d))
 		    .attr("class", "tooltip")
 		    .attr("opacity", 0)
 		    .style("fill", "black")
