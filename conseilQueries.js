@@ -1,4 +1,4 @@
-const conseilServer = { url: 'https://conseil-prod1.cryptonomic-infra.tech:443', apiKey: 'galleon' };
+const conseilServer = { url: 'https://conseil-prod.cryptonomic-infra.tech:443', apiKey: 'galleon' };
 const platform = "tezos"
 const network = "mainnet"
 const blocksPerCycleValues = {"mainnet" : 4096,
@@ -50,6 +50,10 @@ async function httpGet(theUrl) {
 }
 
 function updateCountdown(timestamp, baker) {
+    if (timestamp == "none") {
+	set("baker_next_bake", `Time until next bake: Some time in the distant future...`);
+	return;
+    }
     let timeLeft = timestamp - Date.now()
     if (timeLeft <= 0) {
 	updateBakerInfo(baker);
@@ -112,7 +116,8 @@ async function numBlocksBakedFrom(timestamp) {
     let query = conseiljs.ConseilQueryBuilder.blankQuery();
     query = conseiljs.ConseilQueryBuilder.addFields(query, 'hash');
     query = conseiljs.ConseilQueryBuilder.addAggregationFunction(query, 'hash', 'count');	 
-    query = conseiljs.ConseilQueryBuilder.addPredicate(query, 'timestamp', conseiljs.ConseilOperator.AFTER, [timestamp], false);	 
+    query = conseiljs.ConseilQueryBuilder.addPredicate(query, 'timestamp', conseiljs.ConseilOperator.AFTER, [timestamp], false);
+    query = conseiljs.ConseilQueryBuilder.setLimit(query, blocksPerCycle);
     const numBlocks = await conseiljs.ConseilDataClient.executeEntityQuery(conseilServer, platform, network, 'blocks', query);
     return numBlocks[0].count_hash
 }
@@ -120,24 +125,36 @@ async function numBlocksBakedFrom(timestamp) {
 async function numBlocksBakedBy(baker, cycle="none") {
     let query = conseiljs.ConseilQueryBuilder.blankQuery();
     query = conseiljs.ConseilQueryBuilder.addFields(query, 'hash');
-    query = conseiljs.ConseilQueryBuilder.addPredicate(query, 'baker', conseiljs.ConseilOperator.EQ, [baker], false);
+    query = conseiljs.ConseilQueryBuilder.addFields(query, 'baker');
+    query = conseiljs.ConseilQueryBuilder.addOrdering(query, 'count_hash', conseiljs.ConseilSortDirection.DESC);
+    query = conseiljs.ConseilQueryBuilder.setLimit(query, 100000000)
+    if (baker != "all") 
+	query = conseiljs.ConseilQueryBuilder.addPredicate(query, 'baker', conseiljs.ConseilOperator.EQ, [baker], false);
     query = conseiljs.ConseilQueryBuilder.addAggregationFunction(query, 'hash', 'count');	 
     if (cycle != "none")
 	query = conseiljs.ConseilQueryBuilder.addPredicate(query, 'meta_cycle', conseiljs.ConseilOperator.EQ, [cycle], false);
 
     const numBlocks = await conseiljs.ConseilDataClient.executeEntityQuery(conseilServer, platform, network, 'blocks', query);
-    return numBlocks[0].count_hash;
+    return (baker == "all" ? numBlocks: numBlocks[0])
 }
 
-async function numBlocksStolenBy(baker, cycle) {
+async function blocksBakedBy(baker, cycle) {
     let query = conseiljs.ConseilQueryBuilder.blankQuery();
-    query = conseiljs.ConseilQueryBuilder.addFields(query, 'hash');
+    query = conseiljs.ConseilQueryBuilder.addPredicate(query, 'baker', conseiljs.ConseilOperator.EQ, [baker], false);
+    query = conseiljs.ConseilQueryBuilder.addPredicate(query, 'meta_cycle', conseiljs.ConseilOperator.EQ, [cycle], false);
+    query = conseiljs.ConseilQueryBuilder.setLimit(query, blocksPerCycle)
+    const result = await conseiljs.ConseilDataClient.executeEntityQuery(conseilServer, platform, network, 'blocks', query);
+    return  result
+}
+
+async function blocksStolenBy(baker, cycle) {
+    let query = conseiljs.ConseilQueryBuilder.blankQuery();
     query = conseiljs.ConseilQueryBuilder.addPredicate(query, 'baker', conseiljs.ConseilOperator.EQ, [baker], false);
     query = conseiljs.ConseilQueryBuilder.addPredicate(query, 'meta_cycle', conseiljs.ConseilOperator.EQ, [cycle], false);
     query = conseiljs.ConseilQueryBuilder.addPredicate(query, 'priority', conseiljs.ConseilOperator.GT, ["0"], false);
-    query = conseiljs.ConseilQueryBuilder.addAggregationFunction(query, 'hash', 'count')
+    query = conseiljs.ConseilQueryBuilder.setLimit(query, blocksPerCycle)
     const result = await conseiljs.ConseilDataClient.executeEntityQuery(conseilServer, platform, network, 'blocks', query);
-    return result[0].count_hash
+    return  result
 }
 
 async function lastBlockBakedBy(baker) {
@@ -161,8 +178,10 @@ async function nextBake(baker) {
 
 async function getBakerAccount(pkh="all") {
     let query = conseiljs.ConseilQueryBuilder.blankQuery();
-    if (pkh != "all") 
-	query = conseiljs.ConseilQueryBuilder.addPredicate(query, 'pkh', conseiljs.ConseilOperator.EQ, [pkh], false);	 
+    if (pkh != "all") {
+	query = conseiljs.ConseilQueryBuilder.addPredicate(query, 'pkh', conseiljs.ConseilOperator.EQ, [pkh], false);
+
+    }
     query = conseiljs.ConseilQueryBuilder.addOrdering(query, 'staking_balance', conseiljs.ConseilSortDirection.DESC);
     const account = await conseiljs.ConseilDataClient.executeEntityQuery(conseilServer, platform, network, 'delegates', query);
     return (pkh=="all") ? account : account[0]
@@ -234,6 +253,7 @@ async function bakingSlotLevelsInCycle(baker, cycle) {
 }
 
 async function getTotalRewardsForBlocks(blockids) {
+    if (blockids.length == 0) return 0;
     let query = conseiljs.ConseilQueryBuilder.blankQuery();
     query = conseiljs.ConseilQueryBuilder.addFields(query,'fee');
     query = conseiljs.ConseilQueryBuilder.addPredicate(query, 'block_hash', conseiljs.ConseilOperator.IN, blockids, false);
@@ -249,13 +269,15 @@ async function getRewardsInCycle(baker, cycle) {
     return rewards
 }
 
-async function numBlocksMissedBy(baker, cycle) {
+async function blocksMissedBy(baker, cycle) {
     const levels = await bakingSlotLevelsInCycle(baker, cycle)
+    if (levels.length == 0) return []
     let query = conseiljs.ConseilQueryBuilder.blankQuery();
     query = conseiljs.ConseilQueryBuilder.addPredicate(query, 'level', conseiljs.ConseilOperator.IN, levels, false);
     query = conseiljs.ConseilQueryBuilder.addPredicate(query, 'baker', conseiljs.ConseilOperator.EQ, [baker], true);
+    query = conseiljs.ConseilQueryBuilder.setLimit(query, blocksPerCycle)
     const result = await conseiljs.ConseilDataClient.executeEntityQuery(conseilServer, platform, network, 'blocks', query);
-    return result.length
+    return result
 }
 
 async function getDelegatedBalance(baker) {
@@ -276,8 +298,6 @@ function getFee(bakers, predicate) {
     }
     return king
 }
-
-
 
 function updateNextBakeStats(baker) {
     nextBake(baker)
@@ -310,29 +330,41 @@ async function updateBakerInfo(baker) {
     blocksBakedPerHour(baker,createGraphTimestamps(16)).then(d => linegraph("chart", d, {x:"timestamp", y:"blocksPerHour"}));
     lastBlockBakedBy(baker)
 	.then(d => {
-	    set("baker_last_bake", `Time of last bake: ${UTCToDateTime(d.timestamp)}`);
-	    set("baker_last_bake_level", `Level of last bake: ${d.level}`);
+	    set("baker_last_bake", `Time of last bake: ${d ? UTCToDateTime(d.timestamp) : "Never baked"}`);
+	    set("baker_last_bake_level", `Level of last bake: ${d ? d.level: "Never baked"}`);
 	});
     getBakerAccount()
 	.then(async function(d) { 
-	    let topTen = d.slice(0,10)
+	    let topTen = d//.slice(0,10)
 	    topTen.forEach((baker, i) => {
 		baker["name"] = `#${i+1} ${searchRegistry(baker.pkh).name}`
 		baker["staking_balance"] = convertFromUtezToTez(baker.staking_balance)
+		baker["name"] += ` (${baker.staking_balance.toFixed(2)} XTZ)`
 	    });
 	    if (!topTen.map(d => d.pkh).includes(baker)) {
 		let bakerAcc = await getBakerAccount(baker);
 		bakerAcc.name = `#${d.findIndex(baker => baker.pkh == bakerAcc.pkh)+1} ` +
-		    `You (${searchRegistry(bakerAcc.pkh).name})`;
+		    searchRegistry(bakerAcc.pkh).name;
 		bakerAcc.staking_balance = convertFromUtezToTez(bakerAcc.staking_balance);
+		bakerAcc["default"] = "true";
 		topTen.push(bakerAcc);
-	    }
-	    let sum = d3.sum(topTen, d => d.staking_balance)
-	    let other = ({"name":"Other", "staking_balance":(await getRollsStaked()) * tezPerRoll - sum})
-	    topTen.push(other)
-	    sum += other.staking_balance;
-	    topTen.forEach(d => d["percent"] = d.staking_balance/sum)
-	    stackedBarGraph(`chart2`, topTen, {x:"percent", y:"name"});
+	    } else 
+		topTen.find(d => d.pkh == baker)["default"] = "true";
+	    // let sum = d3.sum(topTen, d => d.staking_balance)
+	    // let other = ({"name":"Other", "staking_balance":(await getRollsStaked()) * tezPerRoll - sum})
+	    // topTen.push(other)
+	    stackedBarGraph(`chart2`, topTen, {x:"staking_balance", y:"name"}, 8);
+	});
+    numBlocksBakedBy("all", lastFullCycle)
+	.then(d => {
+	    if (!d.map(d => d.baker).includes(baker))
+		d.push(({"name":baker, "baker":baker, "count_hash":0}))
+	    d.forEach((baker, i) => {
+		baker["name"] = `#${i+1} ${searchRegistry(baker.baker).name}`;
+		baker["name"] += ` (${baker.count_hash})`;
+	    });
+	    d.find(d => d.baker == baker)["default"] = "true";
+	    stackedBarGraph(`chart3`, d, {x:"count_hash", y:"name"}, 7);
 	});
     getBakerAccount(baker)
 	.then(d => {
@@ -342,32 +374,48 @@ async function updateBakerInfo(baker) {
 	    return numBlocksBakedBy(baker)
 	})
     	.then(d => {
-	    set("baker_blocks_baked", `Lifetime blocks baked: ${d}`);
-	    set("baker_blocks_per_stake", `Blocks per XTZ: ${d / stakingBalance}`);
+	    set("baker_blocks_baked", `Lifetime blocks baked: ${d ? d.count_hash : "never baked"}`);
+	    set("baker_blocks_per_stake", `Blocks per XTZ: ${d ? d.count_hash / stakingBalance : 0}`);
 	});
     getDelegators(baker)
 	.then(d => set("baker_num_delegators", `Number of delegators: ${Object.keys(d).length}`));
     nextBake(baker)
 	.then(d => {
 	    clearTimeout(clock)
-	    updateCountdown(d.estimated_time, baker)
-	    set("baker_next_bake_level", `Level of next bake: ${d.level}`);
+	    updateCountdown((d ? d.estimated_time : "none"), baker);
+	    set("baker_next_bake_level", `Level of next bake: ${d ? d.level : "Some time in the distant future..."}`);
 	});
     getRewardsInCycle(baker, lastFullCycle)
 	.then(d => set("baker_rewards",
 		       `Rewards made in cycle ${lastFullCycle}: ${convertFromUtezToTez(d).toFixed(2)} XTZ`));
-    numBlocksMissedBy(baker, lastFullCycle)
-	.then(d => set("baker_blocks_missed", `Blocks missed in cycle ${lastFullCycle}: ${d}`));
-    numBlocksStolenBy(baker, lastFullCycle)
-	.then(d => set("baker_blocks_stolen", `Blocks stolen in cycle ${lastFullCycle}: ${d}`));
-    numBlocksBakedBy(baker, lastFullCycle)
+    blocksMissedBy(baker, lastFullCycle)
+	.then(d => {
+	    set("baker_blocks_missed", `Blocks missed in cycle ${lastFullCycle}: ${d.length}`);
+	    d.forEach(block => block["label"] = `Level: ${block.meta_level}`);
+	    chainmap("chart6", d, {x:"meta_cycle_position", y:"label"},
+		     blocksPerCycle, "red", "Blocks missed ", true);
+	});
+    blocksStolenBy(baker, lastFullCycle)
+	.then(d => {
+	    set("baker_blocks_stolen", `Blocks stolen in cycle ${lastFullCycle}: ${d.length}`)
+	    d.forEach(block => block["label"] = `Level: ${block.meta_level}`);
+	    chainmap("chart5", d, {x:"meta_cycle_position", y:"label"},
+		     blocksPerCycle, "green", "Blocks stolen ", false);
+	});
+    blocksBakedBy(baker, lastFullCycle)
 	.then(async function(d) {
 	    const percentStaked = await getRollsStaked(baker)/ await getRollsStaked()
-	    const percentBaked = d / blocksPerCycle
+	    const percentBaked = d.length / blocksPerCycle 
 	    set("baker_luck",
 		`Luck in current cycle: ${(percentStaked-percentBaked < 0) ? "You've been lucky!" : "You've been unlucky!"}`)
-	    set("baker_blocks_baked_last_cycle", `Blocks baked in cycle ${lastFullCycle}: ${d}`);
+	    set("baker_blocks_baked_last_cycle", `Blocks baked in cycle ${lastFullCycle}: ${d.length}`);
+	    d.forEach(block => block["label"] = `${block.meta_level}`);
+	    chainmap("chart4", d, {x:"meta_cycle_position", y:"label"},
+		     blocksPerCycle, "#eb7610", "Blocks baked ", false);
 	});
+
+//    tooltip(document.getElementById("baker_luck"), 500, 500, "dud");
+    
 }
 
 async function updateNetworkInfo() {
@@ -407,5 +455,5 @@ function initialize() {
     updateNetworkInfo();
     getBlock("head").then(head => updateBakerInfo(head.baker));
     setTimeout(updateNetworkInfo, 60000);
-    setTimeout(set, 5000, "time", timings);
+    // setTimeout(set, 5000, "time", timings);
 }

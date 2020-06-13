@@ -8,8 +8,9 @@ conseiljs.ConseilDataClient.executeEntityQuery = async function(...args) {
     let entry = ((s != undefined) ?
 		 s.replace(/\s|at|async| *\([^)]*\) */g, "") :
 		 "other")
-	+ "," + args[args.length-2] + "," + (end-start) 
-
+	+ "," + args[args.length-2] + "," + (end-start) + "," +
+	JSON.stringify(args[4])
+    
     console.log(entry)
     timings += entry + "<br>"
     return result

@@ -1,83 +1,95 @@
 <html>
-    <head>
-	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    </head>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <!-- <link rel="stylesheet" type="text/css" href="./assets/style.css"> -->
+  </head>
 
-    <body onload="initialize()">
-	<h2 style="text-align: center"> Staker Dashboard </h2>
-	<p>
-	    Baker: <input type="text" id="baker"> </input>
-	    <button onclick="updateBakerInfo(document.getElementById(&#39;baker&#39;).value)"> Search </button>
-	    <br>
-	    
-	</p>
+  <body onload="initialize()">
+    <h1 style="text-align: center"> Harpoon </h1>
+    <p>
+      Baker: <input type="text" id="baker"> </input>
+      <button onclick="updateBakerInfo(document.getElementById(&#39;baker&#39;).value)"> Search </button>
+      <br>
+      
+    </p>
 
-	<table border="1" style="margin-bottom: 0px">
-	    <tr> <td> <h1 id="baker_grade"> --- </h1> </td> </tr> 
-	    <h1 id="baker_name"> </h1>
-	</table>
-	<br>
+    <table border="1" style="margin-bottom: 0px">
+      <tr> <td> <h1 id="baker_grade"> --- </h1> </td> </tr> 
+      <h2 id="baker_name"> </h2>
+    </table>
+    <br>
 
-	<table border="1" style="width: 100%">
-	    <tr>
-		<th> Baker Info </th> <th> Blocks Baked Per Hour </th>
-	    </tr>
-	    <tr>
-		<td>
-		    <p id="baker_last_bake">Time since last bake: </p>
-		    <p id="baker_last_bake_level">Level of last bake: </p>
-		    <p id="baker_amount_staked">Amount staked: </p>
-		    <p id="baker_amount_delegated">Amount delegated: </p>
-		    <p id="baker_num_delegators">Number delegators: </p>
-		    <p id="baker_blocks_baked">Lifetime locks aked: </p>
-		    <p id="baker_blocks_baked_last_cycle">Blocks baked in cycle: </p>
-		    <p id="baker_next_bake">Time until next bake: </p>
-		    <p id="baker_next_bake_level">Level of next bake: </p>
-		    <p id="baker_rewards">Rewards made in last cycle: </p>
-		    <p id="baker_blocks_per_stake">Blocks baked per XTZ: </p>
-		    <p id="baker_blocks_stolen">Lifetime blocks stolen: </p>
-		    <p id="baker_blocks_missed">Blocks missed: </p>
-		    <p id="baker_luck">Luck in current cycle: </p>
-		</td>
+    <table border="1" style="width: 100%">
+      <tr>
+	<th style="width: 400"> Baker Info </th> <th>  </th>
+      </tr>
+      <tr>
+	<td>
+	  <p id="baker_last_bake">Time since last bake: </p>
+	  <p id="baker_last_bake_level">Level of last bake: </p>
+	  <p id="baker_blocks_baked">Lifetime locks baked: </p>
+	  <p id="baker_next_bake">Time until next bake: </p>
+	  <p id="baker_next_bake_level">Level of next bake: </p>
+	  <p id="baker_blocks_baked_last_cycle">Blocks baked in cycle: </p>
+	  <p id="baker_blocks_stolen">Blocks stolen in cycle: </p>
+	  <p id="baker_blocks_missed">Blocks missed in cycle: </p>
+	  <p id="baker_rewards">Rewards made in last cycle: </p>
+	  <p id="baker_amount_staked">Amount staked: </p>
+	  <p id="baker_amount_delegated">Amount delegated: </p>
+	  <p id="baker_num_delegators">Number delegators: </p>
+	  <p id="baker_blocks_per_stake">Blocks baked per XTZ: </p>
+	  <p id="baker_luck">Luck in current cycle: </p>
+	</td>
 
-		<td>
-		    <svg id="chart" width="1000" height="400"> </svg> <br>
-		    <p> Bakers by staking balances: </p>
-		    <svg id="chart2" width="1000" height="50"> </svg> 
-		</td>
-		
-	    </tr>
-	</table>
-	
-	<table border="1" style="width: 100%">
-	    <tr> <th colspan="2"> Network Info </th> </tr>
-	    <tr>
-		<td>
-		    <p id="net_market_cap">Market cap: </p>
-		    <p id="net_min_baker_fee">Min baker fee: </p>
-		    <p id="net_max_baker_fee">Max baker fee: </p>
-		    <p id="net_avg_baker_fee">Avg baker fee: </p>
-		</td>
-		<td>
-		    <p id="net_level">Current level: </p>
-		    <p id="net_last_block">Latest block: </p>
-		    <p id="net_last_baker">Last baker: </p>
-		    <p id="net_blocks_last_hour"># Blocks baked in the last hr: </p>
+	<td>
+	  <p style="text-align: center;"> <strong> Blocks Baked Per Hour </strong> </p>
+	  <svg id="chart" width="1000" height="300"> </svg> <br>
+	  <p style="text-align: center;"> <strong> Baker perfomance last cycle </strong> </p>
+	  <p> Blocks Baked </p>
+	  <svg id="chart4" width="1000" height="50"> </svg> 
+	  <p> Blocks Stolen </p>
+	  <svg id="chart5" width="1000" height="50"> </svg> 
+	  <p> Blocks Missed </p>
+	  <svg id="chart6" width="1000" height="100"> </svg> 
+	  <p style="margin: 5 0; text-align: center;"> <strong> Baker Comparison </strong> </p>
+	  <p style="margin: 5 0;"> Bakers by staking balances: </p>
+	  <svg id="chart2" width="1000" height="60"> </svg> 
+	  <p style="margin: 5 0;"> Bakers by blocks baked in last cycle: </p>
+	  <svg id="chart3" width="1000" height="60"> </svg> 
+	</td>
+      </tr>
+    </table>
+    
+    <table border="1" style="width: 100%">
+      <tr> <th colspan="2"> Network Info </th> </tr>
+      <tr>
+	<td>
+	  <p id="net_market_cap">Market cap: </p>
+	  <p id="net_min_baker_fee">Min baker fee: </p>
+	  <p id="net_max_baker_fee">Max baker fee: </p>
+	  <p id="net_avg_baker_fee">Avg baker fee: </p>
+	</td>
+	<td>
+	  <p id="net_level">Current level: </p>
+	  <p id="net_last_block">Latest block: </p>
+	  <p id="net_last_baker">Last baker: </p>
+	  <p id="net_blocks_last_hour"># Blocks baked in the last hr: </p>
 
-		</td>
-	    </tr>
-	</table>
-	<p id="time"> </p>
-    </body>
-
-    <script src="https://d3js.org/d3.v5.min.js"></script>
-    <script
-	src="https://cdn.jsdelivr.net/gh/cryptonomic/conseiljs/dist-web/conseiljs.min.js"
-	     integrity="sha384-Qadw6i0MoBdfDPGWqub65ZsMLMlYOcVVgxHKkhSqi2qfE0Ij2Za4r/wpGORh7HBn"
-        crossorigin="anonymous">
-    </script>
-    <script src="https://cdn.jsdelivr.net/gh/Taaseen-Ali/Harpoon/timing.js"> </script>
-    <script src="graphics.js"> </script>
-    <script src="conseilQueries.js"> </script>
-
+	</td>
+      </tr>
+    </table>
+    <p id="time"> </p>
+  </body>
+  
+  <script src="https://d3js.org/d3.v5.min.js"></script>
+  <script
+      src="https://cdn.jsdelivr.net/gh/cryptonomic/conseiljs/dist-web/conseiljs.min.js"
+      integrity="sha384-g7ZPuT8xCBXLdgu2vBXWuOiEQIes6tPyFP4DIJBbgGfGSLRkOvET5Ra6dN9AePbQ"
+      crossorigin="anonymous">
+  </script>
+  <!-- <script src="https://cdn.jsdelivr.net/gh/Taaseen-Ali/Harpoon/timing.js"> </script> -->
+  <!-- <script src="timing.js"> </script> -->
+  <script src="graphics.js"> </script>
+  <script src="conseilQueries.js"> </script>
+  
 </html>
