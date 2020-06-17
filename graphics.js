@@ -75,7 +75,7 @@ function heatTable(id, data, values, mapColumn, comparisons=[]) {
     const textPadding = 5;
     const color = d3.scaleLinear()
 	  .domain(d3.extent(data.map((d, i) => (i==0) ? data[i+1][mapColumn] : d[mapColumn])))
-	  .range(["white", "green"]);
+	  .range(["white", "#65eb72"]);
 
     const render = graph => {
 	console.log(graph.data)
@@ -89,7 +89,7 @@ function heatTable(id, data, values, mapColumn, comparisons=[]) {
 	    .attr("width", graph.innerWidth)
 	    .attr("height", rowHeight)
 	    .attr("y", (d, i) => i * (rowHeight + rowPadding))
-	    .attr("fill", (d, i) => i == 0 ? "#73a9ff" : color(d[mapColumn]));
+	    .attr("fill", (d, i) => i == 0 ? "#f5b505" : color(d[mapColumn]));
 	values.forEach((d, i) => {
 	    g.selectAll(".data")
 		.append("text")
