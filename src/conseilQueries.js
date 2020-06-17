@@ -1,8 +1,3 @@
-/*
-  getPayouts()
-  getDelegateRewards() from payouts, display that and estimated fee.
-*/
-
 const conseilServer = { url: 'https://conseil-prod.cryptonomic-infra.tech:443', apiKey: 'galleon' };
 const platform = "tezos"
 const network = "mainnet"
@@ -53,6 +48,30 @@ async function httpGet(theUrl) {
     });
 }
 
+async function httpPost(theUrl, params) {
+    return new Promise( function(resolve, reject) {
+	var xmlHttp = new XMLHttpRequest();
+	xmlHttp.onreadystatechange = function() { 
+	    if (xmlHttp.readyState == 4 && xmlHttp.status == 200)
+		resolve(xmlHttp.responseText);
+	    else if(xmlHttp.readyState == 4 && xmlHttp.status == 204) {
+		resolve("")
+	    }
+	}
+	xmlHttp.open("POST", theUrl, true); // true for asynchronous 
+	xmlHttp.setRequestHeader('Content-type', 'application/json;charset=UTF-8');
+	xmlHttp.send(params);
+    });
+}
+
+async function getBakerInfo(table, fields, predicates) {
+    const url = `http://localhost:8080/`;
+    const result = await httpPost(url, JSON.stringify({ "table": table,
+							"fields": fields,
+							"predicates": predicates}));
+    return JSON.parse(result)
+}
+
 async function getBakerGradesForCycle(cycle) {
     const url = `http://localhost:8000/getBakerGrades.php?cycle=${cycle}`;
     const result = await httpGet(url);
@@ -75,7 +94,8 @@ async function continueRewardSearch() {
     document.getElementById("payout").style.display = "block";
     document.getElementById("fee").style.display = "block";
     document.getElementById("calculate_rewards_button").style.display = "block";
-    document.getElementById("payout").value = (await getPayout(delegateAddress)).address
+    document.getElementById("payout").value = (await getBakerInfo("baker_payouts", ["payout_account"],
+								  [`baker='${delegateAddress}'`]))[0].payout_account
     document.getElementById("fee").value = JSON.parse(await httpGet(`https://api.baking-bad.org/v2/bakers/${delegateAddress}`)).fee;
 }
 
@@ -85,9 +105,12 @@ async function calculateRewardsForDelegate() {
     const delegator = document.getElementById("delegator").value
     const fee = document.getElementById("fee").value
     const payout = document.getElementById("payout").value
-    let rewards = await getRewardsInCycle(delegateAddress, lastFullCycle - 9, lastFullCycle);
+    let rewards = await getBakerInfo("snapshot_info",
+				     ["cycle", "rewards", "snapshot_block_level", "staking_balance"],
+				     [`cycle BETWEEN ${lastFullCycle-9} AND ${lastFullCycle}`,
+				      `baker='${delegateAddress}'`]);
     for (d of rewards) {
-	let delegateBalance = await getBalanceAtLevel(delegator, d.snapshot_level - 1)
+	let delegateBalance = await getBalanceAtLevel(delegator, d.snapshot_block_level - 1)
 	let rewardsReceived = await tezTransferedBetween(payout, delegator, d.cycle+1); 
 	d["delegator_rewards"] = delegateBalance ? convertFromUtezToTez(d.rewards * (1 - fee) *
 									(delegateBalance/d.staking_balance)).toFixed(6) : "--"
@@ -407,7 +430,8 @@ async function updateBakerInfo(baker) {
 				   .map((i) => (millisThirtyDays / (n-1)) * (n-1-i))
 				   .map((i) => (timeNow - i)))
 
-    getRewardsInCycle(baker, lastFullCycle - 9, lastFullCycle)
+    getBakerInfo("snapshot_info", ["cycle", "rewards"], [`cycle BETWEEN ${lastFullCycle-9} AND ${lastFullCycle}`,
+							 `baker='${baker}'`])
     	.then(d => {
     	    set( "baker_rewards",
 		 `Rewards made in cycle ${lastFullCycle}: ${convertFromUtezToTez(d[d.length-1].rewards).toFixed(2)} XTZ`)
@@ -416,7 +440,7 @@ async function updateBakerInfo(baker) {
 	    d.push({cycle:"Cycle", rewards:"Rewards Earned", staking_balance:"Staking Balance"});
 	    heatTable("rewardsTable", d.reverse(), ["cycle", "rewards"], "rewards");
     	});
-    getBakerGradesForCycle(242)
+    getBakerInfo("baker_grades", ["address", "grade"], [`cycle=${lastFullCycle}`])
 	.then(d => {
 	    let values = d.map(item => item.grade).sort((a, b) => a - b)
 	    const fivePercent = Math.round(values.length * 0.05);
