@@ -24,9 +24,10 @@ currentBlockLevel = blocks.query(blocks.level).order_by(blocks.level.desc())\
 def calc(baker, current_cycle):
     start_cycle = current_cycle - 10;
     b = blocks.query(blocks.hash, blocks.hash.count()) \
-                      .filter(blocks.baker==baker)\
-                      .filter(blocks.meta_cycle.between(start_cycle, current_cycle))\
+                      .filter(blocks.baker==baker,
+                              blocks.meta_cycle.between(start_cycle, current_cycle))\
                       .scalar()
+
     stakingBalance = convertFromUtezToTez(delegates.query(delegates.staking_balance) \
                                           .filter(delegates.pkh==baker) \
                                           .scalar())
@@ -48,18 +49,17 @@ def calc(baker, current_cycle):
                           .limit(10000000) \
                           .vector()
 
-    partitions = [i for i in range(0, len(rights), 5000)]
-    if (len(rights) > 0 and partitions[-1] != len(rights)):
-        partitions.append(len(rights))
-    m = 0
-    if (len(rights)>0):
-        for i in range(len(partitions)-2):
-            result = blocks.query(blocks.hash, blocks.hash.count()) \
-                           .filter(blocks.level.in_(*rights[partitions[i]:partitions[i+1]]),
-                                   blocks.baker!=baker) \
-                           .limit(1000000) \
-                           .scalar()
-            m += int(result)
+    # partitions = [i for i in range(0, len(rights), 5000)]
+    # if (len(rights) > 0 and partitions[-1] != len(rights)):
+    #     partitions.append(len(rights))
+    # m = 0
+    #    if (len(rights)>0):
+    #    for i in range(len(partitions)-2):
+    m = blocks.query(blocks.hash, blocks.hash.count()) \
+                   .filter(blocks.level.in_(*rights),
+                           blocks.baker!=baker) \
+                   .limit(1000000) \
+                   .scalar()
     r= float(r)
     b= int(b)
     s= int(s)
@@ -67,18 +67,21 @@ def calc(baker, current_cycle):
     d= int(d)
 #    grade = stakingBalance
 #    grade = b + s - m + d
-    grade = (10000 * r) * ((b+s)/(1+b)) * (math.exp(-1* (m/(b+1))))*(1-(1/(1+d)))
+    grade =  (100000 * r) * (b+s)/(1+b) * (math.exp(-1* (m/(b+1))))*(1-(1/(1+d)))
+# try this:    grade =  (100000 * r) * (b+5*s)/(1+m+b) *(1-(1/(1+d)))
+#    return baker, grade, r, b, s, m, d, stakingBalance
     return baker, grade, current_cycle
 
 def calculateGradesForCycle(cycle):
     start_cycle = cycle - 10
     bakers = list(set(blocks.query(blocks.baker) \
                  .filter(blocks.meta_cycle.between(start_cycle, cycle)) \
-                 .vector()))
+
+                      .vector()))
     data = []
     for baker in bakers:
         data.append(calc(baker, cycle))
-    print(data)
+
     pushData(data);
 
 def pushData(data):

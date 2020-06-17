@@ -1,3 +1,8 @@
+/*
+  getPayouts()
+  getDelegateRewards() from payouts, display that and estimated fee.
+*/
+
 const conseilServer = { url: 'https://conseil-prod.cryptonomic-infra.tech:443', apiKey: 'galleon' };
 const platform = "tezos"
 const network = "mainnet"
@@ -11,7 +16,7 @@ const millisOneDay = 86400000
 const millisOneHour = millisOneDay/24
 const millisThirtyDays = millisOneDay * 30
 var clock
-
+var delegateAddress
 /* ==== === various utility functions =======*/
 
 function convertFromUtezToTez(amountInUtez) {
@@ -45,8 +50,59 @@ async function httpGet(theUrl) {
 	}
 	xmlHttp.open("GET", theUrl, true); // true for asynchronous 
 	xmlHttp.send(null);
-    }
-		      )
+    });
+}
+
+async function getBakerGradesForCycle(cycle) {
+    const url = `http://localhost:8000/getBakerGrades.php?cycle=${cycle}`;
+    const result = await httpGet(url);
+    return JSON.parse(result)
+}
+
+async function getRewardsInCycle(delegate, cycle, cycle2="none") {
+    let url = `http://localhost:8000/getRewardsInCycle.php?delegate=${delegate}&cycle=${cycle}`;
+    if (cycle2 != "none") url += `&cycle2=${cycle2}`
+    const result = await httpGet(url);
+    return JSON.parse(result)
+}
+async function getPayout(delegate) {
+    let url = `http://localhost:8000/getPayout.php?delegate=${delegate}`;
+    const result = await httpGet(url);
+    return JSON.parse(result)
+}
+
+async function continueRewardSearch() {
+    document.getElementById("payout").style.display = "block";
+    document.getElementById("fee").style.display = "block";
+    document.getElementById("calculate_rewards_button").style.display = "block";
+    document.getElementById("payout").value = (await getPayout(delegateAddress)).address
+    document.getElementById("fee").value = JSON.parse(await httpGet(`https://api.baking-bad.org/v2/bakers/${delegateAddress}`)).fee;
+}
+
+async function calculateRewardsForDelegate() {
+    const head = await getBlock("head");
+    const lastFullCycle = head.meta_cycle - 1;
+    const delegator = document.getElementById("delegator").value
+    const fee = document.getElementById("fee").value
+    const payout = document.getElementById("payout").value
+    let rewards = await getRewardsInCycle(delegateAddress, lastFullCycle - 9, lastFullCycle);
+    for (d of rewards) {
+	let delegateBalance = await getBalanceAtLevel(delegator, d.snapshot_level - 1)
+	let rewardsReceived = await tezTransferedBetween(payout, delegator, d.cycle+1); 
+	d["delegator_rewards"] = delegateBalance ? convertFromUtezToTez(d.rewards * (1 - fee) *
+									(delegateBalance/d.staking_balance)).toFixed(6) : "--"
+	d["delegator_rewards_received"] = convertFromUtezToTez(rewardsReceived)
+	d["advertised_fee"] = parseFloat((fee * 100).toFixed(2))
+	d["actual_fee"] = parseFloat(((-1) * ((rewardsReceived/d.rewards)*(d.staking_balance/delegateBalance) - 1) * 100).toFixed(2))
+    }	
+    rewards.push({cycle:"Cycle", rewards:"Total Baker Rewards Earned",
+    		  staking_balance:"Staking Balance", delegator_rewards:"Delegator Rewards",
+		  delegator_rewards_received:"Payments Received", advertised_fee:"Advertised Fee",
+		  actual_fee:"Actual Fee Taken"});
+
+    heatTable("rewardsTable", rewards.reverse(),
+	      ["cycle", "rewards", "delegator_rewards", "delegator_rewards_received", "advertised_fee", "actual_fee"],
+	      "rewards", [["delegator_rewards", "delegator_rewards_received"], ["actual_fee","advertised_fee"]]);
 }
 
 function updateCountdown(timestamp, baker) {
@@ -94,6 +150,19 @@ async function getTezInCirculation() {
     return totalTez[0].sum_balance
 }
 
+async function tezTransferedBetween(from, to, cycle) {
+    let query = conseiljs.ConseilQueryBuilder.blankQuery();
+    query = conseiljs.ConseilQueryBuilder.addFields(query, 'amount');
+    query = conseiljs.ConseilQueryBuilder.addPredicate(query, 'cycle', conseiljs.ConseilOperator.EQ, [cycle], false);
+    query = conseiljs.ConseilQueryBuilder.addPredicate(query, 'source', conseiljs.ConseilOperator.EQ, [from], false);
+    query = conseiljs.ConseilQueryBuilder.addPredicate(query, 'destination', conseiljs.ConseilOperator.EQ, [to], false);
+    query = conseiljs.ConseilQueryBuilder.addPredicate(query, 'kind', conseiljs.ConseilOperator.EQ, ["transaction"], false);
+    query = conseiljs.ConseilQueryBuilder.addPredicate(query, 'status', conseiljs.ConseilOperator.EQ, ["applied"], false);
+    query = conseiljs.ConseilQueryBuilder.addAggregationFunction(query, 'amount', 'sum');	 
+    const result = await conseiljs.ConseilDataClient.executeEntityQuery(conseilServer, platform, network, 'operations', query);
+    return result[0] ? result[0].sum_amount : 0
+}
+
 async function getRollsStaked(baker="none") {
     let query = conseiljs.ConseilQueryBuilder.blankQuery();
     let field = ""
@@ -110,6 +179,16 @@ async function getRollsStaked(baker="none") {
     const result = await conseiljs.ConseilDataClient.executeEntityQuery(conseilServer, platform, network, 'delegates', query);
     const tezStaked = convertFromUtezToTez(result[0][field]);
     return Math.floor(tezStaked/tezPerRoll)
+}
+
+async function getBalanceAtLevel(address, level) {
+    let query = conseiljs.ConseilQueryBuilder.blankQuery();
+    query = conseiljs.ConseilQueryBuilder.addFields(query, 'balance');
+    query = conseiljs.ConseilQueryBuilder.addPredicate(query, 'block_level', conseiljs.ConseilOperator.LT, [level], false);
+    query = conseiljs.ConseilQueryBuilder.addPredicate(query, 'account_id', conseiljs.ConseilOperator.EQ, [address], false);
+    query = conseiljs.ConseilQueryBuilder.addOrdering(query, 'block_level', conseiljs.ConseilSortDirection.DESC);
+    const result = await conseiljs.ConseilDataClient.executeEntityQuery(conseilServer, platform, network, 'accounts_history', query);
+    return result[0] ? result[0].balance : 0
 }
 
 async function numBlocksBakedFrom(timestamp) {
@@ -170,9 +249,9 @@ async function nextBake(baker) {
     query = conseiljs.ConseilQueryBuilder.addFields(query, 'delegate', 'estimated_time', 'level', 'priority');
     query = conseiljs.ConseilQueryBuilder.addPredicate(query, 'delegate', conseiljs.ConseilOperator.EQ, [baker], false);
     query = conseiljs.ConseilQueryBuilder.addPredicate(query, 'priority', conseiljs.ConseilOperator.EQ, [0], false);
-    query = conseiljs.ConseilQueryBuilder.addPredicate(query, 'estimated_time', conseiljs.ConseilOperator.AFTER, [Date.now()], false);	 
+    query = conseiljs.ConseilQueryBuilder.addPredicate(query, 'estimated_time', conseiljs.ConseilOperator.AFTER, [Date.now()], false);
     query = conseiljs.ConseilQueryBuilder.addOrdering(query, 'estimated_time', conseiljs.ConseilSortDirection.ASC);
-    const bakingRights = await conseiljs.ConseilDataClient.executeEntityQuery(conseilServer, platform, network, 'baking_rights', query);
+    const bakingRights = await conseiljs.ConseilDataClient.executeEntityQuery(conseilServer, platform, network, 'baking_rights', query)
     return bakingRights[0]
 }
 
@@ -182,6 +261,7 @@ async function getBakerAccount(pkh="all") {
 	query = conseiljs.ConseilQueryBuilder.addPredicate(query, 'pkh', conseiljs.ConseilOperator.EQ, [pkh], false);
 
     }
+    query = conseiljs.ConseilQueryBuilder.setLimit(query, 100000000)
     query = conseiljs.ConseilQueryBuilder.addOrdering(query, 'staking_balance', conseiljs.ConseilSortDirection.DESC);
     const account = await conseiljs.ConseilDataClient.executeEntityQuery(conseilServer, platform, network, 'delegates', query);
     return (pkh=="all") ? account : account[0]
@@ -252,28 +332,14 @@ async function bakingSlotLevelsInCycle(baker, cycle) {
     return ret
 }
 
-async function getTotalRewardsForBlocks(blockids) {
-    if (blockids.length == 0) return 0;
-    let query = conseiljs.ConseilQueryBuilder.blankQuery();
-    query = conseiljs.ConseilQueryBuilder.addFields(query,'fee');
-    query = conseiljs.ConseilQueryBuilder.addPredicate(query, 'block_hash', conseiljs.ConseilOperator.IN, blockids, false);
-    query = conseiljs.ConseilQueryBuilder.addAggregationFunction(query, 'fee', 'sum')
-    const result = await conseiljs.ConseilDataClient.executeEntityQuery(conseilServer, platform, network, 'operations', query);
-    const totalFees = result[0].sum_fee
-    const totalRewards = totalFees + 16000000 * blockids.length
-    return totalRewards
-}
-
-async function getRewardsInCycle(baker, cycle) {
-    const rewards = await getTotalRewardsForBlocks(await blocksBakedInCycleBy(baker, cycle))
-    return rewards
-}
-
 async function blocksMissedBy(baker, cycle) {
     const levels = await bakingSlotLevelsInCycle(baker, cycle)
     if (levels.length == 0) return []
     let query = conseiljs.ConseilQueryBuilder.blankQuery();
-    query = conseiljs.ConseilQueryBuilder.addPredicate(query, 'level', conseiljs.ConseilOperator.IN, levels, false);
+    if (levels.length > 1)
+	query = conseiljs.ConseilQueryBuilder.addPredicate(query, 'level', conseiljs.ConseilOperator.IN, levels, false);
+    else 
+	query = conseiljs.ConseilQueryBuilder.addPredicate(query, 'level', conseiljs.ConseilOperator.EQ, levels, false);
     query = conseiljs.ConseilQueryBuilder.addPredicate(query, 'baker', conseiljs.ConseilOperator.EQ, [baker], true);
     query = conseiljs.ConseilQueryBuilder.setLimit(query, blocksPerCycle)
     const result = await conseiljs.ConseilDataClient.executeEntityQuery(conseilServer, platform, network, 'blocks', query);
@@ -285,7 +351,6 @@ async function getDelegatedBalance(baker) {
     query = conseiljs.ConseilQueryBuilder.addFields(query,'delegated_balance');
     query = conseiljs.ConseilQueryBuilder.addPredicate(query, 'pkh', conseiljs.ConseilOperator.EQ, [baker], false);
     const result = await conseiljs.ConseilDataClient.executeEntityQuery(conseilServer, platform, network, 'delegates', query);
-    
     return result[0].delegated_balance
 }
 
@@ -311,6 +376,19 @@ function set(id, value) {
     document.getElementById(id).innerHTML = value
 }
 
+let getMean = function (data) {
+    return data.reduce(function (a, b) {
+        return Number(a) + Number(b);
+    }) / data.length;
+};
+
+let getSD = function (data) {
+    let m = getMean(data);
+    return Math.sqrt(data.reduce(function (sq, n) {
+            return sq + Math.pow(n - m, 2);
+        }, 0) / (data.length - 1));
+};
+
 async function updateBakerInfo(baker) {
     const head = await getBlock("head");
     const timeNow = head.timestamp;
@@ -320,14 +398,50 @@ async function updateBakerInfo(baker) {
     let numBlocksBakedLastCycle = 0;
     let bakerRegistry = JSON.parse(await httpGet(`https://api.baking-bad.org/v2/bakers`));
     let searchRegistry = pkh => bakerRegistry.find(baker => baker.address == pkh) || {"name":pkh};
+    delegateAddress = baker
     httpGet(`https://api.baking-bad.org/v2/bakers/${baker}`)
-	.then(d => d == "" ? set("baker_name", baker) : set("baker_name", JSON.parse(d).name));
+	.then(d => d == "" ? set("baker_name", baker) : set("baker_name",
+							    JSON.parse(d).name + `<h5 style="margin-top:10"> (${baker}) </h5>`));
 
     const createGraphTimestamps = ((n) => Array.from(Array(n).keys())
 				   .map((i) => (millisThirtyDays / (n-1)) * (n-1-i))
 				   .map((i) => (timeNow - i)))
 
-    blocksBakedPerHour(baker,createGraphTimestamps(16)).then(d => linegraph("chart", d, {x:"timestamp", y:"blocksPerHour"}));
+    getRewardsInCycle(baker, lastFullCycle - 9, lastFullCycle)
+    	.then(d => {
+    	    set( "baker_rewards",
+		 `Rewards made in cycle ${lastFullCycle}: ${convertFromUtezToTez(d[d.length-1].rewards).toFixed(2)} XTZ`)
+	    d.forEach(r => r.rewards = convertFromUtezToTez(r.rewards));
+	    linegraph("rewardsChart", d, {x:"cycle", y:"rewards"}, [0, Math.max(...d.map(r =>r.rewards))], false);
+	    d.push({cycle:"Cycle", rewards:"Rewards Earned", staking_balance:"Staking Balance"});
+	    heatTable("rewardsTable", d.reverse(), ["cycle", "rewards"], "rewards");
+    	});
+    getBakerGradesForCycle(242)
+	.then(d => {
+	    let values = d.map(item => item.grade).sort((a, b) => a - b)
+	    const fivePercent = Math.round(values.length * 0.05);
+	    values = values.slice(fivePercent, values.length-fivePercent);
+	    const standardDeviation = getSD(values);
+	    const avg = getMean(values);
+	    const bakerGrade = (d.find(entry => entry.address == baker) || {"grade":0}).grade
+	    const numDeviations = (bakerGrade - avg) / standardDeviation
+	    let letterGrade = "F";
+	    if (numDeviations > 2) letterGrade = "A+";
+	    else if (numDeviations > 1) letterGrade = "A";
+	    else if (numDeviations > 0.5) letterGrade = "B+";
+	    else if (numDeviations > 0) letterGrade = "B";
+	    else if (numDeviations > -1) letterGrade = "C";
+	    else if (numDeviations > -1.5) letterGrade = "D";
+	    else letterGrade = "F";
+	    console.log(baker);
+	    console.log(bakerGrade);
+	    console.log(avg);
+	    console.log(standardDeviation);
+	    set("baker_grade", `${letterGrade}`);
+	});
+	      
+    blocksBakedPerHour(baker,createGraphTimestamps(16)).then(d => linegraph("chart", d,
+									    {x:"timestamp", y:"blocksPerHour"}, [0,50]));
     lastBlockBakedBy(baker)
 	.then(d => {
 	    set("baker_last_bake", `Time of last bake: ${d ? UTCToDateTime(d.timestamp) : "Never baked"}`);
@@ -335,7 +449,7 @@ async function updateBakerInfo(baker) {
 	});
     getBakerAccount()
 	.then(async function(d) { 
-	    let topTen = d//.slice(0,10)
+	    let topTen = d.slice(0,100)
 	    topTen.forEach((baker, i) => {
 		baker["name"] = `#${i+1} ${searchRegistry(baker.pkh).name}`
 		baker["staking_balance"] = convertFromUtezToTez(baker.staking_balance)
@@ -353,7 +467,7 @@ async function updateBakerInfo(baker) {
 	    // let sum = d3.sum(topTen, d => d.staking_balance)
 	    // let other = ({"name":"Other", "staking_balance":(await getRollsStaked()) * tezPerRoll - sum})
 	    // topTen.push(other)
-	    stackedBarGraph(`chart2`, topTen, {x:"staking_balance", y:"name"}, 8);
+	    stackedBarGraph(`chart2`, topTen, {x:"staking_balance", y:"name"}, 8, d => updateBakerInfo(d.pkh));
 	});
     numBlocksBakedBy("all", lastFullCycle)
 	.then(d => {
@@ -364,7 +478,7 @@ async function updateBakerInfo(baker) {
 		baker["name"] += ` (${baker.count_hash})`;
 	    });
 	    d.find(d => d.baker == baker)["default"] = "true";
-	    stackedBarGraph(`chart3`, d, {x:"count_hash", y:"name"}, 7);
+	    stackedBarGraph(`chart3`, d, {x:"count_hash", y:"name"}, 7, d => updateBakerInfo(d.baker));
 	});
     getBakerAccount(baker)
 	.then(d => {
@@ -385,9 +499,6 @@ async function updateBakerInfo(baker) {
 	    updateCountdown((d ? d.estimated_time : "none"), baker);
 	    set("baker_next_bake_level", `Level of next bake: ${d ? d.level : "Some time in the distant future..."}`);
 	});
-    getRewardsInCycle(baker, lastFullCycle)
-	.then(d => set("baker_rewards",
-		       `Rewards made in cycle ${lastFullCycle}: ${convertFromUtezToTez(d).toFixed(2)} XTZ`));
     blocksMissedBy(baker, lastFullCycle)
 	.then(d => {
 	    set("baker_blocks_missed", `Blocks missed in cycle ${lastFullCycle}: ${d.length}`);
