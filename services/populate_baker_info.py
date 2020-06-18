@@ -1,5 +1,5 @@
-import psycopg2
-import math, time
+import postgres
+import math, time, sys
 from conseil.api import ConseilApi
 from conseil.core import ConseilClient as Client
 
@@ -16,10 +16,6 @@ baking_rights = conseil.tezos.mainnet.baking_rights
 
 def convertFromUtezToTez(num):
     return num / 1000000
-
-    
-currentBlockLevel = blocks.query(blocks.level).order_by(blocks.level.desc())\
-                                              .limit(1).scalar()
 
 def calc(baker, current_cycle):
     start_cycle = current_cycle - 10;
@@ -49,12 +45,6 @@ def calc(baker, current_cycle):
                           .limit(10000000) \
                           .vector()
 
-    # partitions = [i for i in range(0, len(rights), 5000)]
-    # if (len(rights) > 0 and partitions[-1] != len(rights)):
-    #     partitions.append(len(rights))
-    # m = 0
-    #    if (len(rights)>0):
-    #    for i in range(len(partitions)-2):
     m = blocks.query(blocks.hash, blocks.hash.count()) \
                    .filter(blocks.level.in_(*rights),
                            blocks.baker!=baker) \
@@ -65,50 +55,30 @@ def calc(baker, current_cycle):
     s= int(s)
     m= int(m)
     d= int(d)
-#    grade = stakingBalance
-#    grade = b + s - m + d
+
     grade =  (100000 * r) * (b+s)/(1+b) * (math.exp(-1* (m/(b+1))))*(1-(1/(1+d)))
-# try this:    grade =  (100000 * r) * (b+5*s)/(1+m+b) *(1-(1/(1+d)))
-#    return baker, grade, r, b, s, m, d, stakingBalance
+#   try this:    grade =  (100000 * r) * (b+5*s)/(1+m+b) *(1-(1/(1+d)))
+#   return baker, grade, r, b, s, m, d, stakingBalance
     return baker, grade, current_cycle
 
 def calculateGradesForCycle(cycle):
     start_cycle = cycle - 10
     bakers = list(set(blocks.query(blocks.baker) \
-                 .filter(blocks.meta_cycle.between(start_cycle, cycle)) \
-
+                      .filter(blocks.meta_cycle.between(start_cycle, cycle)) \
                       .vector()))
     data = []
     for baker in bakers:
         data.append(calc(baker, cycle))
+    db = postgres.getLogin("db_conf.json")
+    postgres.push(db, "baking_info.baker_grades", ("address", "grade", "cycle"), data);
 
-    pushData(data);
-
-def pushData(data):
-    try:
-        connection = psycopg2.connect(user = "postgres",
-                                  password = "something",
-                                  host = "127.0.0.1",
-                                  port = "5433",
-                                  database = "postgres")
-
-        cursor = connection.cursor()
-        postgres_insert_query = """INSERT INTO baking_info.baker_grades (address, grade, cycle) VALUES (%s, %s, %s)"""
-        cursor.executemany(postgres_insert_query, data)
-        connection.commit()
-        print ("Commit changes")
-    except (Exception, psycopg2.Error) as error :
-        print ("Error while connecting to PostgreSQL", error)
-    finally:
-        if(connection):
-            cursor.close()
-            connection.close()
-            print("PostgreSQL connection is closed")
 
 def populate(starting_cycle):
     cycle = starting_cycle
-    currentBlockCycle = blocks.query(blocks.meta_cycle).order_by(blocks.level.desc())\
-                                                  .limit(1).scalar()
+    currentBlockCycle = blocks.query(blocks.meta_cycle) \
+                              .order_by(blocks.level.desc()) \
+                              .limit(1) \
+                              .scalar()
     while (True):
         print("Checking cycle")
         if cycle > currentBlockCycle:
@@ -120,5 +90,10 @@ def populate(starting_cycle):
             print("Done")
             cycle += 1
 
-populate(242);
+if __name__ == "__main__":
+    if len(sys.argv) == 2:
+        populate(int(sys.argv[1]));
+    else:
+        print("Please specify a cycle to start sync from")
+    
         
