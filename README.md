@@ -9,7 +9,7 @@ python3 -m pip install cherrypy
 python3 -m pip install cherrypy-cors
 ```
 
-To download and launch the server run:
+To download and launch the server, run:
 
 ```
 git clone https://github.com/Cryptonomic/Harpoon.git
