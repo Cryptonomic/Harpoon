@@ -65,7 +65,7 @@ async function httpPost(theUrl, params) {
 }
 
 async function getBakerInfo(table, fields, predicates) {
-    const url = `http://localhost:8080/`;
+    const url = `http://localhost:8080/info`;
     const result = await httpPost(url, JSON.stringify({ "table": table,
 							"fields": fields,
 							"predicates": predicates}));

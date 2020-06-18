@@ -1,7 +1,12 @@
-import string
+import os
 import cherrypy
 import cherrypy_cors
 import psycopg2
+
+class Harpoon(object):
+    @cherrypy.expose
+    def index(self):
+        return open("index.html")
 
 @cherrypy.expose
 class HarpoonWebService(object):
@@ -44,15 +49,25 @@ def CORS():
 if __name__ == '__main__':
     conf = {
         '/': {
+            'tools.sessions.on': True,
+            'tools.staticdir.root': os.path.abspath(os.getcwd())
+        },
+        '/info': {
             'request.dispatch': cherrypy.dispatch.MethodDispatcher(),
             'tools.sessions.on': True,
             'tools.response_headers.on': True,
             'tools.response_headers.headers': [('Content-Type', 'text/plain')],
             'tools.CORS.on': True,
             'cors.expose.on': True,
+        },
+        '/assets': {
+            'tools.staticdir.on': True,
+            'tools.staticdir.dir': './assets'
         }
     }
 
     cherrypy_cors.install()
     cherrypy.tools.CORS = cherrypy.Tool('before_handler', CORS)
-    cherrypy.quickstart(HarpoonWebService(), '/', conf)
+    webapp = Harpoon()
+    webapp.info = HarpoonWebService()
+    cherrypy.quickstart(webapp, '/', conf)
