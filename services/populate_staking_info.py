@@ -30,6 +30,8 @@ def getSnapshotData(cycle, bakers):
     for baker in bakers:
         response = requests.get("%s/chains/main/blocks/%s/context/delegates/%s" % (base, snapshotLevel, baker));
         response = response.text
+
+        #if the rpc comes back with an unexpected response
         if response[0] == "[":
             continue
 
@@ -52,7 +54,7 @@ def getSnapshotData(cycle, bakers):
 
 
 def populate(starting_cycle):
-    db = postgres.getLogin("db_conf.json")
+    db = postgres.getLogin()
     cycle = starting_cycle
     currentBlockCycle = blocks.query(blocks.meta_cycle) \
                               .order_by(blocks.level.desc())\
