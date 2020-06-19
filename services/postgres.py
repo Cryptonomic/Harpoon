@@ -31,8 +31,7 @@ def getLogin(dbfile="db_conf.json"):
         db = json.loads(f.read())
     return db
 
-
-if __name__ == "__main__":
+def configure():
     with open("db_conf.json", "w+") as f:
         host = input("Postgres host IP: ")
         port = input("Port: ")
@@ -46,3 +45,7 @@ if __name__ == "__main__":
               "database": database}
 
         f.write(json.dumps(db, indent=4))
+
+
+if __name__ == "__main__":
+    configure()
