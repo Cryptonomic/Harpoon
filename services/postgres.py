@@ -18,14 +18,14 @@ def push(db, table, columns, data):
     cursor.executemany(postgres_insert_query, data)
     connection.commit()
 
-def createTables(db):
+def create_tables(db):
     connection = connect(db)
     cursor = connection.cursor()
     with open("create_tables.sql", "r") as f:
         cursor.execute(f.read())
         connection.commit()
 
-def getLogin(dbfile="db_conf.json"):
+def get_login(dbfile="db_conf.json"):
     db = {}
     with open(dbfile, 'r') as f:
         db = json.loads(f.read())

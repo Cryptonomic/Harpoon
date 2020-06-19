@@ -19,7 +19,7 @@ def populate_from_cycle(table, columns):
                 print("Sleeping for %s seconds." % time_to_sleep)
                 time.sleep(time_to_sleep)
             else:
-                postgres.push(postgres.getLogin(), table, columns, func(cycle))
+                postgres.push(postgres.get_login(), table, columns, func(cycle))
                 print("Done")
                 cycle += 1
 
