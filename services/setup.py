@@ -1,4 +1,4 @@
 import postgres
 
-configure()
-create_tables(db.get_login)
+postgres.configure()
+postgres.create_tables(db.get_login())
