@@ -1,4 +1,4 @@
-const conseilServer = { url: 'https://conseil-prod.cryptonomic-infra.tech:443', apiKey: 'galleon' };
+const conseilServer = { url: 'https://conseil-prod1.cryptonomic-infra.tech:443', apiKey: 'galleon' };
 const platform = "tezos"
 const network = "mainnet"
 const blocksPerCycleValues = {"mainnet" : 4096,
@@ -10,6 +10,8 @@ const tezPerRoll = 8000
 const millisOneDay = 86400000
 const millisOneHour = millisOneDay/24
 const millisThirtyDays = millisOneDay * 30
+const CYCLES_PRESERVED = 5;
+const CYCLES_PENDING = 2;
 var clock
 var delegateAddress
 /* ==== === various utility functions =======*/
@@ -64,39 +66,23 @@ async function httpPost(theUrl, params) {
     });
 }
 
-async function getBakerInfo(table, fields, predicates) {
+async function getBakerInfo(table, fields, predicates, orderby) {
     const url = `http://localhost:8080/info`;
-    const result = await httpPost(url, JSON.stringify({ "table": table,
-							"fields": fields,
-							"predicates": predicates}));
-    return JSON.parse(result)
-}
-
-async function getBakerGradesForCycle(cycle) {
-    const url = `http://localhost:8000/getBakerGrades.php?cycle=${cycle}`;
-    const result = await httpGet(url);
-    return JSON.parse(result)
-}
-
-async function getRewardsInCycle(delegate, cycle, cycle2="none") {
-    let url = `http://localhost:8000/getRewardsInCycle.php?delegate=${delegate}&cycle=${cycle}`;
-    if (cycle2 != "none") url += `&cycle2=${cycle2}`
-    const result = await httpGet(url);
-    return JSON.parse(result)
-}
-async function getPayout(delegate) {
-    let url = `http://localhost:8000/getPayout.php?delegate=${delegate}`;
-    const result = await httpGet(url);
+    let query = { "table": table, "fields": fields };
+    if (predicates) query["predicates"] = predicates;
+    if (orderby) query["orderby"] = orderby;
+    const result = await httpPost(url, JSON.stringify(query));
     return JSON.parse(result)
 }
 
 async function continueRewardSearch() {
-    document.getElementById("payout").style.display = "block";
-    document.getElementById("fee").style.display = "block";
     document.getElementById("calculate_rewards_button").style.display = "block";
     document.getElementById("payout").value = (await getBakerInfo("baker_payouts", ["payout_account"],
 								  [`baker='${delegateAddress}'`]))[0].payout_account
     document.getElementById("fee").value = JSON.parse(await httpGet(`https://api.baking-bad.org/v2/bakers/${delegateAddress}`)).fee;
+    document.getElementById("payout_delay").value = JSON.parse(
+	await httpGet(`https://api.baking-bad.org/v2/bakers/${delegateAddress}`)
+    ).payoutDelay;
 }
 
 async function calculateRewardsForDelegate() {
@@ -104,28 +90,55 @@ async function calculateRewardsForDelegate() {
     const lastFullCycle = head.meta_cycle - 1;
     const delegator = document.getElementById("delegator").value
     const fee = document.getElementById("fee").value
+    const payoutDelay = document.getElementById("payout_delay").value
     const payout = document.getElementById("payout").value
+    const undelegatedMsg = "You were not qualified for rights at this cycle"
     let rewards = await getBakerInfo("snapshot_info",
 				     ["cycle", "rewards", "snapshot_block_level", "staking_balance"],
 				     [`cycle BETWEEN ${lastFullCycle-9} AND ${lastFullCycle}`,
 				      `baker='${delegateAddress}'`]);
+
+    const delegations = await getBakerInfo("delegate_history", ["cycle", "baker"],
+					   [`delegator='${delegator}'`,
+					    `cycle BETWEEN ${lastFullCycle-16} AND ${lastFullCycle-7}`,
+					    `baker='${delegateAddress}'`],
+					   ["cycle", "ASC"])
+
+    const delegation_cycles = delegations ? delegations.map(d => d.cycle): []
+
     for (d of rewards) {
 	let delegateBalance = await getBalanceAtLevel(delegator, d.snapshot_block_level - 1)
-	let rewardsReceived = await tezTransferedBetween(payout, delegator, d.cycle+1); 
-	d["delegator_rewards"] = delegateBalance ? convertFromUtezToTez(d.rewards * (1 - fee) *
-									(delegateBalance/d.staking_balance)).toFixed(6) : "--"
-	d["delegator_rewards_received"] = convertFromUtezToTez(rewardsReceived)
-	d["advertised_fee"] = parseFloat((fee * 100).toFixed(2))
-	d["actual_fee"] = parseFloat(((-1) * ((rewardsReceived/d.rewards)*(d.staking_balance/delegateBalance) - 1) * 100).toFixed(2))
+	console.log(d.cycle - parseInt(payoutDelay))
+	let rewardsReceived = await tezTransferedBetween(payout, delegator, d.cycle+parseInt(payoutDelay)); 
+	
+	if (delegation_cycles.includes(d.cycle - CYCLES_PRESERVED - CYCLES_PENDING)) {
+	
+	    d["delegator_rewards"] = delegateBalance ? convertFromUtezToTez(d.rewards * (1 - fee) *
+									    (delegateBalance/d.staking_balance)).toFixed(6) : "--"
+	    d["delegator_rewards_received"] = convertFromUtezToTez(rewardsReceived)
+	    d["advertised_fee"] = parseFloat((fee * 100).toFixed(2))
+	    d["actual_fee"] = parseFloat(((-1) * ((rewardsReceived/d.rewards)*
+						  (d.staking_balance/delegateBalance) - 1) * 100)
+					 .toFixed(2))
+	}
+	else {
+	    d["delegator_rewards"] =  "*"
+	    d["delegator_rewards_received"] = "*"
+	    d["advertised_fee"] = parseFloat((fee * 100).toFixed(2))
+	    d["actual_fee"] = "*"
+	}
     }	
+    rewards.forEach(d => d.rewards = convertFromUtezToTez(d.rewards).toFixed(2));
     rewards.push({cycle:"Cycle", rewards:"Total Baker Rewards Earned",
     		  staking_balance:"Staking Balance", delegator_rewards:"Delegator Rewards",
 		  delegator_rewards_received:"Payments Received", advertised_fee:"Advertised Fee",
 		  actual_fee:"Actual Fee Taken"});
-
-    heatTable("rewardsTable", rewards.reverse(),
+    heatTable("rewardsTable",
+	      rewards.reverse(),
 	      ["cycle", "rewards", "delegator_rewards", "delegator_rewards_received", "advertised_fee", "actual_fee"],
-	      "rewards", [["delegator_rewards", "delegator_rewards_received"], ["actual_fee","advertised_fee"]]);
+	      "rewards",
+	      [["delegator_rewards", "delegator_rewards_received"], ["advertised_fee", "actual_fee", "inverse"]],
+	      [{identifier:"*", message: undelegatedMsg}, {identifier:"--", message:""}]);
 }
 
 function updateCountdown(timestamp, baker) {
@@ -171,6 +184,23 @@ async function getTezInCirculation() {
     balanceQuery = conseiljs.ConseilQueryBuilder.addAggregationFunction(balanceQuery, 'balance', 'sum');
     const totalTez = await conseiljs.ConseilDataClient.executeEntityQuery(conseilServer, platform, network, 'accounts', balanceQuery);
     return totalTez[0].sum_balance
+}
+
+async function getActiveDelegationsBetween(account, start_cycle, end_cycle) {
+    let query = conseiljs.ConseilQueryBuilder.blankQuery();
+    query = conseiljs.ConseilQueryBuilder.addFields(query, 'delegate', 'cycle');
+    query = conseiljs.ConseilQueryBuilder.addPredicate(query, 'kind', conseiljs.ConseilOperator.EQ, ["delegation"], false);
+    query = conseiljs.ConseilQueryBuilder.addPredicate(query, 'source', conseiljs.ConseilOperator.EQ, [account], false);
+    query = conseiljs.ConseilQueryBuilder.addOrdering(query, 'block_level', conseiljs.ConseilSortDirection.DESC);
+    query = conseiljs.ConseilQueryBuilder.addPredicate(query, 'cycle', conseiljs.ConseilOperator.LT, [start_cycle, end_cycle], false);
+    const result = await conseiljs.ConseilDataClient.executeEntityQuery(conseilServer, platform, network, 'operations', query);
+    ret = []
+    for (let i = start_cycle; i <= end_cycle; i++) 
+	ret.push({"cycle":i})
+    if (result) {
+
+    }
+    return result[0]
 }
 
 async function tezTransferedBetween(from, to, cycle) {
@@ -421,15 +451,17 @@ async function updateBakerInfo(baker) {
     let numBlocksBakedLastCycle = 0;
     let bakerRegistry = JSON.parse(await httpGet(`https://api.baking-bad.org/v2/bakers`));
     let searchRegistry = pkh => bakerRegistry.find(baker => baker.address == pkh) || {"name":pkh};
-    delegateAddress = baker
-    httpGet(`https://api.baking-bad.org/v2/bakers/${baker}`)
-	.then(d => d == "" ? set("baker_name", baker) : set("baker_name",
-							    JSON.parse(d).name + `<h5 style="margin-top:10"> (${baker}) </h5>`));
-
+    let getAddressFromName = name => bakerRegistry.find(baker => baker.name.toLowerCase() == name.toLowerCase()) || {"address": name}
     const createGraphTimestamps = ((n) => Array.from(Array(n).keys())
 				   .map((i) => (millisThirtyDays / (n-1)) * (n-1-i))
 				   .map((i) => (timeNow - i)))
-
+    baker = getAddressFromName(baker).address
+    if (baker.charAt(0) != "t") return;
+    delegateAddress = baker
+    httpGet(`https://api.baking-bad.org/v2/bakers/${baker}`)
+	.then(d => d == "" ? set("baker_name", baker) : set("baker_name",
+							    JSON.parse(d).name + `<h5 style="margin-top:10"> (${baker}) </h5>`)
+	     );
     getBakerInfo("snapshot_info", ["cycle", "rewards"], [`cycle BETWEEN ${lastFullCycle-9} AND ${lastFullCycle}`,
 							 `baker='${baker}'`])
     	.then(d => {
@@ -465,7 +497,9 @@ async function updateBakerInfo(baker) {
 	});
 	      
     blocksBakedPerHour(baker,createGraphTimestamps(16)).then(d => linegraph("chart", d,
-									    {x:"timestamp", y:"blocksPerHour"}, [0,50]));
+									    {x:"timestamp", y:"blocksPerHour"},
+									    [0, Math.max(...d.map(r =>r.blocksPerHour))],
+									    false, true));
     lastBlockBakedBy(baker)
 	.then(d => {
 	    set("baker_last_bake", `Time of last bake: ${d ? UTCToDateTime(d.timestamp) : "Never baked"}`);
@@ -548,8 +582,6 @@ async function updateBakerInfo(baker) {
 	    chainmap("chart4", d, {x:"meta_cycle_position", y:"label"},
 		     blocksPerCycle, "#eb7610", "Blocks baked ", false);
 	});
-
-//    tooltip(document.getElementById("baker_luck"), 500, 500, "dud");
     
 }
 
@@ -590,5 +622,4 @@ function initialize() {
     updateNetworkInfo();
     getBlock("head").then(head => updateBakerInfo(head.baker));
     setTimeout(updateNetworkInfo, 60000);
-    // setTimeout(set, 5000, "time", timings);
 }

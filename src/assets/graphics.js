@@ -25,7 +25,14 @@ let yMap = (outline) =>  d3.scaleLinear()
 
 let lineGenerator = (x, y, outline) => d3.line()
     .x(d => x(outline.xValue(d)))
-    .y(d => y(outline.yValue(d)));
+    .y(d => y(outline.yValue(d)))
+    .curve(d3.curveBasis);
+
+let areaGenerator = (x, y, outline) => d3.area()
+    .x(d => x(outline.xValue(d)))
+    .y0(outline.innerHeight)
+    .y1(d => y(outline.yValue(d)))
+    .curve(d3.curveBasis);
 
 let tooltip = (g, width, height, padding, gwidth, gheight) => {
     let tt = g.append("rect")
@@ -36,6 +43,8 @@ let tooltip = (g, width, height, padding, gwidth, gheight) => {
     let tooltipText = g.append("text")
 	.attr("class", "tooltip")
 	.attr("transform", "translate(0, 15)")
+    tt.setText = text => tooltipText.text(text)
+    tt.fitSizeToText = () => tt.attr("width", tooltipText.node().getBBox().width);
     g.selectAll(".tooltip")
 	.style("opacity", 0);
     g.on("mouseover", d => g.selectAll(".tooltip")
@@ -55,7 +64,7 @@ let tooltip = (g, width, height, padding, gwidth, gheight) => {
 		.attr("y", d3.mouse(this)[1] + yOffset);
 	})
 	.on("mouseout", d => g.selectAll(".tooltip")
-	    .transition().duration(300).style("opacity", 0))
+	    .transition().duration(200).style("opacity", 0))
 
     return tt;
 }
@@ -67,21 +76,22 @@ function setPanel(panel) {
 	.forEach(node => node.style.display = "block");
 }
 
-function heatTable(id, data, values, mapColumn, comparisons=[]) {
+function heatTable(id, data, values, mapColumn, comparisons=[], notices=[]) {
     let toGraph = outline(id, data, values,
 			  {top:10, left:10, right:10, bottom:10});
     const rowHeight = 40;
     const rowPadding = 5;
     const textPadding = 5;
+    const tooltipHeight = 20;
+    const tooltipPadding = 5;
     const color = d3.scaleLinear()
 	  .domain(d3.extent(data.map((d, i) => (i==0) ? data[i+1][mapColumn] : d[mapColumn])))
 	  .range(["white", "#65eb72"]);
-
+	
     const render = graph => {
 	console.log(graph.data)
 	const g = graph.svg.append("g")
 	      .attr("transform", `translate(${graph.margin.left}, ${graph.margin.top})`)
-
 	g.selectAll("g")
 	    .data(graph.data)
 	    .enter().append("g").attr("class", "data")
@@ -92,6 +102,16 @@ function heatTable(id, data, values, mapColumn, comparisons=[]) {
 	    .attr("fill", (d, i) => i == 0 ? "#f5b505" : color(d[mapColumn]));
 	values.forEach((d, i) => {
 	    g.selectAll(".data")
+		.each((r, i, n) => {
+		    noticeInd = notices.map(note => note.identifier)
+			.findIndex(elem => elem == r[d]);
+		    if (noticeInd != -1) {
+			tt = tooltip(d3.select(n[i]), 5, tooltipHeight,
+				tooltipPadding, graph.innerWidth, rowHeight);
+			tt.setText(notices[noticeInd].message)
+			tt.fitSizeToText()
+		    }
+		})
 		.append("text")
 		.text(r => r[d])
 		.attr("x", (graph.innerWidth)/(2*values.length) * (2 * i + 1) + textPadding)
@@ -99,15 +119,26 @@ function heatTable(id, data, values, mapColumn, comparisons=[]) {
 		.style("fill", (r, i) => {
 		    let color = "black";
 		    comparisons.forEach(compareCol => {
-			if (d ==  compareCol[1] && r[compareCol[0]] != "--" && i != 0) {
+			if (d ==  compareCol[1] &&
+			    !notices.map(d => d.identifier).includes(r[compareCol[0]]) &&
+			    i != 0) {
+			    positive = "blue"
+			    negative = "red"
+			    if (compareCol[2] == "inverse") {
+				positive = "red"
+				negative = "blue"
+			    }
+
 			    if (r[compareCol[0]] == r[compareCol[1]]) color = "green";
-			    else if (r[compareCol[0]] > r[compareCol[1]]) color = "red";
-			    else if (r[compareCol[0]] < r[compareCol[1]]) color = "blue";
+			    else if (r[compareCol[0]] > r[compareCol[1]]) color = negative;
+			    else if (r[compareCol[0]] < r[compareCol[1]]) color = positive;
 			}
 		    });
 		    return color;
 		})
-		.style("text-anchor", "middle");
+		.style("text-anchor", "middle")
+
+
 	});
 	
     }
@@ -175,9 +206,9 @@ function chainmap(id, data, values, blocks,
 
 	g.selectAll(".databar")
 	    .on("mouseover", function(d) {
-		g.select("text.tooltip")
-		    .text(`${tooltipLabel}${d.mapVal}: ${d.data}`);
-		label.attr("width", g.select("text.tooltip").node().getBBox().width);
+		label.setText(`${tooltipLabel}${d.mapVal}: ${d.data}`);
+		label.fitSizeToText()
+
 	    });
 
 	if(axis) {
@@ -286,16 +317,15 @@ function stackedBarGraph(id, data, values, colorSet=0, callback=d=>{return;}) {
     render(toGraph)
 }    
 
-function linegraph(id, data, values, yExtent, time=true) {
-    xScale = d3.scaleTime()
-    if (time == false) xScale = d3.scaleLinear();
+function linegraph(id, data, values, yExtent, time=true, area=false) {
+    let xScale = time ? d3.scaleTime() : d3.scaleLinear();
+    let grapher = area ? areaGenerator : lineGenerator
     const toGraph = outline(id, data, values,
 			    {top:10, left: 60, right:60, bottom:30});
     const render = graph => {
 	const x = xScale
 	      .domain(d3.extent(graph.data, graph.xValue))
 	      .range([0, graph.innerWidth])
-	      .nice()
 
 	const y =  d3.scaleLinear()
 	      .domain(yExtent)
@@ -303,27 +333,29 @@ function linegraph(id, data, values, yExtent, time=true) {
 	      .nice()
 
 	const xAxis = d3.axisBottom(x)
-	      .tickSize(-graph.innerHeight)
+	      .tickSize(0)
 	      .tickPadding(15)
 
 	const yAxis = d3.axisLeft(y)
-	      .tickSize(-graph.innerWidth)
-	
+	      .tickSize(0)
+	      .tickPadding(10)
+
 	const g = graph.svg.append("g")
 	      .attr("transform", `translate(${graph.margin.left}, ${graph.margin.top})`)
 
-
 	let line = g.append("path");
-	line.attr("d", lineGenerator(x, y, graph)(graph.data))
+	line.attr("d", grapher(x, y, graph)(graph.data))
 	    .transition().duration(1000)
-	    .attr("fill", "none")
+	    .attr("fill", area ? "steelblue" : "none")
 	    .attr("stroke", "steelblue")
 	    .attr("stroke-width", 5)
 	    .attr("stroke-linejoin", "round")
 
 	g.append("g")
 	    .call(yAxis)
-	
+	    .select(".domain")
+	    .remove()
+
 	g.append("g")
 	    .call(xAxis)
 	    .attr("transform", `translate(0, ${graph.innerHeight})`)

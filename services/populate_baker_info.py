@@ -1,7 +1,7 @@
 import postgres, service_utils, queries as tezos
 import math, sys
 
-TABLE = "baking_info.test_baker_grades"
+TABLE = "baking_info.baker_grades"
 COLUMNS = ("address", "grade", "cycle")
 SAMPLE_RANGE = 10
 
@@ -31,7 +31,7 @@ def calculate_grades_for_cycle(cycle):
     bakers = tezos.active_bakers_between(start_cycle, cycle)
     data = []
 
-    for baker in bakers[0:3]:
+    for baker in bakers:
         data.append(calculate_grade(baker, cycle))
     return data
     
