@@ -142,7 +142,7 @@ async function calculateRewardsForDelegate() {
 }
 
 async function getBakerConfig(baker) {
-    let rewardStruct = httpGet
+    const rewardStruct = JSON.parse(await httpGet(`https://api.baking-bad.org/v2/bakers/${delegateAddress}`)).config.rewardStruct
     let extRewardStruct = {
 	blocks: (rewardStruct & 1) > 0,
 	endorses: (rewardStruct & 2) > 0,
@@ -160,6 +160,7 @@ async function getBakerConfig(baker) {
 	lowPriorityEndorses: (rewardStruct & 8192) > 0,
     }
 }
+
 function updateCountdown(timestamp, baker) {
     if (timestamp == "none") {
 	set("baker_next_bake", `Time until next bake: Some time in the distant future...`);
