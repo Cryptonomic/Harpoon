@@ -1,6 +1,3 @@
-const conseilServer = { url: 'https://conseil-prod1.cryptonomic-infra.tech:443', apiKey: 'galleon' };
-const platform = "tezos"
-const network = "mainnet"
 const blocksPerCycleValues = {"mainnet" : 4096,
 			      "babylonnet" : 2048,
 			      "carthagenet" : 2048,
@@ -24,7 +21,6 @@ function convertFromUtezToTez(amountInUtez) {
 function emphasize(toEmphasize) {
     return "<strong>" + toEmphasize + "</strong>"
 }
-
 
 function UTCToDateTime(timestamp) {
     const dateNow = new Date(timestamp);
@@ -204,23 +200,6 @@ async function getTezInCirculation() {
     balanceQuery = conseiljs.ConseilQueryBuilder.addAggregationFunction(balanceQuery, 'balance', 'sum');
     const totalTez = await conseiljs.ConseilDataClient.executeEntityQuery(conseilServer, platform, network, 'accounts', balanceQuery);
     return totalTez[0].sum_balance
-}
-
-async function getActiveDelegationsBetween(account, start_cycle, end_cycle) {
-    let query = conseiljs.ConseilQueryBuilder.blankQuery();
-    query = conseiljs.ConseilQueryBuilder.addFields(query, 'delegate', 'cycle');
-    query = conseiljs.ConseilQueryBuilder.addPredicate(query, 'kind', conseiljs.ConseilOperator.EQ, ["delegation"], false);
-    query = conseiljs.ConseilQueryBuilder.addPredicate(query, 'source', conseiljs.ConseilOperator.EQ, [account], false);
-    query = conseiljs.ConseilQueryBuilder.addOrdering(query, 'block_level', conseiljs.ConseilSortDirection.DESC);
-    query = conseiljs.ConseilQueryBuilder.addPredicate(query, 'cycle', conseiljs.ConseilOperator.LT, [start_cycle, end_cycle], false);
-    const result = await conseiljs.ConseilDataClient.executeEntityQuery(conseilServer, platform, network, 'operations', query);
-    ret = []
-    for (let i = start_cycle; i <= end_cycle; i++) 
-	ret.push({"cycle":i})
-    if (result) {
-
-    }
-    return result[0]
 }
 
 async function tezTransferedBetween(from, to, cycle) {
