@@ -141,6 +141,25 @@ async function calculateRewardsForDelegate() {
 	      [{identifier:"*", message: undelegatedMsg}, {identifier:"--", message:""}]);
 }
 
+async function getBakerConfig(baker) {
+    let rewardStruct = httpGet
+    let extRewardStruct = {
+	blocks: (rewardStruct & 1) > 0,
+	endorses: (rewardStruct & 2) > 0,
+	fees: (rewardStruct & 4) > 0,
+	accusationRewards: (rewardStruct & 8) > 0,
+	accusationLostDeposits: (rewardStruct & 16) > 0,
+	accusationLostRewards: (rewardStruct & 32) > 0,
+	accusationLostFees: (rewardStruct & 64) > 0,
+	revelationRewards: (rewardStruct & 128) > 0,
+	revelationLostRewards: (rewardStruct & 256) > 0,
+	revelationLostFees: (rewardStruct & 512) > 0,
+	missedBlocks: (rewardStruct & 1024) > 0,
+	stolenBlocks: (rewardStruct & 2048) > 0,
+	missedEndorses: (rewardStruct & 4096) > 0,
+	lowPriorityEndorses: (rewardStruct & 8192) > 0,
+    }
+}
 function updateCountdown(timestamp, baker) {
     if (timestamp == "none") {
 	set("baker_next_bake", `Time until next bake: Some time in the distant future...`);

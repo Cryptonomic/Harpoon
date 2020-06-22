@@ -4,14 +4,16 @@ from conseil.core import ConseilClient as Client
 
 conseil = Client(ConseilApi(
     api_key='galleon',
-    api_host='https://conseil-prod.cryptonomic-infra.tech:443',
+    api_host='https://conseil-prod1.cryptonomic-infra.tech:443',
     api_version=2
 ))
 
-accounts= conseil.tezos.mainnet.accounts
 blocks = conseil.tezos.mainnet.blocks
+operations = conseil.tezos.mainnet.operations
+accounts= conseil.tezos.mainnet.accounts
 delegates = conseil.tezos.mainnet.delegates
 baking_rights = conseil.tezos.mainnet.baking_rights
+
 
 BASE_URL = "http://157.245.219.171:8732/"
 CYCLE_SIZE = 4096
@@ -38,20 +40,7 @@ def current_level():
                .limit(1) \
                .scalar())
 
-def blocks_baked_between(baker, start_cycle, end_cycle):
-    return int(blocks.query(blocks.hash, blocks.hash.count()) \
-                      .filter(blocks.baker==baker,
-                              blocks.meta_cycle.between(start_cycle, end_cycle))\
-                      .scalar())
-
-def blocks_stolen_between(baker, start_cycle, end_cycle):
-    return int(blocks.query(blocks.hash, blocks.hash.count()) \
-                 .filter(blocks.baker==baker,
-                         blocks.priority>0, \
-                         blocks.meta_cycle.between(start_cycle, end_cycle))\
-                 .scalar())
-
-def blocks_missed_between(baker, start_cycle, end_cycle):
+def baking_rights_between(baker, start_cycle, end_cycle):
     rights = baking_rights.query(baking_rights.level) \
                           .filter(baking_rights.delegate==baker,
                                   baking_rights.priority==0,
@@ -59,12 +48,37 @@ def blocks_missed_between(baker, start_cycle, end_cycle):
                           .order_by(baking_rights.level.asc()) \
                           .limit(MAX_LIMIT) \
                           .vector()
+    return rights
 
-    return int(blocks.query(blocks.hash, blocks.hash.count()) \
+def blocks_baked_between(baker, start_cycle, end_cycle):
+    return blocks.query(blocks.level) \
+                 .filter(blocks.baker==baker,
+                         blocks.meta_cycle.between(start_cycle, end_cycle),
+                         blocks.priority==0)\
+                 .all()
+
+def blocks_stolen_between(baker, start_cycle, end_cycle):
+    return blocks.query(blocks.level) \
+                 .filter(blocks.baker==baker,
+                         blocks.priority>0, \
+                         blocks.meta_cycle.between(start_cycle, end_cycle))\
+                 .all()
+
+def blocks_missed_between(baker, start_cycle, end_cycle):
+    rights = baking_rights_between(baker, start_cycle, end_cycle)
+    return blocks.query(blocks.level) \
                  .filter(blocks.level.in_(*rights),
                          blocks.baker!=baker) \
                  .limit(MAX_LIMIT) \
-                 .scalar())
+                 .all()
+
+def sum_endorsements_for_blocks(blocks):
+    if len(blocks) == 0: return 0
+    op_levels = [entry["level"] + 1 for entry in blocks]
+    return int(operations.query(operations.number_of_slots,
+                                operations.number_of_slots.sum()) \
+               .filter(operations.level.in_(*op_levels)) \
+               .scalar())
 
 def all_bakers():
     return  delegates.query(delegates.pkh).order_by(delegates.staking_balance.desc()) \
@@ -77,11 +91,12 @@ def active_bakers_between(start_cycle, end_cycle):
                         .vector()))
 
 def baker_info_at_level(baker, level):
-    response = requests.get("%s/chains/main/blocks/%s/context/delegates/%s" % (BASE_URL, level, baker));    
+    response = requests.get("%s/chains/main/blocks/%s/context/delegates/%s" % (BASE_URL, level, baker))
     return (json.loads(response.text))
 
 def snapshot_index(cycle):
     cycleLevel = cycle_to_level(cycle) + 1
     r = requests.get("%s/chains/main/blocks/%d/context/raw/json/cycle/%d/roll_snapshot" % (BASE_URL, cycleLevel, cycle)) 
     return int(r.text)
-    
+
+
