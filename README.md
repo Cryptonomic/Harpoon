@@ -15,7 +15,7 @@ python3 -m pip install conseil
 ```
 Access to a postgres server is also needed for many functions. You can find more information about how to set one up [here](https://www.postgresql.org/). 
 
-To download and run initial setup procedures, run:
+To download Harpoon and run initial setup procedures, run:
 
 ```
 git clone https://github.com/Cryptonomic/Harpoon.git
