@@ -11,7 +11,7 @@ COLUMNS = ("address",
            "num_endorsements_in_stolen",
            "num_endorsements_in_missed")
 
-SAMPLE_RANGE = 10
+SAMPLE_RANGE = 1
 
 def calculate_grade(baker, current_cycle):
     start_cycle = current_cycle - SAMPLE_RANGE;
@@ -45,7 +45,11 @@ def calculate_grades_for_cycle(cycle):
     start_cycle = cycle - SAMPLE_RANGE
     bakers = tezos.active_bakers_between(start_cycle, cycle)
     data = []
+    wheel = ["-","\\","|","/"]
+    i=0;
     for baker in bakers:
+        print(" [" + wheel[i % len(wheel)] + "] ", end="\r")
+        i += 1
         data.append(calculate_grade(baker, cycle))
     return data
         

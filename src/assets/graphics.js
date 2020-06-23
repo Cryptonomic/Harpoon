@@ -320,6 +320,11 @@ function stackedBarGraph(id, data, values, colorSet=0, callback=d=>{return;}) {
 function linegraph(id, data, values, yExtent, time=true, area=false) {
     let xScale = time ? d3.scaleTime() : d3.scaleLinear();
     let grapher = area ? areaGenerator : lineGenerator
+    const xTickSize = 7
+    const xTickPadding = 15
+    const yTickSize = 0 
+    const yTickPadding = 10
+
     const toGraph = outline(id, data, values,
 			    {top:10, left: 60, right:60, bottom:30});
     const render = graph => {
@@ -333,12 +338,12 @@ function linegraph(id, data, values, yExtent, time=true, area=false) {
 	      .nice()
 
 	const xAxis = d3.axisBottom(x)
-	      .tickSize(0)
-	      .tickPadding(15)
+	      .tickSize(xTickSize)
+	      .tickPadding(xTickPadding)
 
 	const yAxis = d3.axisLeft(y)
-	      .tickSize(0)
-	      .tickPadding(10)
+	      .tickSize(yTickSize)
+	      .tickPadding(yTickPadding)
 
 	const g = graph.svg.append("g")
 	      .attr("transform", `translate(${graph.margin.left}, ${graph.margin.top})`)

@@ -498,7 +498,7 @@ async function updateBakerInfo(baker) {
     blocksBakedPerHour(baker,createGraphTimestamps(16)).then(d => linegraph("chart", d,
 									    {x:"timestamp", y:"blocksPerHour"},
 									    [0, Math.max(...d.map(r =>r.blocksPerHour))],
-									    false, true));
+									    true, true));
     lastBlockBakedBy(baker)
 	.then(d => {
 	    set("baker_last_bake", `Time of last bake: ${d ? UTCToDateTime(d.timestamp) : "Never baked"}`);

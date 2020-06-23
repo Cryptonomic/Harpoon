@@ -22,8 +22,10 @@ def create_tables(db):
     connection = connect(db)
     cursor = connection.cursor()
     with open("create_tables.sql", "r") as f:
+        print("Creating tables...")
         cursor.execute(f.read())
         connection.commit()
+    print("Postgres database is setup")
 
 def get_login(dbfile="db_conf.json"):
     db = {}
