@@ -2,7 +2,7 @@
 A Tezos staking dashboard built using ConseilJS
 
 ## Installation
-Python 3.7+ is recomended. Before running, make sure cherrypy and cherrypy-cors is installed:
+Python 3.7+ is recommended. Before running, make sure cherrypy and cherrypy-cors is installed:
 
 ```
 python3 -m pip install cherrypy
