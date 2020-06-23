@@ -1,6 +1,5 @@
 # Harpoon
-A Tezos staking dashboard built using ConseilJS
-
+Harpoon is a staking dashboard for Tezos built using ConseilJS. Harpoon collects metrics about each baker on the Tezos network and allows users to search for and evaluate bakers based off of these performance metrics. These include blocks baked, missed, and stolen, stake relative to the rest of the network, as well as a letter grade based on a normalized scoring system. Harpoon also allows for a user to view and audit the rewards won/payed out by bakers. 
 ## Installation
 Python 3.7+ is recommended. Before running, make sure cherrypy and cherrypy-cors is installed:
 
