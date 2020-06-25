@@ -1,7 +1,7 @@
 # Harpoon
 Harpoon is a staking dashboard for Tezos built using ConseilJS. Harpoon collects metrics about each baker on the Tezos network and allows users to search for and evaluate bakers based off of these performance stats. This data includes blocks baked, missed, and stolen, stake relative to the rest of the network, as well as a letter grade based on a normalized scoring system. Harpoon also allows for a user to view and audit the rewards won/payed out by bakers. 
 ## Installation
-Harpoon can be run through (Docker)[https://docs.docker.com/engine/install/] using the following commands:
+Harpoon can be run through [Docker](https://docs.docker.com/engine/install/) using the following commands:
 ```
 git clone https://github.com/Cryptonomic/Harpoon.git
 cd Harpoon
