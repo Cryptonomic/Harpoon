@@ -7,6 +7,7 @@ git clone https://github.com/Cryptonomic/Harpoon.git
 cd Harpoon
 docker-compose up --build
 ```
-Doing so will result in an endpoint at http://127.0.0.1:8080, as well as a Postgres database accessible through port 5434. 
-On startup, Harpoon will display metrics for the most recent baker. Some features, such as letter grades and rewards will be unable, however, as syncing the Postgres database requires some time to do.
-The default cycle to start syncing from is set to `230`. This value can be changed in docker-compose.yml by changing the value of `command` to the desired start cycle. It is recommended to at least start the sync from 8 cycles before the current cycle for all of the features to work correctly.
+Doing so will result in an endpoint at http://127.0.0.1:8080, as well as a Postgres database accessible through port `5434`. 
+On startup, Harpoon will display metrics for the most recent baker. Other bakers can be searched for by baker name or public key hash 
+
+Some features, such as letter grades and rewards will be unable, however, as syncing the Postgres database requires some time to do. The default cycle to start syncing from is set to `230`. This value can be changed in `docker-compose.yml` by changing the value of `command` to the desired start cycle. It is recommended to at least start the sync from 8 cycles before the current cycle for all of the features to work correctly.
