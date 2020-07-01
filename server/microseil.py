@@ -1,4 +1,4 @@
-import json
+import json, logging
 from service_utils import get_user_config
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
@@ -56,6 +56,7 @@ def get_class_by_tablename(tablename):
 def get_column_by_name(tableclass, column):
     return getattr(tableclass, column)
 
+logging.info("Creating tables...")
 Base.metadata.create_all(engine)
 Session = sessionmaker(engine)
 session = Session()
