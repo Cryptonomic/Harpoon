@@ -1,5 +1,5 @@
 import time, sys, requests
-from microseil import session
+from microseil import get_session
 import queries as tezos
     
 def populate_from_cycle():
@@ -21,6 +21,7 @@ def populate_from_cycle():
                 time.sleep(time_to_sleep)
             else:
                 try:
+                    session = get_session()
                     session.add_all(func(cycle))
                     session.commit()
                     print("Done")

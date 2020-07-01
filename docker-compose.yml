@@ -4,16 +4,17 @@ services:
   db:
     image: postgres
     environment:
-      - POSTGRES_PASSWORD=<db_password>
+      - POSTGRES_PASSWORD=password
       - POSTGRES_USER=postgres
     ports:
-      - "<host_db_port>:5432"
+      - "5434:5432"
 
   web:
     build: .
     tty: true
     ports:
-      - "<host_web_port>:8080"
+      - "8080:8080"
     depends_on:
       - db
-    command: "<start_cycle>"
+    command: "240"
+

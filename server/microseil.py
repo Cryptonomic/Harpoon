@@ -64,12 +64,15 @@ def get_class_by_tablename(tablename):
 def get_column_by_name(tableclass, column):
     return getattr(tableclass, column)
 
+def get_session():
+    Session = sessionmaker(engine)
+    session = Session()
+    return session
+    
 if not has_tables(TABLES, engine):
-    logging.info("Creating tables...")
+    logging.debug("Creating tables...")
     Base.metadata.create_all(engine)
 
-Session = sessionmaker(engine)
-session = Session()
 
 
 

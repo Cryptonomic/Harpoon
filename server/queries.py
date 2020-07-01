@@ -17,11 +17,11 @@ conseil = Client(ConseilApi(
 blocks = conseil.tezos.mainnet.blocks
 operations = conseil.tezos.mainnet.operations
 accounts= conseil.tezos.mainnet.accounts
-delegates = conseil.tezos.mainnet.delegates
+bakers = conseil.tezos.mainnet.bakers
 baking_rights = conseil.tezos.mainnet.baking_rights
 
 
-BASE_URL = TEZOS_CONF["host"] + str(TEZOS_CONF["port"]) + "/"
+BASE_URL = TEZOS_CONF["host"] + ":" + str(TEZOS_CONF["port"]) + "/"
 CYCLE_SIZE = 4096
 PRESERVED_CYCLES = 5
 PRESERVED_CYCLES = 5
@@ -87,8 +87,8 @@ def sum_endorsements_for_blocks(blocks):
                .scalar())
 
 def all_bakers():
-    return  delegates.query(delegates.pkh).order_by(delegates.staking_balance.desc()) \
-                                          .filter(delegates.deactivated==False) \
+    return  bakers.query(bakers.pkh).order_by(bakers.staking_balance.desc()) \
+                                          .filter(bakers.deactivated==False) \
                                           .limit(1000).vector()
 
 def active_bakers_between(start_cycle, end_cycle):

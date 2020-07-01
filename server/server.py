@@ -22,6 +22,7 @@ class HarpoonWebService(object):
                   if hasattr(Column, p % predicate["op"])]
             op = op[0]
             filters.append(getattr(Column, op)(*predicate["value"]))
+        session = get_session()
         query = session.query(*columns).filter(*filters)
         if "orderby" in response:
             OrderCol = get_column_by_name(Table, response["orderby"]["field"])
