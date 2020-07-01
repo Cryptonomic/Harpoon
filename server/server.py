@@ -1,7 +1,6 @@
-import os
-import cherrypy, cherrypy_cors
-import psycopg2
-import postgres 
+import cherrypy, cherrypy_cors, os
+from microseil import *
+from service_utils import get_user_config
 
 class Harpoon(object):
     @cherrypy.expose
@@ -10,6 +9,25 @@ class Harpoon(object):
 
 @cherrypy.expose
 class HarpoonWebService(object):
+    def parse_query(self, response):
+        Table = get_class_by_tablename(response["table"])
+        predicates = response["predicates"]
+        fields = response["fields"]
+        filters = []
+        columns = []
+        for field in fields:
+            columns.append(get_column_by_name(Table, field))
+        for predicate in predicates:
+            Column = get_column_by_name(Table, predicate["field"])
+            op = [p % predicate["op"] for p in ["%s", "%s_", "__%s__"]
+                  if hasattr(Column, p % predicate["op"])]
+            op = op[0]
+            filters.append(getattr(Column, op)(*predicate["value"]))
+        query = session.query(*columns).filter(*filters)
+        if "orderby" in response:
+            OrderCol = get_column_by_name(Table, response["orderby"]["field"])
+            query = query.order_by(getattr(OrderCol, response["orderby"]["dir"])())
+        return query
 
     @cherrypy_cors.tools.preflight(
         allowed_methods=["GET", "DELETE", "POST", "PUT"])
@@ -24,25 +42,9 @@ class HarpoonWebService(object):
     @cherrypy.tools.json_out()
     def POST(self):
         input_json = cherrypy.request.json
-        table = input_json["table"]
-        fields = ", ".join([val if i==1 else "'" + val + "'"
-                            for val in input_json["fields"] for i in (0,1)])
-        predicates = ""
-        if "predicates" in input_json:
-            predicates = " AND ".join(input_json["predicates"])
-        orderby = ""
-        if "orderby" in input_json:
-            orderby = " ORDER BY %s %s" % (input_json["orderby"][0], input_json["orderby"][1])
-
-        connection = postgres.connect()
-        cursor = connection.cursor()
-        query = """SELECT json_agg(json_build_object(%s) %s) FROM baking_info.%s""" \
-            % (fields, orderby, table)
-        if len(predicates) > 0:
-            query += " WHERE " + predicates
-        cursor.execute(query);
-        response = cursor.fetchone()
-        return response[0]
+        query = self.parse_query(input_json)
+        response = query.all()
+        return response
 
 def CORS():
     cherrypy.response.headers["Access-Control-Allow-Origin"] = "*"
@@ -65,10 +67,12 @@ if __name__ == '__main__':
             'tools.staticdir.dir':  os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + "/ui/assets"
         }
     }
-
+    
+    net_conf = get_user_config()["cherrypy"]
     cherrypy_cors.install()
     cherrypy.tools.CORS = cherrypy.Tool('before_handler', CORS)
-    cherrypy.server.socket_host = "web"
+    cherrypy.server.socket_host = net_conf["host"]
+    cherrypy.server.socket_port = net_conf["port"]
     webapp = Harpoon()
     webapp.info = HarpoonWebService()
     cherrypy.quickstart(webapp, '/', conf)

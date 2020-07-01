@@ -1,12 +1,7 @@
-import postgres, service_utils, queries as tezos
+import service_utils, queries as tezos
+from microseil import SnapshotInfo
 
-
-TABLE = "baking_info.snapshot_info"
-COLUMNS =  ("cycle", "snapshot_index", "snapshot_block_level",
-            "baker", "staking_balance", "delegated_balance",
-            "rewards")
-
-@service_utils.populate_from_cycle(TABLE, COLUMNS)
+@service_utils.populate_from_cycle()
 def get_snapshot_data(cycle):
     print("Calculating snapshot data for cycle %s..." % cycle)
     snapshot_index = tezos.snapshot_index(cycle)
@@ -34,8 +29,12 @@ def get_snapshot_data(cycle):
             if entry["cycle"] == cycle:
                 reward = int(entry["fees"]) + int(entry["rewards"])
 
-        data.append((cycle, snapshot_index, snapshot_block, baker,
-                     staking_balance, delegated_balance, reward));
+        data.append(SnapshotInfo(cycle=cycle, baker=baker,
+                                 snapshot_index=snapshot_index,
+                                 snapshot_block_level=snapshot_block,
+                                 staking_balance=staking_balance,
+                                 delegated_balance=delegated_balance,
+                                 rewards=reward));
 
     return data
 

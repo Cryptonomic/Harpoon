@@ -63,18 +63,19 @@ async function httpPost(theUrl, params) {
 }
 
 async function getBakerInfo(table, fields, predicates, orderby) {
-    const url = `http://localhost:8080/info`;
     let query = { "table": table, "fields": fields };
     if (predicates) query["predicates"] = predicates;
     if (orderby) query["orderby"] = orderby;
-    const result = await httpPost(url, JSON.stringify(query));
+    const result = await httpPost(microseilServer, JSON.stringify(query));
     return JSON.parse(result)
 }
 
 async function continueRewardSearch() {
     document.getElementById("calculate_rewards_button").style.display = "block";
-    document.getElementById("payout").value = (await getBakerInfo("baker_payouts", ["payout_account"],
-								  [`baker='${delegateAddress}'`]))[0].payout_account
+    document.getElementById("payout").value = (await getBakerInfo("baker_payouts",
+								  ["payout_account"],
+								  [{"field":"baker", "op":"eq", "value":[delegateAddress]}]
+								 ))[0].payout_account
     document.getElementById("fee").value = JSON.parse(await httpGet(`https://api.baking-bad.org/v2/bakers/${delegateAddress}`)).fee;
     document.getElementById("payout_delay").value = JSON.parse(
 	await httpGet(`https://api.baking-bad.org/v2/bakers/${delegateAddress}`)
@@ -91,14 +92,14 @@ async function calculateRewardsForDelegate() {
     const undelegatedMsg = "You were not qualified for rights at this cycle"
     let rewards = await getBakerInfo("snapshot_info",
 				     ["cycle", "rewards", "snapshot_block_level", "staking_balance"],
-				     [`cycle BETWEEN ${lastFullCycle-9} AND ${lastFullCycle}`,
-				      `baker='${delegateAddress}'`]);
+				     [{"field":"cycle", "op":"between", "value":[lastFullCycle-9,lastFullCycle]},
+				      {"field":"baker", "op":"eq", "value":[delegateAddress]}]);
 
     const delegations = await getBakerInfo("delegate_history", ["cycle", "baker"],
-					   [`delegator='${delegator}'`,
-					    `cycle BETWEEN ${lastFullCycle-16} AND ${lastFullCycle-7}`,
-					    `baker='${delegateAddress}'`],
-					   ["cycle", "ASC"])
+					   [{"field":"delegator", "op":"eq", "value":[delegator]},
+					    {"field":"cycle", "op":"between", "value":[lastFullCycle-16, lastFullCycle-7]},
+					    {"field":"baker", "op":"eq", "value":[delegateAddress]}],
+					   {"field":"cycle", "dir":"asc"});
 
     const delegation_cycles = delegations ? delegations.map(d => d.cycle): []
 
@@ -129,7 +130,7 @@ async function calculateRewardsForDelegate() {
     		  staking_balance:"Staking Balance", delegator_rewards:"Delegator Rewards",
 		  delegator_rewards_received:"Payments Received", advertised_fee:"Advertised Fee",
 		  actual_fee:"Actual Fee Taken"});
-    heatTable("rewardsTable",
+    heatTable("rewards_table",
 	      rewards.reverse(),
 	      ["cycle", "rewards", "delegator_rewards", "delegator_rewards_received", "advertised_fee", "actual_fee"],
 	      "rewards",
@@ -228,7 +229,7 @@ async function getRollsStaked(baker="none") {
 	query = conseiljs.ConseilQueryBuilder.addPredicate(query, 'pkh', conseiljs.ConseilOperator.EQ, [baker], false);	 
 	field = "staking_balance"
     }
-    const result = await conseiljs.ConseilDataClient.executeEntityQuery(conseilServer, platform, network, 'delegates', query);
+    const result = await conseiljs.ConseilDataClient.executeEntityQuery(conseilServer, platform, network, 'bakers', query);
     const tezStaked = convertFromUtezToTez(result[0][field]);
     return Math.floor(tezStaked/tezPerRoll)
 }
@@ -315,7 +316,7 @@ async function getBakerAccount(pkh="all") {
     }
     query = conseiljs.ConseilQueryBuilder.setLimit(query, 100000000)
     query = conseiljs.ConseilQueryBuilder.addOrdering(query, 'staking_balance', conseiljs.ConseilSortDirection.DESC);
-    const account = await conseiljs.ConseilDataClient.executeEntityQuery(conseilServer, platform, network, 'delegates', query);
+    const account = await conseiljs.ConseilDataClient.executeEntityQuery(conseilServer, platform, network, 'bakers', query);
     return (pkh=="all") ? account : account[0]
 }
 
@@ -402,7 +403,7 @@ async function getDelegatedBalance(baker) {
     let query = conseiljs.ConseilQueryBuilder.blankQuery();
     query = conseiljs.ConseilQueryBuilder.addFields(query,'delegated_balance');
     query = conseiljs.ConseilQueryBuilder.addPredicate(query, 'pkh', conseiljs.ConseilOperator.EQ, [baker], false);
-    const result = await conseiljs.ConseilDataClient.executeEntityQuery(conseilServer, platform, network, 'delegates', query);
+    const result = await conseiljs.ConseilDataClient.executeEntityQuery(conseilServer, platform, network, 'bakers', query);
     return result[0].delegated_balance
 }
 
@@ -461,8 +462,9 @@ async function updateBakerInfo(baker) {
 	.then(d => d == "" ? set("baker_name", baker) : set("baker_name",
 							    JSON.parse(d).name + `<h5 style="margin-top:10"> (${baker}) </h5>`)
 	     );
-    getBakerInfo("snapshot_info", ["cycle", "rewards"], [`cycle BETWEEN ${lastFullCycle-9} AND ${lastFullCycle}`,
-							 `baker='${baker}'`])
+    getBakerInfo("snapshot_info", ["cycle", "rewards"],
+		 [{"field":"cycle", "op":"between", "value":[lastFullCycle-9, lastFullCycle]},
+		  {"field":"baker", "op":"eq", "value":[baker]}])
     	.then(d => {
     	    set( "baker_rewards",
 		 `Rewards made in cycle ${lastFullCycle}: ${convertFromUtezToTez(d[d.length-1].rewards).toFixed(2)} XTZ`)
@@ -471,7 +473,7 @@ async function updateBakerInfo(baker) {
 	    d.push({cycle:"Cycle", rewards:"Rewards Earned", staking_balance:"Staking Balance"});
 	    heatTable("rewards_table", d.reverse(), ["cycle", "rewards"], "rewards");
     	});
-    getBakerInfo("baker_performance", ["baker", "grade"], [`cycle=${lastFullCycle}`])
+    getBakerInfo("baker_performance", ["baker", "grade"], [{"field":"cycle", "op":"eq", "value":[lastFullCycle]}])
 	.then(d => {
 	    let values = d.map(item => item.grade).sort((a, b) => a - b)
 	    const fivePercent = Math.round(values.length * 0.05);

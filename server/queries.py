@@ -1,11 +1,17 @@
 import requests, json
+from service_utils import get_user_config
 from conseil.api import ConseilApi
 from conseil.core import ConseilClient as Client
 
+
+NET_CONF = get_user_config()
+CONSEIL_CONF = NET_CONF["conseil"]
+TEZOS_CONF = NET_CONF["tezos"]
+
 conseil = Client(ConseilApi(
-    api_key='galleon',
-    api_host='https://conseil-prod1.cryptonomic-infra.tech:443',
-    api_version=2
+    api_key=CONSEIL_CONF["api_key"],
+    api_host=CONSEIL_CONF["host"],
+    api_version=CONSEIL_CONF["version"]
 ))
 
 blocks = conseil.tezos.mainnet.blocks
@@ -15,7 +21,7 @@ delegates = conseil.tezos.mainnet.delegates
 baking_rights = conseil.tezos.mainnet.baking_rights
 
 
-BASE_URL = "http://157.245.219.171:8732/"
+BASE_URL = TEZOS_CONF["host"] + str(TEZOS_CONF["port"]) + "/"
 CYCLE_SIZE = 4096
 PRESERVED_CYCLES = 5
 PRESERVED_CYCLES = 5

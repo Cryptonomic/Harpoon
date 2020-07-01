@@ -16,4 +16,4 @@ services:
       - "8080:8080"
     depends_on:
       - db
-    command: "230"
+    command: "240"

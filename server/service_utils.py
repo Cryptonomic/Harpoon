@@ -1,7 +1,17 @@
 import time, sys, requests
-import postgres, json, queries as tezos
+from microseil import *
 
-def populate_from_cycle(table, columns):
+def get_user_config():
+    config = {}
+    with open('network_conf.json', 'r') as f:
+        config = json.loads(f.read())
+    return config
+
+#import is here to deal with circular import
+import queries as tezos
+    
+def populate_from_cycle():
+
     if len(sys.argv) != 2:
         print("Please specify a cycle to start sync from")
         return lambda _ : _
@@ -20,7 +30,8 @@ def populate_from_cycle(table, columns):
                 time.sleep(time_to_sleep)
             else:
                 try:
-                    postgres.push(table, columns, func(cycle))
+                    session.add_all(func(cycle))
+                    session.commit()
                     print("Done")
                     cycle += 1
                 except requests.exceptions.ReadTimeout:
