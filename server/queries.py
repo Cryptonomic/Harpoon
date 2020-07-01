@@ -1,5 +1,5 @@
 import requests, json
-from service_utils import get_user_config
+from microseil import get_user_config
 from conseil.api import ConseilApi
 from conseil.core import ConseilClient as Client
 

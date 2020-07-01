@@ -1,17 +1,8 @@
 import time, sys, requests
-from microseil import *
-
-def get_user_config():
-    config = {}
-    with open('network_conf.json', 'r') as f:
-        config = json.loads(f.read())
-    return config
-
-#import is here to deal with circular import
+from microseil import session
 import queries as tezos
     
 def populate_from_cycle():
-
     if len(sys.argv) != 2:
         print("Please specify a cycle to start sync from")
         return lambda _ : _

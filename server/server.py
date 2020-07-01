@@ -1,6 +1,5 @@
 import cherrypy, cherrypy_cors, os
 from microseil import *
-from service_utils import get_user_config
 
 class Harpoon(object):
     @cherrypy.expose

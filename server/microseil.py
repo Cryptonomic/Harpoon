@@ -1,9 +1,13 @@
 import json, logging
-from service_utils import get_user_config
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine, Column, Integer, String, BigInteger
 
+def get_user_config():
+    config = {}
+    with open('network_conf.json', 'r') as f:
+        config = json.loads(f.read())
+    return config
 
 LOGIN = get_user_config()["db"]
 engine = create_engine('postgresql+psycopg2://%s:%s@%s:%s/%s' %
@@ -15,7 +19,6 @@ Base = declarative_base()
 
 class DelegateHistory(Base):
     __tablename__ = "delegate_history"
-    __table_args__ = {"schema": "baking_info"}
 
     cycle = Column(Integer, primary_key=True)
     snapshot_block_level = Column(Integer)
@@ -24,7 +27,6 @@ class DelegateHistory(Base):
 
 class SnapshotInfo(Base):
     __tablename__ = "snapshot_info"
-    __table_args__ = {"schema": "baking_info"}
 
     cycle = Column(Integer, primary_key=True)
     baker = Column(String(255), primary_key=True)
@@ -36,7 +38,6 @@ class SnapshotInfo(Base):
     
 class BakerPerformance(Base):
     __tablename__ = "baker_performance"
-    __table_args__ = {"schema": "baking_info"}
 
     cycle = Column(Integer, primary_key=True)
     baker = Column(String(255), primary_key=True)
