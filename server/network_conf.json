@@ -1,23 +1,22 @@
 {
     "db": {
 	"user":"postgres",
-	"password":"something",
-	"host":"127.0.0.1",
-	"port":5433,
+	"password":"<db_password>",
+	"host":"db",
+	"port":5432,
 	"database":"postgres"
     },
-
     "conseil": {
-	"api_key":"galleon",
-	"host":"https://conseil-prod2.cryptonomic-infra.tech:443",
+	"api_key":"<api_key>",
+	"host":"<conseil_host>",
 	"version":2
     },
     "tezos": {
-	"host":"http://157.245.219.171",
-	"port":8732
+	"host":"<tezos_host>",
+	"port":<tezos_port>
     },
     "cherrypy": {
-	"host":"127.0.0.1",
-	"port":8081
+	"host":"web",
+	"port":8080
     }
 }
