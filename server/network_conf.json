@@ -7,7 +7,7 @@
 	"database":"postgres"
     },
     "conseil": {
-	"api_key":"<api_key>",n
+	"api_key":"<api_key>",
 	"host":"<conseil_host>",
 	"version":2
     },
