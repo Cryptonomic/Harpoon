@@ -14,7 +14,7 @@ After configuration, Harpoon can be run through [Docker](https://docs.docker.com
 ```
 docker-compose up --build
 ```
-Doing so will result in an endpoint at http://127.0.0.1:`<web_server_port>`, where `web_server_port` was the values specified during configuration. A Postgres database is also accessible through the corresponding port specified during configuration a well.
+Doing so will result in an endpoint at http://127.0.0.1:`<web_server_port>` , where `web_server_port` was the values specified during configuration. A Postgres database is also accessible through the corresponding port specified during configuration a well.
 
 On startup, Harpoon will display metrics for the most recent baker. Other bakers can be searched for by baker name or public key hash 
 Some features, such as letter grades and rewards will be unable, however, as syncing the Postgres database requires some time to do. 
