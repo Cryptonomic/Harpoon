@@ -69,9 +69,10 @@ def get_session():
     session = Session()
     return session
     
-if not has_tables(TABLES, engine):
-    logging.debug("Creating tables...")
-    Base.metadata.create_all(engine)
+if __name__ == "__main__":
+    if not has_tables(TABLES, engine):
+        logging.debug("Creating tables...")
+        Base.metadata.create_all(engine)
 
 
 

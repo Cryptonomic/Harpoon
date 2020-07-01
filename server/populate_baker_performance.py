@@ -5,7 +5,6 @@ from microseil import BakerPerformance
 SAMPLE_RANGE = 1
 
 def calculate_grade(baker, current_cycle):
-    print(baker)
     start_cycle = current_cycle - SAMPLE_RANGE;
     delegate = tezos.baker_info_at_level(baker, tezos.cycle_to_level(current_cycle))
     staking_balance = tezos.utez_to_tez(int(delegate["staking_balance"]))
