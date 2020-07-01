@@ -1,11 +1,12 @@
 def fill_template(path, mapping):
-    with open(path, "r+") as f:
+    file_str = ""
+    with open(path, "r") as f:
         file_str = f.read()
         for key in mapping:
             file_str = file_str.replace("<%s>" % key, mapping[key])
-        f.seek(0)
+    path = path.replace(".default", "")
+    with open(path, "w+") as f:
         f.write(file_str)
-        f.truncate()
 
 if __name__ == "__main__":
     print("====Harpoon Config====")
@@ -30,9 +31,9 @@ if __name__ == "__main__":
         "start_cycle": start_cycle
     }
 
-    FILES = ["./docker-compose.yml",
-             "./ui/assets/networkConf.js",
-             "./server/network_conf.json"]
+    FILES = ["./docker-compose.default.yml",
+             "./ui/assets/networkConf.default.js",
+             "./server/network_conf.default.json"]
 
     for f in FILES:
         fill_template(f, MAPPING)
