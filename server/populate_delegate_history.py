@@ -1,4 +1,4 @@
-import postgres, service_utils, queries as tezos
+import service_utils, queries as tezos
 from microseil import DelegateHistory
 
 @service_utils.populate_from_cycle()

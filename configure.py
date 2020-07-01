@@ -3,7 +3,6 @@ def fill_template(path, mapping):
         file_str = f.read()
         for key in mapping:
             file_str = file_str.replace("<%s>" % key, mapping[key])
-            print(file_str)
         f.seek(0)
         f.write(file_str)
         f.truncate()
