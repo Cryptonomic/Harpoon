@@ -65,6 +65,7 @@ async function getBakerInfo(table, fields, predicates, orderby) {
     let query = { "table": table, "fields": fields };
     if (predicates) query["predicates"] = predicates;
     if (orderby) query["orderby"] = orderby;
+    console.log(microseilServer)
     const result = await httpPost(microseilServer, JSON.stringify(query));
     return JSON.parse(result)
 }
@@ -244,6 +245,7 @@ async function updateBakerInfo(baker) {
 		 [{"field":"cycle", "op":"between", "value":[lastFullCycle-9, lastFullCycle]},
 		  {"field":"baker", "op":"eq", "value":[baker]}])
     	.then(d => {
+	    console.log(d)
     	    set( "baker_rewards",
 		 `Rewards made in cycle ${lastFullCycle}: ${convertFromUtezToTez(d[d.length-1].rewards).toFixed(2)} XTZ`)
 	    d.forEach(r => r.rewards = convertFromUtezToTez(r.rewards));
@@ -252,7 +254,8 @@ async function updateBakerInfo(baker) {
 	    heatTable("rewards_table", d.reverse(), ["cycle", "rewards"], "rewards");
     	});
     getBakerInfo("baker_performance", ["baker", "grade"], [{"field":"cycle", "op":"eq", "value":[lastFullCycle]}])
-	.then(d => {
+    	.then(d => {
+	    console.log(d)
 	    let values = d.map(item => item.grade).sort((a, b) => a - b)
 	    const fivePercent = Math.round(values.length * 0.05);
 	    values = values.slice(fivePercent, values.length-fivePercent);
