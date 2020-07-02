@@ -1,4 +1,4 @@
-import requests, json
+import requests, json, math
 from microseil import get_user_config
 from conseil.api import ConseilApi
 from conseil.core import ConseilClient as Client
@@ -81,10 +81,20 @@ def blocks_missed_between(baker, start_cycle, end_cycle):
 def sum_endorsements_for_blocks(blocks):
     if len(blocks) == 0: return 0
     op_levels = [entry["level"] + 1 for entry in blocks]
-    return int(operations.query(operations.number_of_slots,
+    partition_size = 50
+    num_cycles = math.floor(len(blocks)/partition_size)
+    total = 0
+    for i in range(num_cycles):
+        total += int(operations.query(operations.number_of_slots,
                                 operations.number_of_slots.sum()) \
-               .filter(operations.level.in_(*op_levels)) \
-               .scalar())
+                   .filter(operations.level.in_(*(op_levels[i * partition_size: (i+1) * partition_size]))) \
+                   .scalar())
+    if (partition_size * num_cycles) <= len(blocks):
+        total += int(operations.query(operations.number_of_slots,
+                                operations.number_of_slots.sum()) \
+                   .filter(operations.level.in_(*(op_levels[partition_size * num_cycles:]))) \
+                   .scalar())
+    return total
 
 def all_bakers():
     return  bakers.query(bakers.pkh).order_by(bakers.staking_balance.desc()) \
