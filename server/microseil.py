@@ -1,7 +1,7 @@
 import json, logging
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy import create_engine, Column, Integer, String, BigInteger
+from sqlalchemy import create_engine, Column, Integer, String, BigInteger, Numeric
 
 def get_user_config():
     config = {}
@@ -54,7 +54,7 @@ class BakerPerformance(Base):
     num_endorsements_in_baked = Column(Integer)
     num_endorsements_in_stolen = Column(Integer)
     num_endorsements_in_missed = Column(Integer)
-    grade = Column(Integer)
+    grade = Column(Numeric)
 
 def get_class_by_tablename(tablename):
   for c in Base._decl_class_registry.values():

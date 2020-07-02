@@ -89,7 +89,7 @@ def sum_endorsements_for_blocks(blocks):
                                 operations.number_of_slots.sum()) \
                    .filter(operations.level.in_(*(op_levels[i * partition_size: (i+1) * partition_size]))) \
                    .scalar())
-    if (partition_size * num_cycles) <= len(blocks):
+    if (partition_size * num_cycles) < len(blocks):
         total += int(operations.query(operations.number_of_slots,
                                 operations.number_of_slots.sum()) \
                    .filter(operations.level.in_(*(op_levels[partition_size * num_cycles:]))) \

@@ -93,7 +93,7 @@ async function calculateRewardsForDelegate() {
 				     ["cycle", "rewards", "snapshot_block_level", "staking_balance"],
 				     [{"field":"cycle", "op":"between", "value":[lastFullCycle-9,lastFullCycle]},
 				      {"field":"baker", "op":"eq", "value":[delegateAddress]}]);
-
+    console.log(rewards)
     const delegations = await getBakerInfo("delegate_history", ["cycle", "baker"],
 					   [{"field":"delegator", "op":"eq", "value":[delegator]},
 					    {"field":"cycle", "op":"between", "value":[lastFullCycle-16, lastFullCycle-7]},
