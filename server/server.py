@@ -29,6 +29,15 @@ class HarpoonWebService(object):
             query = query.order_by(getattr(OrderCol, response["orderby"]["dir"])())
         return query
 
+    def query_response_to_json(self, fields, data):
+        ret = []
+        for entry in data:
+            json_data = {}
+            for i in range(len(entry)):
+                json_data[fields[i]] = entry[i]
+            ret.append(json_data)
+        return ret
+
     @cherrypy_cors.tools.preflight(
         allowed_methods=["GET", "DELETE", "POST", "PUT"])
     def OPTIONS(self):
@@ -44,7 +53,9 @@ class HarpoonWebService(object):
         input_json = cherrypy.request.json
         query = self.parse_query(input_json)
         response = query.all()
-        return response
+        json_response = self.query_response_to_json(input_json["fields"], response)
+        return json_response
+
 
 def CORS():
     cherrypy.response.headers["Access-Control-Allow-Origin"] = "*"

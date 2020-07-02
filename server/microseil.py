@@ -70,6 +70,7 @@ def get_session():
     return session
     
 if __name__ == "__main__":
+    get_session()
     if not has_tables(TABLES, engine):
         logging.debug("Creating tables...")
         Base.metadata.create_all(engine)
