@@ -28,6 +28,18 @@ PRESERVED_CYCLES = 5
 SNAPSHOT_BLOCKS = 256
 MAX_LIMIT = 100000000
 
+def partition_query(f):
+    partition_size = 50
+    def sum_partitions(blocks):
+        num_cycles = math.floor(len(blocks)/partition_size)
+        total = 0
+        for i in range(num_cycles):
+            total += f(blocks[i * partition_size: (i+1) * partition_size])
+        if (partition_size * num_cycles) < len(blocks):
+            total += f(blocks[partition_size * num_cycles:])
+        return total
+    return sum_partitions
+
 def utez_to_tez(num):
     return num / 1000000
 
@@ -78,23 +90,14 @@ def blocks_missed_between(baker, start_cycle, end_cycle):
                  .limit(MAX_LIMIT) \
                  .all()
 
+@partition_query
 def sum_endorsements_for_blocks(blocks):
     if len(blocks) == 0: return 0
     op_levels = [entry["level"] + 1 for entry in blocks]
-    partition_size = 50
-    num_cycles = math.floor(len(blocks)/partition_size)
-    total = 0
-    for i in range(num_cycles):
-        total += int(operations.query(operations.number_of_slots,
+    return int(operations.query(operations.number_of_slots,
                                 operations.number_of_slots.sum()) \
-                   .filter(operations.level.in_(*(op_levels[i * partition_size: (i+1) * partition_size]))) \
-                   .scalar())
-    if (partition_size * num_cycles) < len(blocks):
-        total += int(operations.query(operations.number_of_slots,
-                                operations.number_of_slots.sum()) \
-                   .filter(operations.level.in_(*(op_levels[partition_size * num_cycles:]))) \
-                   .scalar())
-    return total
+               .filter(operations.level.in_(*op_levels)) \
+               .scalar())
 
 def all_bakers():
     return  bakers.query(bakers.pkh).order_by(bakers.staking_balance.desc()) \
@@ -116,3 +119,4 @@ def snapshot_index(cycle):
     return int(r.text)
 
 
+print(sum_endorsements_for_blocks(blocks_baked_between("tz1gfArv665EUkSg2ojMBzcbfwuPxAvqPvjo", 240, 240)))

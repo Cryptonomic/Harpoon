@@ -2,7 +2,7 @@ import math, sys
 import service_utils, queries as tezos
 from microseil import BakerPerformance
 
-SAMPLE_RANGE = 1
+SAMPLE_RANGE = 0
 
 def calculate_grade(baker, current_cycle):
     start_cycle = current_cycle - SAMPLE_RANGE;
