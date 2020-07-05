@@ -9,14 +9,6 @@ def get_user_config():
         config = json.loads(f.read())
     return config
 
-# def has_tables(tables, engine):
-#     exists = True
-#     for table in tables:
-#         exists = exists and engine.dialect.has_table(engine, table)
-#     return exists
-
-# TABLES = ["delegate_history", "snapshot_info",
-#           "baker_performance", "baker_payouts"]
 
 Base = declarative_base()
 
@@ -71,20 +63,18 @@ def get_column_by_name(tableclass, column):
 def get_session():
     LOGIN = get_user_config()["db"]
     engine = create_engine('postgresql+psycopg2://%s:%s@%s:%s/%s' %
-                       (LOGIN["user"], LOGIN["password"],
-                        LOGIN["host"], LOGIN["port"],
-                        LOGIN["database"]))
+                           (LOGIN["user"], LOGIN["password"],
+                            LOGIN["host"], LOGIN["port"],
+                            LOGIN["database"]))
 
-    Base.metadata.create_all(engine)
     Session = sessionmaker(engine)
     session = Session()
     return session
     
 if __name__ == "__main__":
     get_session()
-    #    if not has_tables(TABLES, engine):
-
-
+    logging.debug("Creating tables...")
+    Base.metadata.create_all(engine)
 
 
 

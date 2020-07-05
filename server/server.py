@@ -1,5 +1,11 @@
-import cherrypy, cherrypy_cors, os
+import cherrypy, cherrypy_cors, os, json, decimal
 from microseil import *
+
+class DecimalEncoder(json.JSONEncoder):
+    def default(self, o):
+        if isinstance(o, decimal.Decimal):
+            return float(o)
+        return super(DecimalEncoder, self).default(o)
 
 class Harpoon(object):
     @cherrypy.expose
@@ -54,7 +60,9 @@ class HarpoonWebService(object):
         query, session = self.parse_query(input_json)
         response = query.all()
         session.close()
-        json_response = self.query_response_to_json(input_json["fields"], response)
+        json_response = json.loads(
+            json.dumps(self.query_response_to_json(input_json["fields"], response),
+                                   cls = DecimalEncoder))
         return json_response
 
 
