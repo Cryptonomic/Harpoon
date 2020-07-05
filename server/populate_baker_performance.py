@@ -5,21 +5,28 @@ from microseil import BakerPerformance
 SAMPLE_RANGE = 0
 
 def calculate_grade(baker, current_cycle):
+    print(baker)
     start_cycle = current_cycle - SAMPLE_RANGE;
     delegate = tezos.baker_info_at_level(baker, tezos.cycle_to_level(current_cycle))
     staking_balance = tezos.utez_to_tez(int(delegate["staking_balance"]))
     num_delegators = len(delegate["delegated_contracts"])
 
+    print("blocks baked")
     blocks_baked = tezos.blocks_baked_between(baker, start_cycle, current_cycle)
+    print("blocks stolen")
     blocks_stolen =  tezos.blocks_stolen_between(baker, start_cycle, current_cycle)
+    print("blocks missed")
     blocks_missed = tezos.blocks_missed_between(baker, start_cycle, current_cycle)
 
     num_blocks_baked = len(blocks_baked)
     num_blocks_stolen = len(blocks_stolen)
     num_blocks_missed = len(blocks_missed)
 
+    print("endorsements in baked")
     num_endorsements_in_baked = tezos.sum_endorsements_for_blocks(blocks_baked)
+    print("endorsements in stolen")
     num_endorsements_in_stolen = tezos.sum_endorsements_for_blocks(blocks_stolen)
+    print("endorsements in missed")
     num_endorsements_in_missed = tezos.sum_endorsements_for_blocks(blocks_missed)
 
     blocks_per_stake = 0 if staking_balance==0 else float(num_blocks_baked/staking_balance)

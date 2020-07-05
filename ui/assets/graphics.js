@@ -326,7 +326,7 @@ function linegraph(id, data, values, yExtent, time=true, area=false) {
     const yTickPadding = 10
 
     const toGraph = outline(id, data, values,
-			    {top:10, left: 60, right:60, bottom:30});
+			    {top:10, left: 20, right:10, bottom:30});
     const render = graph => {
 	const x = xScale
 	      .domain(d3.extent(graph.data, graph.xValue))

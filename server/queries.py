@@ -105,9 +105,17 @@ def all_bakers():
                                           .limit(1000).vector()
 
 def active_bakers_between(start_cycle, end_cycle):
-        return list(set(blocks.query(blocks.baker) \
-                        .filter(blocks.meta_cycle.between(start_cycle, end_cycle)) \
-                        .vector()))
+    bakers = all_bakers()
+    active = list(set(blocks.query(blocks.baker) \
+                      .filter(blocks.meta_cycle.between(start_cycle, end_cycle)) \
+                      .vector()))
+    return [baker for baker in bakers if baker in active]
+
+def transaction_sources_in_cycle(destination, cycle):
+    return operations.query(operations.source) \
+                     .filter(operations.destination==destination,
+                             operations.cycle==cycle) \
+                     .all()
 
 def baker_info_at_level(baker, level):
     response = requests.get("%s/chains/main/blocks/%s/context/delegates/%s" % (BASE_URL, level, baker))
@@ -118,5 +126,7 @@ def snapshot_index(cycle):
     r = requests.get("%s/chains/main/blocks/%d/context/raw/json/cycle/%d/roll_snapshot" % (BASE_URL, cycleLevel, cycle)) 
     return int(r.text)
 
+def snapshot_index_to_block(index, cycle):
+    return (cycle - PRESERVED_CYCLES - 2) * \
+        CYCLE_SIZE + (index + 1) * SNAPSHOT_BLOCKS;
 
-print(sum_endorsements_for_blocks(blocks_baked_between("tz1gfArv665EUkSg2ojMBzcbfwuPxAvqPvjo", 240, 240)))

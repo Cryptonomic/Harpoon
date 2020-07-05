@@ -70,15 +70,15 @@ async function getBakerInfo(table, fields, predicates, orderby) {
     return JSON.parse(result)
 }
 
-async function continueRewardSearch() {
-    document.getElementById("calculate_rewards_button").style.display = "block";
-    document.getElementById("payout").value = (await getBakerInfo("baker_payouts",
-								  ["payout_account"],
-								  [{"field":"baker", "op":"eq", "value":[delegateAddress]}]
-								 ))[0].payout_account
-    document.getElementById("fee").value = JSON.parse(await httpGet(`https://api.baking-bad.org/v2/bakers/${delegateAddress}`)).fee;
+async function updatePayoutInfo(baker) {
+    payout_response = (await getBakerInfo("baker_payouts",
+				 ["payout"],
+				 [{"field":"baker", "op":"eq", "value":[baker]}]
+				))[0]
+    document.getElementById("payout").value = payout_response ? payout_response.payout : ""
+    document.getElementById("fee").value = JSON.parse(await httpGet(`https://api.baking-bad.org/v2/bakers/${baker}`)).fee;
     document.getElementById("payout_delay").value = JSON.parse(
-	await httpGet(`https://api.baking-bad.org/v2/bakers/${delegateAddress}`)
+	await httpGet(`https://api.baking-bad.org/v2/bakers/${baker}`)
     ).payoutDelay;
 }
 
@@ -237,15 +237,24 @@ async function updateBakerInfo(baker) {
     baker = getAddressFromName(baker).address
     if (baker.charAt(0) != "t") return;
     delegateAddress = baker
+    updatePayoutInfo(baker)
     httpGet(`https://api.baking-bad.org/v2/bakers/${baker}`)
 	.then(d => d == "" ? set("baker_name", baker) : set("baker_name",
 							    JSON.parse(d).name + `<h5 style="margin-top:10"> (${baker}) </h5>`)
 	     );
-    getBakerInfo("snapshot_info", ["cycle", "rewards"],
+    getBakerInfo("baker_performance", ["cycle","num_baked", "num_missed", "num_stolen"],
 		 [{"field":"cycle", "op":"between", "value":[lastFullCycle-9, lastFullCycle]},
 		  {"field":"baker", "op":"eq", "value":[baker]}])
     	.then(d => {
 	    console.log(d)
+	    d.push({"cycle":"Cycle", "num_baked":"Blocks Baked",
+		    "num_missed":"Blocks Missed", "num_stolen":"Blocks Stolen"})
+	    heatTable("performance_table", d.reverse(), ["cycle", "num_baked", "num_missed", "num_stolen"], "num_baked");
+    	});
+    getBakerInfo("snapshot_info", ["cycle", "rewards"],
+		 [{"field":"cycle", "op":"between", "value":[lastFullCycle-9, lastFullCycle]},
+		  {"field":"baker", "op":"eq", "value":[baker]}])
+    	.then(d => {
     	    set( "baker_rewards",
 		 `Rewards made in cycle ${lastFullCycle}: ${convertFromUtezToTez(d[d.length-1].rewards).toFixed(2)} XTZ`)
 	    d.forEach(r => r.rewards = convertFromUtezToTez(r.rewards));

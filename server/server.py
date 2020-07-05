@@ -27,7 +27,7 @@ class HarpoonWebService(object):
         if "orderby" in response:
             OrderCol = get_column_by_name(Table, response["orderby"]["field"])
             query = query.order_by(getattr(OrderCol, response["orderby"]["dir"])())
-        return query
+        return query, session
 
     def query_response_to_json(self, fields, data):
         ret = []
@@ -51,8 +51,9 @@ class HarpoonWebService(object):
     @cherrypy.tools.json_out()
     def POST(self):
         input_json = cherrypy.request.json
-        query = self.parse_query(input_json)
+        query, session = self.parse_query(input_json)
         response = query.all()
+        session.close()
         json_response = self.query_response_to_json(input_json["fields"], response)
         return json_response
 
