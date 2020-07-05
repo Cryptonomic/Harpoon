@@ -75,6 +75,7 @@ def get_session():
                         LOGIN["host"], LOGIN["port"],
                         LOGIN["database"]))
 
+    Base.metadata.create_all(engine)
     Session = sessionmaker(engine)
     session = Session()
     return session
@@ -82,8 +83,8 @@ def get_session():
 if __name__ == "__main__":
     get_session()
     #    if not has_tables(TABLES, engine):
-    logging.debug("Creating tables...")
-    Base.metadata.create_all(engine)
+
+
 
 
 
