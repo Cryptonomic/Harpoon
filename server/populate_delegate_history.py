@@ -3,14 +3,19 @@ from microseil import DelegateHistory
 
 @service_utils.populate_from_cycle()
 def delegate_history(cycle):
+    """Populates delegate_history table with data for each baker at a given cycle"""
+
     print("Acquiring delegate history for cycle %s..." % cycle)
     bakers = tezos.all_bakers()
     data = []
     for baker in bakers:
+
+        # See README.md for a description on these values
         snapshot_index = tezos.snapshot_index(cycle)
-        snapshot_block = (cycle - tezos.PRESERVED_CYCLES - 2) * \
-            tezos.CYCLE_SIZE + (snapshot_index + 1) * tezos.SNAPSHOT_BLOCKS;
+        snapshot_block = tezos.snapshot_index_to_block(snapshot_index, cycle):
         snapshot_level = snapshot_block - 1
+
+        #if the rpc comes back with an unexpected response
         response = tezos.baker_info_at_level(baker, snapshot_level)
         if not "delegated_contracts" in response:
             continue

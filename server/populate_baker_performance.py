@@ -2,38 +2,52 @@ import math, sys
 import service_utils, queries as tezos
 from microseil import BakerPerformance
 
+# Size of the range in cycles to use in pulling performance data. 
 SAMPLE_RANGE = 0
 
-def calculate_grade(baker, current_cycle):
-    print(baker)
+def get_baker_performance(baker, current_cycle):
+    """Makes the necessary queries to accumulate baker performance data
+    
+    Args:
+        baker: (String) address of baker to query
+        current_cycle: (int) cycle to get performance data for
+    
+    Returns:
+        (BakerPerformance) Wrapper class for baking_info table with necessary columns
+        filled out. See microseil.BakerPerformance for column descriptions
+    """
+
     start_cycle = current_cycle - SAMPLE_RANGE;
     delegate = tezos.baker_info_at_level(baker, tezos.cycle_to_level(current_cycle))
     staking_balance = tezos.utez_to_tez(int(delegate["staking_balance"]))
     num_delegators = len(delegate["delegated_contracts"])
 
-    print("blocks baked")
     blocks_baked = tezos.blocks_baked_between(baker, start_cycle, current_cycle)
-    print("blocks stolen")
     blocks_stolen =  tezos.blocks_stolen_between(baker, start_cycle, current_cycle)
-    print("blocks missed")
     blocks_missed = tezos.blocks_missed_between(baker, start_cycle, current_cycle)
 
     num_blocks_baked = len(blocks_baked)
     num_blocks_stolen = len(blocks_stolen)
     num_blocks_missed = len(blocks_missed)
 
-    print("endorsements in baked")
     num_endorsements_in_baked = tezos.sum_endorsements_for_blocks(blocks_baked)
-    print("endorsements in stolen")
     num_endorsements_in_stolen = tezos.sum_endorsements_for_blocks(blocks_stolen)
-    print("endorsements in missed")
     num_endorsements_in_missed = tezos.sum_endorsements_for_blocks(blocks_missed)
 
     blocks_per_stake = 0 if staking_balance==0 else float(num_blocks_baked/staking_balance)
+
+    # TODO: remove grade calculation from server side and move into frontend code
+    # A baker grade is calculated from the data collected. See readme for a description
+    # on the formula used
+
     grade = (100000 * blocks_per_stake) * \
         (num_blocks_baked+num_blocks_stolen)/(1+num_blocks_baked) * \
         (math.exp(-1* (num_blocks_missed/(num_blocks_baked+1))))*(1-(1/(1+num_delegators)))
-    #   try this:    grade =  (100000 * num_blocks_per_stake) * (num_blocks_baked+5*s)/(1+num_blocks_missed+num_blocks_baked) *(1-(1/(1+d)))
+
+    # alternate formula (not tested):
+    # grade =  (100000 * num_blocks_per_stake) * (num_blocks_baked+5*s)/(1+num_blocks_missed+num_blocks_baked) \
+    #     *(1-(1/(1+d)))
+
     row = BakerPerformance(baker=baker, cycle=current_cycle,
                            num_baked=num_blocks_baked,
                            num_stolen=num_blocks_stolen,
@@ -45,13 +59,15 @@ def calculate_grade(baker, current_cycle):
     return row
 
 @service_utils.populate_from_cycle()
-def calculate_grades_for_cycle(cycle):
+def populate_baker_performance(cycle):
+    """Populates baker_performance table with data for each baker at a given cycle"""
+
     print("Calculating grades for cycle %s..." % cycle)
     start_cycle = cycle - SAMPLE_RANGE
     bakers = tezos.active_bakers_between(start_cycle, cycle)
     data = []
     for baker in bakers:
-        data.append(calculate_grade(baker, cycle))
+        data.append(get_baker_performance(baker, cycle))
     return data
         
     

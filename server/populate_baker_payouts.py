@@ -3,6 +3,8 @@ import service_utils, queries as tezos
 from microseil import BakerPayouts
 
 def max_source(sources):
+    """Returns the source with the most transactions from an array of dicts"""
+
     largest_source = ""
     max_count = 0
     for source in sources:
@@ -12,12 +14,26 @@ def max_source(sources):
     return largest_source
 
 def get_payout_delay(baker):
+    """Queries Baking Bad's API for the number of cycles before payouts are sent"""
+
     response = requests.get("https://api.baking-bad.org/v2/bakers/%s" % baker)
     if not response.text:
         return 0
     return int(json.loads(response.text)["payoutDelay"])
     
 def count_sources(receiver_list, cycle):
+    """Looks through receiver_list and accumulates a tally of the sources of transactions
+    
+    Args:
+        reciever_list: ([String]) List of addresses to accumulate transaction sources for
+        cycle: (int) Cycle number of the transactions to look in
+    
+    Returns:
+        {"source": count} A dictionary where the keys ("source") are the addresses
+        of transaction sources and values (count) are the number of times the corresponding
+        key was a source that sent a transaction to a member of receiever_list
+    """
+
     source_count = {}
     for delegator in receiver_list:
         sources = set([entry["source"] for entry in
@@ -31,6 +47,8 @@ def count_sources(receiver_list, cycle):
     
 @service_utils.populate_from_cycle()
 def populate_baker_payouts(cycle):
+    """Populates baker_payouts table with data for each baker at given cycle"""
+
     print("Acquiring payout accounts for cycle %s..." % cycle)
 
     bakers = tezos.all_bakers()

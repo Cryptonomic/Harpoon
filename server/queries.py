@@ -3,7 +3,6 @@ from microseil import get_user_config
 from conseil.api import ConseilApi
 from conseil.core import ConseilClient as Client
 
-
 NET_CONF = get_user_config()
 CONSEIL_CONF = NET_CONF["conseil"]
 TEZOS_CONF = NET_CONF["tezos"]
@@ -20,15 +19,30 @@ accounts= conseil.tezos.mainnet.accounts
 bakers = conseil.tezos.mainnet.bakers
 baking_rights = conseil.tezos.mainnet.baking_rights
 
-
+# Tezos node to hit for rpc queries
 BASE_URL = TEZOS_CONF["host"] + ":" + str(TEZOS_CONF["port"]) + "/"
+
+# TODO: refactor to allow for testnet support based off of user configuration
+# Current size of cycle
 CYCLE_SIZE = 4096
+
+# Tezos constants
 PRESERVED_CYCLES = 5
-PRESERVED_CYCLES = 5
+PENDING_CYCLES = 5
 SNAPSHOT_BLOCKS = 256
+
+# Arbitrary large value for conseilpy queries
 MAX_LIMIT = 100000000
 
 def partition_query(f):
+    """Decorator function for conseil queries which use the IN clause
+
+    In order to prevent timeouts for conseilpy queries which need to search through
+    an array of values, partition_query() takes the array to search and splits it based
+    on partition_size to make several more manageable arrays. The query is then executed
+    over the several partitions and then added together
+    """
+
     partition_size = 50
     def sum_partitions(blocks):
         num_cycles = math.floor(len(blocks)/partition_size)
@@ -58,7 +72,7 @@ def current_level():
                .limit(1) \
                .scalar())
 
-def baking_rights_between(baker, start_cycle, end_cycle):
+def assigned_blocks_between(baker, start_cycle, end_cycle):
     rights = baking_rights.query(baking_rights.level) \
                           .filter(baking_rights.delegate==baker,
                                   baking_rights.priority==0,
@@ -83,7 +97,7 @@ def blocks_stolen_between(baker, start_cycle, end_cycle):
                  .all()
 
 def blocks_missed_between(baker, start_cycle, end_cycle):
-    rights = baking_rights_between(baker, start_cycle, end_cycle)
+    rights = assigned_blocks_between(baker, start_cycle, end_cycle)
     return blocks.query(blocks.level) \
                  .filter(blocks.level.in_(*rights),
                          blocks.baker!=baker) \
@@ -105,6 +119,8 @@ def all_bakers():
                                           .limit(1000).vector()
 
 def active_bakers_between(start_cycle, end_cycle):
+    """Returns all bakers who've baked a block betwen start_cycle and end_cycle"""
+
     bakers = all_bakers()
     active = list(set(blocks.query(blocks.baker) \
                       .filter(blocks.meta_cycle.between(start_cycle, end_cycle)) \
@@ -118,6 +134,12 @@ def transaction_sources_in_cycle(destination, cycle):
                      .all()
 
 def baker_info_at_level(baker, level):
+    """Returns a dictionary containing relevant baker stats at a given level
+    
+    The dictionary which is returned containes balance stats such as staking, delegated 
+    and frozen balance. Frozen balance is further subdivided into rewards, security 
+    deposits, and fees. The rpc also has delegated contracts active at the given level
+    """
     response = requests.get("%s/chains/main/blocks/%s/context/delegates/%s" % (BASE_URL, level, baker))
     return (json.loads(response.text))
 
@@ -127,6 +149,22 @@ def snapshot_index(cycle):
     return int(r.text)
 
 def snapshot_index_to_block(index, cycle):
-    return (cycle - PRESERVED_CYCLES - 2) * \
-        CYCLE_SIZE + (index + 1) * SNAPSHOT_BLOCKS;
+    """Returns the level of the block from the snapshot_index and cycle
+    
+    Every cycle in Tezos is associated with a random value from 0-15 called a snapshot
+    index. The snapshot index determines which one of the 16 evenly spaced snapshots
+    from cycle x - PRESERVED_CYCLES - PENDING_CYCLES was used for baking rights in the
+    current cycle. A snapshot is taken once every SNAPSHOT_BLOCKS blocks. 
+
+    Args:
+        index: (int) Snapshot index of the cycle
+        cycle: (int) cycle of the snapshot index being used
+    """
+
+    # The first line resolves to the first block of  cycle which the snapshot index
+    # refers to. The second line adds the correct number of levels to this value in
+    # order to arrive at the correct level of the snapshot block
+
+    return (cycle - PRESERVED_CYCLES - PENDING_CYCLES) * CYCLE_SIZE + \
+        (index + 1) * SNAPSHOT_BLOCKS;
 
