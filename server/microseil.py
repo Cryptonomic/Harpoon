@@ -3,8 +3,9 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine, Column, Integer, String, BigInteger, Numeric
 
-TABLES = ["delegate_history", "snapshot_info",
-          "baker_performance", "baker_payouts"]
+def all_tables():
+    return ["delegate_history", "snapshot_info",
+            "baker_performance", "baker_payouts"]
 
 def get_user_config():
     """Returns a dictionary containing config options loaded from 
@@ -146,7 +147,7 @@ def get_session():
                            (LOGIN["user"], LOGIN["password"],
                             LOGIN["host"], LOGIN["port"],
                             LOGIN["database"]))
-    if not has_tables(TABLES, engine):
+    if not has_tables(all_tables(), engine):
         Base.metadata.create_all(engine)
 
     Session = sessionmaker(engine)
