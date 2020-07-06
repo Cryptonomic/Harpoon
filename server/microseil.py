@@ -3,12 +3,21 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine, Column, Integer, String, BigInteger, Numeric
 
+TABLES = ["delegate_history", "snapshot_info",
+          "baker_performance", "baker_payouts"]
+
+
 def get_user_config():
     config = {}
     with open('network_conf.json', 'r') as f:
         config = json.loads(f.read())
     return config
 
+def has_tables(tables, engine):
+    exists = True
+    for table in tables:
+        exists = exists and engine.dialect.has_table(engine, table)
+    return exists
 
 Base = declarative_base()
 
@@ -66,7 +75,8 @@ def get_session():
                            (LOGIN["user"], LOGIN["password"],
                             LOGIN["host"], LOGIN["port"],
                             LOGIN["database"]))
-    Base.metadata.create_all(engine)
+    if not has_tables(TABLES):
+        Base.metadata.create_all(engine)
 
     Session = sessionmaker(engine)
     session = Session()
