@@ -2,19 +2,27 @@ import cherrypy, cherrypy_cors, os, json, decimal
 from microseil import *
 
 class DecimalEncoder(json.JSONEncoder):
+    """Helper class to allow for json serialization of Decimal"""
+
     def default(self, o):
         if isinstance(o, decimal.Decimal):
             return float(o)
         return super(DecimalEncoder, self).default(o)
 
 class Harpoon(object):
+    """Exposes http://<host>:<port>/"""
+
     @cherrypy.expose
     def index(self):
         return open("../ui/index.html")
 
 @cherrypy.expose
 class HarpoonWebService(object):
+    """Exposes table query api at http://<host>:<port>/info"""
+
     def parse_query(self, response):
+        """Returns a constructed sqlalchemy query from json query"""
+
         Table = get_class_by_tablename(response["table"])
         predicates = response["predicates"]
         fields = response["fields"]
@@ -36,6 +44,14 @@ class HarpoonWebService(object):
         return query, session
 
     def query_response_to_json(self, fields, data):
+        """Returns query response (a list of tuples) into a python dictionary based
+        off of the fields provided
+
+        Args:
+            fields: ([String]) Ordered list of fields which data refers to
+            data: ([Tuple]) Response from sql query 
+        """
+
         ret = []
         for entry in data:
             json_data = {}
@@ -60,6 +76,8 @@ class HarpoonWebService(object):
         query, session = self.parse_query(input_json)
         response = query.all()
         session.close()
+
+        #serialize response into proper JSON using DecimalEncoder
         json_response = json.loads(
             json.dumps(self.query_response_to_json(input_json["fields"], response),
                                    cls = DecimalEncoder))
@@ -88,11 +106,14 @@ if __name__ == '__main__':
         }
     }
     
-    net_conf = get_user_config()["cherrypy"]
+
     cherrypy_cors.install()
     cherrypy.tools.CORS = cherrypy.Tool('before_handler', CORS)
+
+    net_conf = get_user_config()["cherrypy"]
     cherrypy.server.socket_host = net_conf["host"]
     cherrypy.server.socket_port = net_conf["port"]
+
     webapp = Harpoon()
     webapp.info = HarpoonWebService()
     cherrypy.quickstart(webapp, '/', conf)
