@@ -66,15 +66,12 @@ def get_session():
                            (LOGIN["user"], LOGIN["password"],
                             LOGIN["host"], LOGIN["port"],
                             LOGIN["database"]))
+    Base.metadata.create_all(engine)
 
     Session = sessionmaker(engine)
     session = Session()
     return session
     
-if __name__ == "__main__":
-    get_session()
-    logging.debug("Creating tables...")
-    Base.metadata.create_all(engine)
 
 
 
