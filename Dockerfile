@@ -1,13 +1,9 @@
-FROM ubuntu
+FROM python:3.8
 
 COPY . .
 
 WORKDIR /server
-RUN apt-get update && apt-get install -y libpq-dev \
-    libpq-dev \
-    python3-pip
-
-RUN python3 -m pip install -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 RUN chmod +x startup.sh
 ENTRYPOINT ["./startup.sh"]
 CMD ["0"]
