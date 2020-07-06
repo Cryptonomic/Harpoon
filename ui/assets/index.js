@@ -1,24 +1,12 @@
-const blocksPerCycleValues = {"mainnet" : 4096,
-			      "babylonnet" : 2048,
-			      "carthagenet" : 2048,
-			      "zeronet" : 128}
-const blocksPerCycle = blocksPerCycleValues[network]
-const tezPerRoll = 8000
 const millisOneDay = 86400000
 const millisOneHour = millisOneDay/24
 const millisThirtyDays = millisOneDay * 30
-const CYCLES_PRESERVED = 5;
-const CYCLES_PENDING = 2;
 var clock
 var delegateAddress
 
 function convertFromUtezToTez(amountInUtez) {
     const tezAmount = amountInUtez / 1000000
     return tezAmount
-}
-
-function emphasize(toEmphasize) {
-    return "<strong>" + toEmphasize + "</strong>"
 }
 
 function UTCToDateTime(timestamp) {
@@ -322,9 +310,6 @@ async function updateBakerInfo(baker) {
 		topTen.push(bakerAcc);
 	    } else 
 		topTen.find(d => d.pkh == baker)["default"] = "true";
-	    // let sum = d3.sum(topTen, d => d.staking_balance)
-	    // let other = ({"name":"Other", "staking_balance":(await getRollsStaked()) * tezPerRoll - sum})
-	    // topTen.push(other)
 	    stackedBarGraph(`staking_balances_chart`, topTen, {x:"staking_balance", y:"name"}, 8, d => updateBakerInfo(d.pkh));
 	});
     numBlocksBakedBy("all", lastFullCycle)
