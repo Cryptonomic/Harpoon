@@ -326,7 +326,7 @@ function linegraph(id, data, values, yExtent, time=true, area=false) {
     const yTickPadding = 10
 
     const toGraph = outline(id, data, values,
-			    {top:10, left: 20, right:10, bottom:30});
+			    {top:10, left: 30, right:10, bottom:30});
     const render = graph => {
 	const x = xScale
 	      .domain(d3.extent(graph.data, graph.xValue))
@@ -340,10 +340,11 @@ function linegraph(id, data, values, yExtent, time=true, area=false) {
 	const xAxis = d3.axisBottom(x)
 	      .tickSize(xTickSize)
 	      .tickPadding(xTickPadding)
-
+	
 	const yAxis = d3.axisLeft(y)
 	      .tickSize(yTickSize)
 	      .tickPadding(yTickPadding)
+	      .tickFormat(d3.format(".2s"));
 
 	const g = graph.svg.append("g")
 	      .attr("transform", `translate(${graph.margin.left}, ${graph.margin.top})`)

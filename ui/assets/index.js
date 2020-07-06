@@ -88,8 +88,10 @@ async function calculateRewardsForDelegate() {
     const delegator = document.getElementById("delegator").value
     const fee = document.getElementById("fee").value
     const payoutDelay = document.getElementById("payout_delay").value
-    const payout = document.getElementById("payout").value
+    const payout = parseInt(document.getElementById("payout").value)
     const undelegatedMsg = "You were not qualified for rights at this cycle"
+    const inProgressMsg = "Rewards payouts are still in progress for this cycle"
+
     let rewards = await getBakerInfo("snapshot_info",
 				     ["cycle", "rewards", "snapshot_block_level", "staking_balance"],
 				     [{"field":"cycle", "op":"between", "value":[lastFullCycle-9,lastFullCycle]},
@@ -106,17 +108,23 @@ async function calculateRewardsForDelegate() {
     for (d of rewards) {
 	let delegateBalance = await getBalanceAtLevel(delegator, d.snapshot_block_level - 1)
 	console.log(d.cycle - parseInt(payoutDelay))
-	let rewardsReceived = await tezTransferedBetween(payout, delegator, d.cycle+parseInt(payoutDelay)); 
+	let rewardsReceived = await tezTransferedBetween(payout, delegator, d.cycle+payoutDelay); 
 	
 	if (delegation_cycles.includes(d.cycle - CYCLES_PRESERVED - CYCLES_PENDING)) {
 	
 	    d["delegator_rewards"] = delegateBalance ? convertFromUtezToTez(d.rewards * (1 - fee) *
 									    (delegateBalance/d.staking_balance)).toFixed(6) : "--"
-	    d["delegator_rewards_received"] = convertFromUtezToTez(rewardsReceived)
 	    d["advertised_fee"] = parseFloat((fee * 100).toFixed(2))
-	    d["actual_fee"] = parseFloat(((-1) * ((rewardsReceived/d.rewards)*
-						  (d.staking_balance/delegateBalance) - 1) * 100)
-					 .toFixed(2))
+	    if (lastFullCycle - payoutDelay < d.cycle) {
+		d["delegator_rewards_received"] = "..."
+		d["actual_fee"] = "..."
+	    }
+	    else {
+		d["delegator_rewards_received"] = convertFromUtezToTez(rewardsReceived)
+		d["actual_fee"] = parseFloat(((-1) * ((rewardsReceived/d.rewards)*
+						      (d.staking_balance/delegateBalance) - 1) * 100)
+					     .toFixed(2))
+	    }
 	}
 	else {
 	    d["delegator_rewards"] =  "*"
@@ -135,7 +143,8 @@ async function calculateRewardsForDelegate() {
 	      ["cycle", "rewards", "delegator_rewards", "delegator_rewards_received", "advertised_fee", "actual_fee"],
 	      "rewards",
 	      [["delegator_rewards", "delegator_rewards_received"], ["advertised_fee", "actual_fee", "inverse"]],
-	      [{identifier:"*", message: undelegatedMsg}, {identifier:"--", message:""}]);
+	      [{identifier:"*", message: undelegatedMsg},
+	       {identifier:"...", message:inProgressMsg}]);
 }
 
 async function getBakerConfig(baker) {
