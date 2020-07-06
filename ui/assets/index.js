@@ -53,7 +53,6 @@ async function getBakerInfo(table, fields, predicates, orderby) {
     let query = { "table": table, "fields": fields };
     if (predicates) query["predicates"] = predicates;
     if (orderby) query["orderby"] = orderby;
-    console.log(microseilServer)
     const result = await httpPost(microseilServer, JSON.stringify(query));
     return JSON.parse(result)
 }
@@ -75,8 +74,8 @@ async function calculateRewardsForDelegate() {
     const lastFullCycle = head.meta_cycle - 1;
     const delegator = document.getElementById("delegator").value
     const fee = document.getElementById("fee").value
-    const payoutDelay = document.getElementById("payout_delay").value
-    const payout = parseInt(document.getElementById("payout").value)
+    const payoutDelay = parseInt(document.getElementById("payout_delay").value)
+    const payout = document.getElementById("payout").value
     const undelegatedMsg = "You were not qualified for rights at this cycle"
     const inProgressMsg = "Rewards payouts are still in progress for this cycle"
 
@@ -87,23 +86,27 @@ async function calculateRewardsForDelegate() {
     console.log(rewards)
     const delegations = await getBakerInfo("delegate_history", ["cycle", "baker"],
 					   [{"field":"delegator", "op":"eq", "value":[delegator]},
-					    {"field":"cycle", "op":"between", "value":[lastFullCycle-16, lastFullCycle-7]},
+					    {"field":"cycle", "op":"between", "value":[lastFullCycle-7, lastFullCycle]},
 					    {"field":"baker", "op":"eq", "value":[delegateAddress]}],
 					   {"field":"cycle", "dir":"asc"});
 
     const delegation_cycles = delegations ? delegations.map(d => d.cycle): []
-
+    console.log("hi")
+    console.log(delegation_cycles)
+    console.log(lastFullCycle)
     for (d of rewards) {
 	let delegateBalance = await getBalanceAtLevel(delegator, d.snapshot_block_level - 1)
-	console.log(d.cycle - parseInt(payoutDelay))
 	let rewardsReceived = await tezTransferedBetween(payout, delegator, d.cycle+payoutDelay); 
+	console.log(payoutDelay)
+	console.log(rewardsReceived)
+	console.log(payout)
+	d["advertised_fee"] = parseFloat((fee * 100).toFixed(2))
 	
-	if (delegation_cycles.includes(d.cycle - CYCLES_PRESERVED - CYCLES_PENDING)) {
-	
+	if (delegation_cycles.includes(d.cycle)) {
 	    d["delegator_rewards"] = delegateBalance ? convertFromUtezToTez(d.rewards * (1 - fee) *
 									    (delegateBalance/d.staking_balance)).toFixed(6) : "--"
-	    d["advertised_fee"] = parseFloat((fee * 100).toFixed(2))
-	    if (lastFullCycle - payoutDelay < d.cycle) {
+
+	    if (lastFullCycle > payoutDelay + d.cycle && !rewardsReceived) {
 		d["delegator_rewards_received"] = "..."
 		d["actual_fee"] = "..."
 	    }
@@ -117,7 +120,6 @@ async function calculateRewardsForDelegate() {
 	else {
 	    d["delegator_rewards"] =  "*"
 	    d["delegator_rewards_received"] = "*"
-	    d["advertised_fee"] = parseFloat((fee * 100).toFixed(2))
 	    d["actual_fee"] = "*"
 	}
     }	
@@ -243,7 +245,6 @@ async function updateBakerInfo(baker) {
 		 [{"field":"cycle", "op":"between", "value":[lastFullCycle-9, lastFullCycle]},
 		  {"field":"baker", "op":"eq", "value":[baker]}])
     	.then(d => {
-	    console.log(d)
 	    d.push({"cycle":"Cycle", "num_baked":"Blocks Baked",
 		    "num_missed":"Blocks Missed", "num_stolen":"Blocks Stolen"})
 	    heatTable("performance_table", d.reverse(), ["cycle", "num_baked", "num_missed", "num_stolen"], "num_baked");
@@ -261,7 +262,6 @@ async function updateBakerInfo(baker) {
     	});
     getBakerInfo("baker_performance", ["baker", "grade"], [{"field":"cycle", "op":"eq", "value":[lastFullCycle]}])
     	.then(d => {
-	    console.log(d)
 	    let values = d.map(item => item.grade).sort((a, b) => a - b)
 	    const fivePercent = Math.round(values.length * 0.05);
 	    values = values.slice(fivePercent, values.length-fivePercent);
@@ -277,10 +277,6 @@ async function updateBakerInfo(baker) {
 	    else if (numDeviations > -1) letterGrade = "C";
 	    else if (numDeviations > -1.5) letterGrade = "D";
 	    else letterGrade = "F";
-	    console.log(baker);
-	    console.log(bakerGrade);
-	    console.log(avg);
-	    console.log(standardDeviation);
 	    set("baker_grade", `${letterGrade}`);
 	});
 	      

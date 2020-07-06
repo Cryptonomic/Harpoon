@@ -31,7 +31,7 @@ class DelegateHistory(Base):
 
     delegate_history records the delegates for all active bakers by cycle. The records
     are taken at the snapshot block level, meaning all delegates at cycle x for a
-    given baker are used in baking rights for cycle x+7
+    given baker were used for baking rights in that cycle
 
     Attributes:
         cycle: (Column) Cycle at which delegate history was recorded

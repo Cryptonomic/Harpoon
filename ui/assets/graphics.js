@@ -89,7 +89,6 @@ function heatTable(id, data, values, mapColumn, comparisons=[], notices=[]) {
 	  .range(["white", "#65eb72"]);
 	
     const render = graph => {
-	console.log(graph.data)
 	const g = graph.svg.append("g")
 	      .attr("transform", `translate(${graph.margin.left}, ${graph.margin.top})`)
 	g.selectAll("g")
