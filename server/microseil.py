@@ -75,7 +75,7 @@ def get_session():
                            (LOGIN["user"], LOGIN["password"],
                             LOGIN["host"], LOGIN["port"],
                             LOGIN["database"]))
-    if not has_tables(TABLES):
+    if not has_tables(TABLES, engine):
         Base.metadata.create_all(engine)
 
     Session = sessionmaker(engine)
