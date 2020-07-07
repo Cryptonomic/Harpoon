@@ -33,7 +33,9 @@ Every cycle in the Tezos blockchain has a snapshot index associated with it. Thi
 Many of the mechanisms in Harpoon reference the following values:
 
 `snapshot_index`: a random value (0-15) used to pick the snapshot
+
 `snapshot_block_level`: the level number of the snapshot used in a cycle
+
 `snapshot_level`: the level one block before the snapshot block
 
 Given the snapshot index of a cycle x, `snapshot_block_level` can be used with the following logic.
