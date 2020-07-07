@@ -32,19 +32,16 @@ Every cycle in the Tezos blockchain has a snapshot index associated with it. Thi
 
 Many of the mechanisms in Harpoon reference the following values:
 
-`snapshot_index`: a random value (0-15) used to pick the snapshot
+- `snapshot_index`: a random value (0-15) used to pick the snapshot
+- `snapshot_block_level`: the level number of the snapshot used in a cycle
+- `snapshot_level`: the level one block before the snapshot block
 
-`snapshot_block_level`: the level number of the snapshot used in a cycle
+Given the snapshot index of a cycle x, `snapshot_block_level` can be calculated with the following logic.
 
-`snapshot_level`: the level one block before the snapshot block
+1. `(x - PRESERVED_CYCLES - 2) * CYCLE_SIZE` gives the level of the first block of the cycle which the snapshot_index was used in (cycle x-7)
+2. `(snapshot_index + 1) * SNAPSHOT_BLOCKS` gives the level position of the snapshot in the cycle. Since there are only 16 evenly spaced snapshots per cycle, a snapshot is taken every `BLOCKS_PER_CYCLE/16 = SNAPSHOT_BLOCKS` blocks. In the current mainnet, this value is `256`.
 
-Given the snapshot index of a cycle x, `snapshot_block_level` can be used with the following logic.
-
-`(x - PRESERVED_CYCLES - 2) * CYCLE_SIZE` gives the level of the first block of the cycle which the snapshot_index was used in (cycle x-7)
- 
-`(snapshot_index + 1) * SNAPSHOT_BLOCKS` gives the level position of the snapshot in the cycle. Since there are only 16 evenly spaced snapshots per cycle, a snapshot is taken every `BLOCKS_PER_CYCLE/16 = SNAPSHOT_BLOCKS` blocks. In the current mainnet, this value is `256`.
-
-Thus, the snapshot block used for for cycle x would be:
+Thus, the snapshot block used for for cycle x would be:  
 `(x - PRESERVED_CYCLES - 2) * CYCLE_SIZE + (snapshot_index + 1) * SNAPSHOT_BLOCKS`
 
 The snapshot taken at the snapshot block only contains the rolls which each baker had at that point, however. The balances for all accounts in the snapshot are the values before the operations in the snapshot block have settled. `snapshot_level` which is just `snapshot_block_level - 1` , is thus used to get all of the necessary balance data
