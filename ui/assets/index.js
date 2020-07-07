@@ -76,14 +76,14 @@ async function calculateRewardsForDelegate() {
     const fee = document.getElementById("fee").value
     const payoutDelay = parseInt(document.getElementById("payout_delay").value)
     const payout = document.getElementById("payout").value
-    const undelegatedMsg = "You were not qualified for rights at this cycle"
+    const undelegatedMsg = "You are not qualified for rewards from this baker at this cycle"
     const inProgressMsg = "Rewards payouts are still in progress for this cycle"
 
     let rewards = await getBakerInfo("snapshot_info",
 				     ["cycle", "rewards", "snapshot_block_level", "staking_balance"],
 				     [{"field":"cycle", "op":"between", "value":[lastFullCycle-9,lastFullCycle]},
 				      {"field":"baker", "op":"eq", "value":[delegateAddress]}]);
-    console.log(rewards)
+
     const delegations = await getBakerInfo("delegate_history", ["cycle", "baker"],
 					   [{"field":"delegator", "op":"eq", "value":[delegator]},
 					    {"field":"cycle", "op":"between", "value":[lastFullCycle-7, lastFullCycle]},
@@ -91,15 +91,11 @@ async function calculateRewardsForDelegate() {
 					   {"field":"cycle", "dir":"asc"});
 
     const delegation_cycles = delegations ? delegations.map(d => d.cycle): []
-    console.log("hi")
-    console.log(delegation_cycles)
-    console.log(lastFullCycle)
+
     for (d of rewards) {
 	let delegateBalance = await getBalanceAtLevel(delegator, d.snapshot_block_level - 1)
 	let rewardsReceived = await tezTransferedBetween(payout, delegator, d.cycle+payoutDelay); 
-	console.log(payoutDelay)
-	console.log(rewardsReceived)
-	console.log(payout)
+
 	d["advertised_fee"] = parseFloat((fee * 100).toFixed(2))
 	
 	if (delegation_cycles.includes(d.cycle)) {
