@@ -12,7 +12,7 @@ def delegate_history(cycle):
 
         # See README.md for a description on these values
         snapshot_index = tezos.snapshot_index(cycle)
-        snapshot_block = tezos.snapshot_index_to_block(snapshot_index, cycle):
+        snapshot_block = tezos.snapshot_index_to_block(snapshot_index, cycle)
         snapshot_level = snapshot_block - 1
 
         #if the rpc comes back with an unexpected response

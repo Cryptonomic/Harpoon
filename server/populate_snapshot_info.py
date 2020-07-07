@@ -13,7 +13,7 @@ def get_snapshot_data(cycle):
     # have settled. The correct balances are those after the block before the snapshot
     # block has been baked (snapshot_level)
     
-    snapshot_block = tezos.snapshot_index_to_block(snapshot_index, cycle):
+    snapshot_block = tezos.snapshot_index_to_block(snapshot_index, cycle)
     snapshot_level = snapshot_block - 1
     end_of_cycle = tezos.cycle_to_level(cycle + 1) + 1
 

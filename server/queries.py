@@ -154,7 +154,8 @@ def snapshot_index_to_block(index, cycle):
     Every cycle in Tezos is associated with a random value from 0-15 called a snapshot
     index. The snapshot index determines which one of the 16 evenly spaced snapshots
     from cycle x - PRESERVED_CYCLES - PENDING_CYCLES was used for baking rights in the
-    current cycle. A snapshot is taken once every SNAPSHOT_BLOCKS blocks. 
+    current cycle. A snapshot is taken once every SNAPSHOT_BLOCKS blocks. The level of
+    the snapshot block level is calculated by the formula this function wraps.
 
     Args:
         index: (int) Snapshot index of the cycle
@@ -164,6 +165,7 @@ def snapshot_index_to_block(index, cycle):
     # The first line resolves to the first block of  cycle which the snapshot index
     # refers to. The second line adds the correct number of levels to this value in
     # order to arrive at the correct level of the snapshot block
+    # See README for more information
 
     return (cycle - PRESERVED_CYCLES - PENDING_CYCLES) * CYCLE_SIZE + \
         (index + 1) * SNAPSHOT_BLOCKS;
