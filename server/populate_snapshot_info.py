@@ -5,7 +5,7 @@ from microseil import SnapshotInfo
 def get_snapshot_data(cycle):
     """Populates snapshot_info table with data for each baker at a given cycle"""
 
-    print("Calculating snapshot data for cycle %s..." % cycle)
+    print("Acquiring snapshot data for cycle %s..." % cycle)
     snapshot_index = tezos.snapshot_index(cycle)
 
     # snapshot_block is the actual block level of the snapshot. However, snapshot

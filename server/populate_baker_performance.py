@@ -62,7 +62,7 @@ def get_baker_performance(baker, current_cycle):
 def populate_baker_performance(cycle):
     """Populates baker_performance table with data for each baker at a given cycle"""
 
-    print("Calculating grades for cycle %s..." % cycle)
+    print("Acquiring baker performance data for cycle %s..." % cycle)
     start_cycle = cycle - SAMPLE_RANGE
     bakers = tezos.active_bakers_between(start_cycle, cycle)
     data = []
