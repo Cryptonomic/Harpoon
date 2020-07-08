@@ -3,27 +3,6 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine, Column, Integer, String, BigInteger, Numeric
 
-def all_tables():
-    return ["delegate_history", "snapshot_info",
-            "baker_performance", "baker_payouts"]
-
-def get_user_config():
-    """Returns a dictionary containing config options loaded from 
-    ./network_conf.json"""
-
-    config = {}
-    with open('network_conf.json', 'r') as f:
-        config = json.loads(f.read())
-    return config
-
-def has_tables(tables, engine):
-    """Returns a True/False based on if tables have been created in engine db"""
-
-    exists = True
-    for table in tables:
-        exists = exists and engine.dialect.has_table(engine, table)
-    return exists
-
 Base = declarative_base()
 
 class DelegateHistory(Base):
@@ -123,6 +102,42 @@ class BakerPayouts(Base):
     payout = Column(String(255), primary_key=True)
 
 
+def all_tables():
+    return ["delegate_history", "snapshot_info",
+            "baker_performance", "baker_payouts"]
+
+def get_user_config():
+    """Returns a dictionary containing config options loaded from 
+    ./network_conf.json"""
+
+    config = {}
+    with open('network_conf.json', 'r') as f:
+        config = json.loads(f.read())
+    return config
+
+def has_tables(tables, engine):
+    """Returns a True/False based on if tables have been created in engine db"""
+
+    exists = True
+    for table in tables:
+        exists = exists and engine.dialect.has_table(engine, table)
+    return exists
+
+def get_engine():
+    """Returns sqlalchemy engine to connect to db"""
+
+    login = get_user_config()["db"]
+    engine = create_engine('postgresql+psycopg2://%s:%s@%s:%s/%s' %
+                           (login["user"], login["password"],
+                            login["host"], login["port"],
+                            login["database"]))
+    return engine
+
+def create_tables():
+    engine = get_engine()
+    if not has_tables(all_tables(), engine):
+        Base.metadata.create_all(engine)
+
 def get_class_by_tablename(tablename):
     """Returns table wrapper class from name"""
 
@@ -141,21 +156,13 @@ def get_session():
     get_session() will create the necessary tables if they do not exists in the specified
     database. A new engine is created for each session
     """
-
-    LOGIN = get_user_config()["db"]
-    engine = create_engine('postgresql+psycopg2://%s:%s@%s:%s/%s' %
-                           (LOGIN["user"], LOGIN["password"],
-                            LOGIN["host"], LOGIN["port"],
-                            LOGIN["database"]))
-    if not has_tables(all_tables(), engine):
-        Base.metadata.create_all(engine)
-
+    engine = get_engine()
     Session = sessionmaker(engine)
     session = Session()
     return session
-    
 
-
+if __name__ == "__main__":
+    create_tables()
 
 
 
