@@ -1,0 +1,4 @@
+**.pyc
+docker-compose.yml
+ui/assets/networkConf.js
+server/network_conf.json

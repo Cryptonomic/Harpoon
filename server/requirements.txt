@@ -1,0 +1,6 @@
+### Requirements ###
+cherrypy
+cherrypy-cors
+conseil
+psycopg2
+sqlalchemy
