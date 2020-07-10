@@ -48,7 +48,7 @@ The snapshot taken at the snapshot block only contains the rolls which each bake
 
 ### Baker Grade Calculation
 
-Baker are scored once at the end of every cycle. The formula used to calculate this score can be interacted with [here] (https://www.desmos.com/calculator/p419kfvxpk).
+Baker are scored once at the end of every cycle. The formula used to calculate this score can be interacted with [here](https://www.desmos.com/calculator/p419kfvxpk).
 
 As of now, endorsement data has not been factored into grading yet.
 
