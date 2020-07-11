@@ -4,11 +4,6 @@ const millisThirtyDays = millisOneDay * 30
 var clock
 var delegateAddress
 
-function convertFromUtezToTez(amountInUtez) {
-    const tezAmount = amountInUtez / 1000000
-    return tezAmount
-}
-
 function UTCToDateTime(timestamp) {
     const dateNow = new Date(timestamp);
     const date  = dateNow.getMonth()+1 + "-" + dateNow.getDate() + "-" + dateNow.getFullYear();
@@ -16,45 +11,6 @@ function UTCToDateTime(timestamp) {
 	  ":" + ((dateNow.getMinutes() < 10) ? "0" + dateNow.getMinutes() : dateNow.getMinutes()) +
 	  ":" + dateNow.getSeconds();
     return date + " " + time
-}
-
-async function httpGet(theUrl) {
-    return new Promise( function(resolve, reject) {
-	var xmlHttp = new XMLHttpRequest();
-	xmlHttp.onreadystatechange = function() { 
-	    if (xmlHttp.readyState == 4 && xmlHttp.status == 200)
-		resolve(xmlHttp.responseText);
-	    else if(xmlHttp.readyState == 4 && xmlHttp.status == 204) {
-		resolve("")
-	    }
-	}
-	xmlHttp.open("GET", theUrl, true); // true for asynchronous 
-	xmlHttp.send(null);
-    });
-}
-
-async function httpPost(theUrl, params) {
-    return new Promise( function(resolve, reject) {
-	var xmlHttp = new XMLHttpRequest();
-	xmlHttp.onreadystatechange = function() { 
-	    if (xmlHttp.readyState == 4 && xmlHttp.status == 200)
-		resolve(xmlHttp.responseText);
-	    else if(xmlHttp.readyState == 4 && xmlHttp.status == 204) {
-		resolve("")
-	    }
-	}
-	xmlHttp.open("POST", theUrl, true); // true for asynchronous 
-	xmlHttp.setRequestHeader('Content-type', 'application/json;charset=UTF-8');
-	xmlHttp.send(params);
-    });
-}
-
-async function getBakerInfo(table, fields, predicates, orderby) {
-    let query = { "table": table, "fields": fields };
-    if (predicates) query["predicates"] = predicates;
-    if (orderby) query["orderby"] = orderby;
-    const result = await httpPost(microseilServer, JSON.stringify(query));
-    return JSON.parse(result)
 }
 
 async function updatePayoutInfo(baker) {
@@ -80,10 +36,17 @@ async function calculateRewardsForDelegate() {
     const inProgressMsg = "Rewards payouts are still in progress for this cycle"
 
     let rewards = await getBakerInfo("snapshot_info",
-				     ["cycle", "rewards", "snapshot_block_level", "staking_balance"],
+				     ["cycle", "snapshot_block_level", "staking_balance"],
 				     [{"field":"cycle", "op":"between", "value":[lastFullCycle-9,lastFullCycle]},
 				      {"field":"baker", "op":"eq", "value":[delegateAddress]}]);
-
+    
+    console.log("hi")
+    console.log((await getBakerRewards(baker, lastFullCycle)).values().reduce(((acc, curr) => acc + curr), 0))
+    rewards.forEach(async function(entry) {
+	rewards = await getBakerRewards(baker, entry.cycle)
+	entry["rewards"] = rewards.values().reduce(((acc, curr) => acc + curr), 0)
+    });
+    
     const delegations = await getBakerInfo("delegate_history", ["cycle", "baker"],
 					   [{"field":"delegator", "op":"eq", "value":[delegator]},
 					    {"field":"cycle", "op":"between", "value":[lastFullCycle-7, lastFullCycle]},
@@ -95,14 +58,12 @@ async function calculateRewardsForDelegate() {
     for (d of rewards) {
 	let delegateBalance = await getBalanceAtLevel(delegator, d.snapshot_block_level - 1)
 	let rewardsReceived = await tezTransferedBetween(payout, delegator, d.cycle+payoutDelay); 
-
 	d["advertised_fee"] = parseFloat((fee * 100).toFixed(2))
-	
 	if (delegation_cycles.includes(d.cycle)) {
 	    d["delegator_rewards"] = delegateBalance ? convertFromUtezToTez(d.rewards * (1 - fee) *
 									    (delegateBalance/d.staking_balance)).toFixed(6) : "--"
 
-	    if (lastFullCycle > payoutDelay + d.cycle && !rewardsReceived) {
+	    if (lastFullCycle + 1 < payoutDelay + d.cycle && !rewardsReceived) {
 		d["delegator_rewards_received"] = "..."
 		d["actual_fee"] = "..."
 	    }
@@ -133,25 +94,10 @@ async function calculateRewardsForDelegate() {
 	       {identifier:"...", message:inProgressMsg}]);
 }
 
-async function getBakerConfig(baker) {
-    const rewardStruct = JSON.parse(await httpGet(`https://api.baking-bad.org/v2/bakers/${delegateAddress}`)).config.rewardStruct
-    let extRewardStruct = {
-	blocks: (rewardStruct & 1) > 0,
-	endorses: (rewardStruct & 2) > 0,
-	fees: (rewardStruct & 4) > 0,
-	accusationRewards: (rewardStruct & 8) > 0,
-	accusationLostDeposits: (rewardStruct & 16) > 0,
-	accusationLostRewards: (rewardStruct & 32) > 0,
-	accusationLostFees: (rewardStruct & 64) > 0,
-	revelationRewards: (rewardStruct & 128) > 0,
-	revelationLostRewards: (rewardStruct & 256) > 0,
-	revelationLostFees: (rewardStruct & 512) > 0,
-	missedBlocks: (rewardStruct & 1024) > 0,
-	stolenBlocks: (rewardStruct & 2048) > 0,
-	missedEndorses: (rewardStruct & 4096) > 0,
-	lowPriorityEndorses: (rewardStruct & 8192) > 0,
-    }
+function deductionsFromRewardsStruct(struct) {
+
 }
+
 
 function updateCountdown(timestamp, baker) {
     if (timestamp == "none") {
@@ -229,6 +175,7 @@ async function updateBakerInfo(baker) {
     const createGraphTimestamps = ((n) => Array.from(Array(n).keys())
 				   .map((i) => (millisThirtyDays / (n-1)) * (n-1-i))
 				   .map((i) => (timeNow - i)))
+
     baker = getAddressFromName(baker).address
     if (baker.charAt(0) != "t") return;
     delegateAddress = baker

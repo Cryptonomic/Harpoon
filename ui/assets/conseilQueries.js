@@ -1,3 +1,13 @@
+function convertFromUtezToTez(amountInUtez) {
+    const tezAmount = amountInUtez / 1000000
+    return tezAmount
+}
+
+function convertFromTezToUtez(amountInTez) {
+    const uTezAmount = amountInTez * 1000000
+    return uTezAmount
+}
+
 async function getBlock(blockid) {
     block = (blockid == "head") ? 
 	await conseiljs.TezosConseilClient.getBlockHead(conseilServer, network) :
@@ -216,3 +226,153 @@ async function getDelegatedBalance(baker) {
     const result = await conseiljs.ConseilDataClient.executeEntityQuery(conseilServer, platform, network, 'bakers', query);
     return result[0].delegated_balance
 }
+
+async function getRevelations(baker, cycle) {
+    
+}
+
+async function missedRevelations(baker, cycle) {
+
+}
+async function getBakerRewards(baker, cycle) {
+    const response = JSON.parse(
+	await httpGet(`https://api.baking-bad.org/v2/bakers/${baker}?configs=true`))
+	  .config.rewardStruct.reverse()
+
+    const rewardStruct = response.find(struct => struct.cycle < cycle).value
+    let extRewardStruct = {
+	blocks: (rewardStruct & 1) > 0 ? await getBlockRewards(baker, cycle, "baked"): 0,
+	endorses: (rewardStruct & 2) > 0 ? await getEndorsementRewards(baker, cycle, "high"): 0,
+	fees: (rewardStruct & 4) > 0 ? await getBlockFees(baker, cycle, "baked"): 0,
+	// accusationRewards: (rewardStruct & 8) > 0,
+	// accusationLostDeposits: (rewardStruct & 16) > 0,
+	// accusationLostRewards: (rewardStruct & 32) > 0,
+	// accusationLostFees: (rewardStruct & 64) > 0,
+	// revelationRewards: (rewardStruct & 128) > 0,
+	// revelationLostRewards: (rewardStruct & 256) > 0,
+	// revelationLostFees: (rewardStruct & 512) > 0,
+	missedBlocks: (rewardStruct & 1024) > 0 ? await getBlockRewards(baker, cycle, "missed") : 0,
+	stolenBlocks: (rewardStruct & 2048) > 0 ? await getBlockRewards(baker, cycle, "stolen") : 0,
+	missedEndorses: (rewardStruct & 4096) > 0 ? await getEndorsementRewards(baker, cycle, "missed"): 0,
+	lowPriorityEndorses: (rewardStruct & 8192) > 0 ? await getEndorsementRewards(baker, cycle, "low"): 0,
+    }
+    // console.log(extRewardStruct.blocks)
+    // console.log(extRewardStruct.endorses)
+    // console.log(extRewardStruct.fees)
+    // console.log(extRewardStruct.accusationRewards)
+    // console.log(extRewardStruct.accusationLostDeposits)
+    // console.log(extRewardStruct.accusationLostRewards)
+    // console.log(extRewardStruct.accusationLostFees)
+    // console.log(extRewardStruct.revelationRewards)
+    // console.log(extRewardStruct.revelationLostRewards)
+    // console.log(extRewardStruct.revelationLostFees)
+    // console.log(extRewardStruct.missedBlocks)
+    // console.log(extRewardStruct.stolenBlocks)
+    // console.log(extRewardStruct.missedEndorses)
+    // console.log(extRewardStruct.lowPriorityEndorses)
+    return extRewardStruct
+}
+
+
+async function httpGet(theUrl) {
+    return new Promise( function(resolve, reject) {
+	var xmlHttp = new XMLHttpRequest();
+	xmlHttp.onreadystatechange = function() { 
+	    if (xmlHttp.readyState == 4 && xmlHttp.status == 200)
+		resolve(xmlHttp.responseText);
+	    else if(xmlHttp.readyState == 4 && xmlHttp.status == 204) {
+		resolve("")
+	    }
+	}
+	xmlHttp.open("GET", theUrl, true); // true for asynchronous 
+	xmlHttp.send(null);
+    });
+}
+
+async function httpPost(theUrl, params) {
+    return new Promise( function(resolve, reject) {
+	var xmlHttp = new XMLHttpRequest();
+	xmlHttp.onreadystatechange = function() { 
+	    if (xmlHttp.readyState == 4 && xmlHttp.status == 200)
+		resolve(xmlHttp.responseText);
+	    else if(xmlHttp.readyState == 4 && xmlHttp.status == 204) {
+		resolve("")
+	    }
+	}
+	xmlHttp.open("POST", theUrl, true); // true for asynchronous 
+	xmlHttp.setRequestHeader('Content-type', 'application/json;charset=UTF-8');
+	xmlHttp.send(params);
+    });
+}
+
+async function getBakerInfo(table, fields, predicates, orderby) {
+    let query = { "table": table, "fields": fields };
+    if (predicates) query["predicates"] = predicates;
+    if (orderby) query["orderby"] = orderby;
+    const result = await httpPost(microseilServer, JSON.stringify(query));
+    return JSON.parse(result)
+}
+
+
+async function getBlockFees(baker, cycle, type) {
+    const typeToPriority = {"baked":0, "stolen":1, "misssed":1}
+    const response = (await getBakerInfo("baker_performance", [`fees_in_${type}`],
+    					 [{field:"cycle", op:"eq", value:[cycle]},
+    					  {field:"baker", op:"eq", value:[baker]}]))[0]
+
+    const sumFees = response[`fees_in_${type}`]
+    return sumFees ? sumFees : 0
+}
+
+async function getBlockRewards(baker, cycle, type) {
+    const typeToPriority = {"baked":0, "stolen":1, "misssed":1}
+    const rewardPerEndorsement = BAKING_REWARD_PER_ENDORSEMENT[typeToPriority[type]]
+    const blocks = (await getBakerInfo("baker_performance", [`num_endorsements_in_${type}`],
+    				       [{field:"cycle", op:"eq", value:[cycle]},
+    					{field:"baker", op:"eq", value:[baker]}]))[0]
+
+    const sumBlockPower = blocks[`num_endorsements_in_${type}`]
+    const rewards = convertFromTezToUtez(rewardPerEndorsement * sumBlockPower)
+    return rewards ? rewards : 0
+}
+
+async function getEndorsementRewards(baker, cycle, type) {
+    const table = 0
+    const priority_ind = 1
+    typeData = {"low": ["low_priority_endorsements", 1],
+		"high": ["high_priority_endorsements", 0],
+		"missed": ["missed_endorsements", 0]}
+    endorsementType = typeData[type]
+
+    rewardPerEndorsement = REWARD_PER_ENDORSEMENT[endorsementType[priority_ind]]
+    response = (await getBakerInfo("baker_performance", [endorsementType[table]],
+    				   [{field:"cycle", op:"eq", value:[cycle]},
+    				    {field:"baker", op:"eq", value:[baker]}]))[0]
+
+    sumEndorsements = response[endorsementType[table]]
+    rewards = convertFromTezToUtez(sumEndorsements * rewardPerEndorsement)
+    return rewards ? rewards : 0
+}
+
+async function getRewards(baker, cycle) {
+    // const bakedRewards = await getBlockRewards(baker, cycle, "baked")
+    // const stolenRewards = await getBlockRewards(baker, cycle, "stolen")
+    // const missedRewards = await getBlockRewards(baker, cycle, "missed")
+
+    // const bakedFees = await getBlockFees(baker, cycle, "baked")
+    // const stolenFees = await getBlockFees(baker, cycle, "stolen")
+
+    // const endorsementRewards = await getEndorsementRewards(baker, cycle, "high")
+    // const lowPriorityEndorsementRewards = await getEndorsementRewards(baker, cycle, "low")
+    // const missedEndorsementRewards = await getEndorsementRewards(baker, cycle, "missed")
+    // console.log(bakedRewards)
+    // console.log(stolenRewards)
+    // console.log(missedRewards)
+    // console.log(bakedFees)
+    // console.log(stolenFees)
+    // console.log(endorsementRewards + lowPriorityEndorsementRewards)
+    // console.log(missedEndorsementRewards)
+    rewards = await getBakerRewards(baker, cycle)
+    console.log(rewards)
+}
+getRewards("tz1P2Po7YM526ughEsRbY4oR9zaUPDZjxFrb", 250)
