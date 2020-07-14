@@ -234,43 +234,64 @@ async function getRevelations(baker, cycle) {
 async function missedRevelations(baker, cycle) {
 
 }
-async function getBakerRewards(baker, cycle) {
+
+async function getRewardStructs(baker, start_cycle, end_cycle) {
     const response = JSON.parse(
 	await httpGet(`https://api.baking-bad.org/v2/bakers/${baker}?configs=true`))
-	  .config.rewardStruct.reverse()
+	  .config.rewardStruct
+    let structs = []
+    let i = end_cycle
+    response.forEach(entry => {
+	for (;i >= start_cycle; i--) {
+	    if (entry.cycle <= i) {
+		structs.push({"cycle":i, "value":entry.value})
+	    }
+	    else return;
+	}
+    });
+    return structs
+}
 
-    const rewardStruct = response.find(struct => struct.cycle < cycle).value
-    let extRewardStruct = {
-	blocks: (rewardStruct & 1) > 0 ? await getBlockRewards(baker, cycle, "baked"): 0,
-	endorses: (rewardStruct & 2) > 0 ? await getEndorsementRewards(baker, cycle, "high"): 0,
-	fees: (rewardStruct & 4) > 0 ? await getBlockFees(baker, cycle, "baked"): 0,
-	// accusationRewards: (rewardStruct & 8) > 0,
-	// accusationLostDeposits: (rewardStruct & 16) > 0,
-	// accusationLostRewards: (rewardStruct & 32) > 0,
-	// accusationLostFees: (rewardStruct & 64) > 0,
-	// revelationRewards: (rewardStruct & 128) > 0,
-	// revelationLostRewards: (rewardStruct & 256) > 0,
-	// revelationLostFees: (rewardStruct & 512) > 0,
-	missedBlocks: (rewardStruct & 1024) > 0 ? await getBlockRewards(baker, cycle, "missed") : 0,
-	stolenBlocks: (rewardStruct & 2048) > 0 ? await getBlockRewards(baker, cycle, "stolen") : 0,
-	missedEndorses: (rewardStruct & 4096) > 0 ? await getEndorsementRewards(baker, cycle, "missed"): 0,
-	lowPriorityEndorses: (rewardStruct & 8192) > 0 ? await getEndorsementRewards(baker, cycle, "low"): 0,
-    }
-    // console.log(extRewardStruct.blocks)
-    // console.log(extRewardStruct.endorses)
-    // console.log(extRewardStruct.fees)
-    // console.log(extRewardStruct.accusationRewards)
-    // console.log(extRewardStruct.accusationLostDeposits)
-    // console.log(extRewardStruct.accusationLostRewards)
-    // console.log(extRewardStruct.accusationLostFees)
-    // console.log(extRewardStruct.revelationRewards)
-    // console.log(extRewardStruct.revelationLostRewards)
-    // console.log(extRewardStruct.revelationLostFees)
-    // console.log(extRewardStruct.missedBlocks)
-    // console.log(extRewardStruct.stolenBlocks)
-    // console.log(extRewardStruct.missedEndorses)
-    // console.log(extRewardStruct.lowPriorityEndorses)
-    return extRewardStruct
+async function getBakerRewards(baker, start_cycle, end_cycle) {
+    const structs = await getRewardStructs(baker, start_cycle, end_cycle)
+    const fields = ['num_endorsements_in_baked', 'num_endorsements_in_stolen', 'num_endorsements_in_missed',
+		    'fees_in_baked', 'fees_in_stolen', 'high_priority_endorsements', 'low_priority_endorsements',
+		    'missed_endorsements', 'num_revelations_in_baked', 'num_revelations_in_stolen', 'num_revelations_in_missed',
+		    'endorsements_in_not_revealed', 'fees_in_not_revealed']
+
+    const rewardsInfo = await getBakerInfo('baker_performance', fields,
+					   [{field:'baker', op:'eq', value:[baker]},
+					    {field:'cycle', op:'between', value:[start_cycle, end_cycle]}],
+					   {field:'cycle', dir:'asc'})
+    const rewards = []
+    for (let i = 0; i <= end_cycle - start_cycle; i++) { 
+	const bakerStats = rewardsInfo[i]
+    	const rewardStruct = structs[i].value
+    	const cycle = structs[i].cycle
+    	let extRewardStruct = {
+    	    blocks: (rewardStruct & 1) > 0 ? bakerStats.num_endorsements_in_baked * BAKING_REWARD_PER_ENDORSEMENT[0]: 0,
+    	    endorses: (rewardStruct & 2) > 0 ? bakerStats.high_priority_endorsements * REWARD_PER_ENDORSEMENT[0]: 0,
+    	    fees: (rewardStruct & 4) > 0 ? convertFromUtezToTez(bakerStats.fees_in_baked): 0,
+    	    // accusationRewards: (rewardStruct & 8) > 0,
+    	    // accusationLostDeposits: (rewardStruct & 16) > 0,
+    	    // accusationLostRewards: (rewardStruct & 32) > 0,
+    	    // accusationLostFees: (rewardStruct & 64) > 0,
+    	    revelationRewards: (rewardStruct & 128) > 0 ?
+    		(bakerStats.num_revelations_in_baked + bakerStats.num_revelations_in_stolen) * REWARD_PER_REVELATION : 0,
+    	    revelationLostRewards: !((rewardStruct & 256) > 0) ?
+		bakerStats.endorsements_in_not_revealed * REWARD_PER_REVELATION : 0,
+  	    revelationLostFees: !((rewardStruct & 512) > 0) ? convertFromUtezToTez(bakerStats.fees_in_not_revealed) : 0,
+    	    missedBlocks: !((rewardStruct & 1024) > 0) ? bakerStats.num_endorsements_in_missed * BAKING_REWARD_PER_ENDORSEMENT[0] : 0,
+    	    stolenBlocks: (rewardStruct & 2048) > 0 ? bakerStats.num_endorsements_in_stolen * BAKING_REWARD_PER_ENDORSEMENT[1] +
+    		convertFromUtezToTez(bakerStats.fees_in_stolen) : 0,
+    	    missedEndorses: !((rewardStruct & 4096) > 0) ? bakerStats.missed_endorsements * REWARD_PER_ENDORSEMENT[0]: 0,
+    	    lowPriorityEndorses: !((rewardStruct & 8192) > 0) ?
+		bakerStats.low_priority_endorsements * REWARD_PER_ENDORSEMENT[0] :
+		bakerStats.low_priority_endorsements * REWARD_PER_ENDORSEMENT[1],
+    	}
+    	rewards.push(extRewardStruct)
+   }
+    return rewards
 }
 
 
@@ -354,25 +375,3 @@ async function getEndorsementRewards(baker, cycle, type) {
     return rewards ? rewards : 0
 }
 
-async function getRewards(baker, cycle) {
-    // const bakedRewards = await getBlockRewards(baker, cycle, "baked")
-    // const stolenRewards = await getBlockRewards(baker, cycle, "stolen")
-    // const missedRewards = await getBlockRewards(baker, cycle, "missed")
-
-    // const bakedFees = await getBlockFees(baker, cycle, "baked")
-    // const stolenFees = await getBlockFees(baker, cycle, "stolen")
-
-    // const endorsementRewards = await getEndorsementRewards(baker, cycle, "high")
-    // const lowPriorityEndorsementRewards = await getEndorsementRewards(baker, cycle, "low")
-    // const missedEndorsementRewards = await getEndorsementRewards(baker, cycle, "missed")
-    // console.log(bakedRewards)
-    // console.log(stolenRewards)
-    // console.log(missedRewards)
-    // console.log(bakedFees)
-    // console.log(stolenFees)
-    // console.log(endorsementRewards + lowPriorityEndorsementRewards)
-    // console.log(missedEndorsementRewards)
-    rewards = await getBakerRewards(baker, cycle)
-    console.log(rewards)
-}
-getRewards("tz1P2Po7YM526ughEsRbY4oR9zaUPDZjxFrb", 250)

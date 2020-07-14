@@ -40,19 +40,20 @@ async function calculateRewardsForDelegate() {
 				     [{"field":"cycle", "op":"between", "value":[lastFullCycle-9,lastFullCycle]},
 				      {"field":"baker", "op":"eq", "value":[delegateAddress]}]);
     
-    console.log("hi")
-    console.log((await getBakerRewards(baker, lastFullCycle)).values().reduce(((acc, curr) => acc + curr), 0))
-    rewards.forEach(async function(entry) {
-	rewards = await getBakerRewards(baker, entry.cycle)
-	entry["rewards"] = rewards.values().reduce(((acc, curr) => acc + curr), 0)
-    });
-    
+    calcRewards = await getBakerRewards(delegateAddress, lastFullCycle-9, lastFullCycle)
+    for (let i = 0; i < rewards.length; i++) {
+	rewards[i]["rewards"] = Object.values(calcRewards[i]).reduce(((acc, curr) => acc + curr), 0)
+	console.log(Object.values(calcRewards[i]).reduce(((acc, curr) => acc + curr), 0))
+    }
+
+    console.log(rewards)
     const delegations = await getBakerInfo("delegate_history", ["cycle", "baker"],
 					   [{"field":"delegator", "op":"eq", "value":[delegator]},
-					    {"field":"cycle", "op":"between", "value":[lastFullCycle-7, lastFullCycle]},
+					    {"field":"cycle", "op":"between", "value":[lastFullCycle-9, lastFullCycle]},
 					    {"field":"baker", "op":"eq", "value":[delegateAddress]}],
 					   {"field":"cycle", "dir":"asc"});
 
+    console.log(delegations)
     const delegation_cycles = delegations ? delegations.map(d => d.cycle): []
 
     for (d of rewards) {
@@ -60,16 +61,15 @@ async function calculateRewardsForDelegate() {
 	let rewardsReceived = await tezTransferedBetween(payout, delegator, d.cycle+payoutDelay); 
 	d["advertised_fee"] = parseFloat((fee * 100).toFixed(2))
 	if (delegation_cycles.includes(d.cycle)) {
-	    d["delegator_rewards"] = delegateBalance ? convertFromUtezToTez(d.rewards * (1 - fee) *
-									    (delegateBalance/d.staking_balance)).toFixed(6) : "--"
-
+	    // d["delegator_rewards"] = delegateBalance ? d.rewards * (1 - fee) * (delegateBalance/d.staking_balance).toFixed(6) : "--"
+	    d["delegator_rewards"] = (d.rewards * (1 - fee) * (delegateBalance/d.staking_balance)).toFixed(6)
 	    if (lastFullCycle + 1 < payoutDelay + d.cycle && !rewardsReceived) {
 		d["delegator_rewards_received"] = "..."
 		d["actual_fee"] = "..."
 	    }
 	    else {
 		d["delegator_rewards_received"] = convertFromUtezToTez(rewardsReceived)
-		d["actual_fee"] = parseFloat(((-1) * ((rewardsReceived/d.rewards)*
+		d["actual_fee"] = parseFloat(((-1) * ((convertFromUtezToTez(rewardsReceived)/d.rewards)*
 						      (d.staking_balance/delegateBalance) - 1) * 100)
 					     .toFixed(2))
 	    }
@@ -80,18 +80,20 @@ async function calculateRewardsForDelegate() {
 	    d["actual_fee"] = "*"
 	}
     }	
-    rewards.forEach(d => d.rewards = convertFromUtezToTez(d.rewards).toFixed(2));
+//    rewards.forEach(d => d.rewards = convertFromUtezToTez(d.rewards).toFixed(2));
     rewards.push({cycle:"Cycle", rewards:"Total Baker Rewards Earned",
     		  staking_balance:"Staking Balance", delegator_rewards:"Delegator Rewards",
 		  delegator_rewards_received:"Payments Received", advertised_fee:"Advertised Fee",
 		  actual_fee:"Actual Fee Taken"});
-    heatTable("rewards_table",
-	      rewards.reverse(),
-	      ["cycle", "rewards", "delegator_rewards", "delegator_rewards_received", "advertised_fee", "actual_fee"],
-	      "rewards",
+
+    heatTableFields = ["cycle", "rewards", "delegator_rewards",
+		       "delegator_rewards_received", "advertised_fee",
+		       "actual_fee"]
+
+    heatTable("rewards_table", rewards.reverse(), heatTableFields, "rewards",
 	      [["delegator_rewards", "delegator_rewards_received"], ["advertised_fee", "actual_fee", "inverse"]],
 	      [{identifier:"*", message: undelegatedMsg},
-	       {identifier:"...", message:inProgressMsg}]);
+	       {identifier:"...", message: inProgressMsg}]);
 }
 
 function deductionsFromRewardsStruct(struct) {
@@ -176,6 +178,9 @@ async function updateBakerInfo(baker) {
 				   .map((i) => (millisThirtyDays / (n-1)) * (n-1-i))
 				   .map((i) => (timeNow - i)))
 
+    const bakerPerformanceFields = ["cycle","num_baked", "num_missed", "num_stolen",
+				    "high_priority_endorsements", "low_priority_endorsements",
+				    "missed_endorsements"]
     baker = getAddressFromName(baker).address
     if (baker.charAt(0) != "t") return;
     delegateAddress = baker
@@ -184,14 +189,20 @@ async function updateBakerInfo(baker) {
 	.then(d => d == "" ? set("baker_name", baker) : set("baker_name",
 							    JSON.parse(d).name + `<h5 style="margin-top:10"> (${baker}) </h5>`)
 	     );
-    getBakerInfo("baker_performance", ["cycle","num_baked", "num_missed", "num_stolen"],
+    getBakerInfo("baker_performance", bakerPerformanceFields,
 		 [{"field":"cycle", "op":"between", "value":[lastFullCycle-9, lastFullCycle]},
 		  {"field":"baker", "op":"eq", "value":[baker]}])
     	.then(d => {
-	    d.push({"cycle":"Cycle", "num_baked":"Blocks Baked",
-		    "num_missed":"Blocks Missed", "num_stolen":"Blocks Stolen"})
-	    heatTable("performance_table", d.reverse(), ["cycle", "num_baked", "num_missed", "num_stolen"], "num_baked");
+	    const columnTitles = {"cycle":"Cycle", "num_baked":"Blocks Baked",
+				  "num_missed":"Blocks Missed", "num_stolen":"Blocks Stolen",
+				  "endorsements": "Endorsements Made", "missed_endorsements": "Endorsements Missed"}
+	    d.forEach(entry => entry["endorsements"] = entry.high_priority_endorsements + entry.low_priority_endorsements)
+	    d.push(columnTitles)
+	    heatTable("performance_table", d.reverse(),
+		      ["cycle","num_baked", "num_missed", "num_stolen",
+		       "endorsements", "missed_endorsements"], "num_baked");
     	});
+    
     getBakerInfo("snapshot_info", ["cycle", "rewards"],
 		 [{"field":"cycle", "op":"between", "value":[lastFullCycle-9, lastFullCycle]},
 		  {"field":"baker", "op":"eq", "value":[baker]}])

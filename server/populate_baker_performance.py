@@ -53,6 +53,17 @@ def get_baker_performance(baker, current_cycle):
     missed_endorsements = tezos.endorsements_missed_between(baker, start_cycle,
                                                             current_cycle)
 
+    num_revelations_in_baked = tezos.sum_revelations_in(blocks_baked)
+    num_revelations_in_stolen = tezos.sum_revelations_in(blocks_stolen)
+    num_revelations_in_missed = tezos.sum_revelations_in(blocks_missed)
+
+    nonces_not_revealed = tezos.nonces_not_revealed_between(baker, start_cycle,
+                                                            current_cycle )
+    num_nonces_not_revealed = len(nonces_not_revealed)
+    endorsements_in_not_revealed = tezos. \
+        sum_endorsements_in_blocks(nonces_not_revealed)
+    fees_in_not_revealed = tezos.sum_fees_for_blocks(nonces_not_revealed)
+
     blocks_per_stake = 0 if staking_balance==0 else \
         float(num_blocks_baked/staking_balance)
 
@@ -83,6 +94,12 @@ def get_baker_performance(baker, current_cycle):
                            high_priority_endorsements=high_priority_endorsements,
                            low_priority_endorsements=low_priority_endorsements,
                            missed_endorsements=missed_endorsements,
+                           num_revelations_in_baked=num_revelations_in_baked,
+                           num_revelations_in_stolen=num_revelations_in_stolen,
+                           num_revelations_in_missed=num_revelations_in_missed,
+                           num_nonces_not_revealed=num_nonces_not_revealed,
+                           endorsements_in_not_revealed=endorsements_in_not_revealed,
+                           fees_in_not_revealed=fees_in_not_revealed,
                            grade=grade)
     return row
 

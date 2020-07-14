@@ -113,7 +113,7 @@ function heatTable(id, data, values, mapColumn, comparisons=[], notices=[]) {
 		})
 		.append("text")
 		.text(r => r[d])
-		.attr("x", (graph.innerWidth)/(2*values.length) * (2 * i + 1) + textPadding)
+		.attr("x", (graph.innerWidth - textPadding * 2)/(2*values.length) * (2 * i + 1) + textPadding)
 		.attr("y", (d, i) => i * (rowHeight + rowPadding) + (rowHeight + rowPadding)/2)
 		.style("fill", (r, i) => {
 		    let color = "black";
@@ -136,8 +136,6 @@ function heatTable(id, data, values, mapColumn, comparisons=[], notices=[]) {
 		    return color;
 		})
 		.style("text-anchor", "middle")
-
-
 	});
 	
     }

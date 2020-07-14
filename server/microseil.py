@@ -81,7 +81,15 @@ class BakerPerformance(Base):
             blocks that were priority 0
         low_priority_endorsements: (Column) Number of endorsements made with
             blocks that were greater than priority 0
-        endorsements_missed: (Column) Number of endorsements missed in cycle
+        missed_endorsements: (Column) Number of endorsements missed in cycle
+        num_revelations_in_baked: (Column) Count revelations in baked blocks
+        num_revelations_in_stolen: (Column) Count revelations in stolen blocks
+        num_revelations_in_missed: (Column) Count revelations in missed blocks
+        num_nonces_not_revealed = (Column) Count nonces not revealed
+        endorsements_in_not_revealed = (Column) Count endorsements in blocks
+            where the nonce was not revealed by baker
+        fees_in_not_revealed = (Column) Sum fess in blocks where nonce was not
+            revealed by baker
         grade: (Column) Grade calculated from performance data
     """
 
@@ -101,6 +109,12 @@ class BakerPerformance(Base):
     high_priority_endorsements = Column(Integer)
     low_priority_endorsements = Column(Integer)
     missed_endorsements = Column(Integer)
+    num_revelations_in_baked = Column(Integer)
+    num_revelations_in_stolen = Column(Integer)
+    num_revelations_in_missed = Column(Integer)
+    num_nonces_not_revealed = Column(Integer)
+    endorsements_in_not_revealed = Column(Integer)
+    fees_in_not_revealed = Column(Integer)
     grade = Column(Numeric)
 
 

@@ -55,7 +55,9 @@ def partition_query(partition_size=50):
     def inner(f):
         def sum_partitions(blocks, *args):
             num_cycles = math.floor(len(blocks)/partition_size)
-            total = 0
+
+            # Get default empty value for function
+            total = f([], *args)
             for i in range(num_cycles):
                 total += f(blocks[i * partition_size: (i+1) * partition_size],
                            *args)
@@ -194,6 +196,8 @@ def endorsements_missed_between(baker, start_cycle, end_cycle):
 
 @partition_query(5000)
 def sum_endorsements_made_in(blocks, baker):
+    """Returns the number of endorsements made by baker in blocks"""
+
     if len(blocks) == 0:
         return 0
 
@@ -206,6 +210,8 @@ def sum_endorsements_made_in(blocks, baker):
 
 @partition_query()
 def sum_endorsements_in_blocks(blocks):
+    """Returns the sum endorsing power in blocks"""
+
     if len(blocks) == 0:
         return 0
 
@@ -228,6 +234,35 @@ def sum_fees_for_blocks(blocks):
     return int(fees)
 
 
+@partition_query(1000)
+def sum_revelations_in(blocks):
+    if len(blocks) == 0:
+        return 0
+    
+    return int(operations.query(operations.operation_group_hash,
+                                operations.operation_group_hash.count()) 
+               .filter(operations.block_level.in_(*blocks),
+                       operations.kind == "seed_nonce_revelation")
+               .scalar())
+
+@partition_query()
+def nonces_not_revealed_in(commitments):
+    if len(commitments) == 0:
+        return []
+
+    revelations = operations.query(operations.level) \
+                            .filter(operations.level.in_(*commitments),
+                                    operations.kind == "seed_nonce_revelation") \
+                            .vector()
+
+    return [level for level in commitments if level not in revelations]
+
+
+def nonces_not_revealed_between(baker, start_cycle, end_cycle):
+    return nonces_not_revealed_in(
+        commitments_made_between(baker, start_cycle, end_cycle))
+
+
 def endorsements_made_between(baker, start_cycle, end_cycle, priority="high"):
     """Returns the number of endorsement slots baker has endorsed where the
     block was priority 0 (high) or a priority greater than 1 (low)"""
@@ -237,6 +272,15 @@ def endorsements_made_between(baker, start_cycle, end_cycle, priority="high"):
                                                   end_cycle, priority), baker)
 
 
+def commitments_made_between(baker, start_cycle, end_cycle):
+    return blocks.query(blocks.level) \
+                 .filter(blocks.baker == baker,
+                         blocks.meta_cycle.between(start_cycle, end_cycle),
+                         blocks.expected_commitment == "true",
+                         blocks.nonce_hash.isnot(None)) \
+                 .vector()
+
+    
 def all_bakers():
     return bakers.query(bakers.pkh).order_by(bakers.staking_balance.desc()) \
                                    .filter(bakers.deactivated == False) \
@@ -305,3 +349,4 @@ def snapshot_index_to_block(index, cycle):
 
     return (cycle - PRESERVED_CYCLES - PENDING_CYCLES) * CYCLE_SIZE + \
         (index + 1) * SNAPSHOT_BLOCKS
+
