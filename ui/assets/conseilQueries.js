@@ -227,14 +227,6 @@ async function getDelegatedBalance(baker) {
     return result[0].delegated_balance
 }
 
-async function getRevelations(baker, cycle) {
-    
-}
-
-async function missedRevelations(baker, cycle) {
-
-}
-
 async function getRewardStructs(baker, start_cycle, end_cycle) {
     const response = JSON.parse(
 	await httpGet(`https://api.baking-bad.org/v2/bakers/${baker}?configs=true`))
