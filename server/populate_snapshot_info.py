@@ -3,7 +3,7 @@ import queries as tezos
 from microseil import SnapshotInfo
 
 
-@service_utils.populate_from_cycle()
+@service_utils.populate_from_cycle(SnapshotInfo)
 def get_snapshot_data(cycle):
     """Populates snapshot_info table with data for each baker at given cycle"""
 

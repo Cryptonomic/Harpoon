@@ -3,7 +3,7 @@ import queries as tezos
 from microseil import DelegateHistory
 
 
-@service_utils.populate_from_cycle()
+@service_utils.populate_from_cycle(DelegateHistory)
 def delegate_history(cycle):
     """Populates delegate_history table with data for each baker at a given
     cycle"""

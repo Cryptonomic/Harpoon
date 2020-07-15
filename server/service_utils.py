@@ -1,11 +1,11 @@
 import time
 import sys
 import requests
-from microseil import get_session
+from microseil import get_session, func
 import queries as tezos
 
 
-def populate_from_cycle():
+def populate_from_cycle(table):
     """Decorator which automates populating database tables
 
     populate_from_cycle() wraps around a function which calculates all the
@@ -21,8 +21,18 @@ def populate_from_cycle():
         print("Please specify a cycle to start sync from")
         return lambda _: _
 
-    def inner(func):
+    def inner(f):
         cycle = int(sys.argv[1])
+        session = get_session()
+        latest_cycle = session.query(func.max(table.cycle)).scalar()
+        session.close()
+        
+        if latest_cycle and int(latest_cycle) > cycle:
+            latest_cycle = int(latest_cycle)
+            cycle = latest_cycle + 1
+            print("%s has data from %s. Skipping to cycle %s..." % 
+                (table.__tablename__, latest_cycle, cycle))
+        
         while (True):
             latest_cycle = tezos.current_cycle()
             print("Checking cycle")
@@ -39,8 +49,9 @@ def populate_from_cycle():
             else:
                 try:
                     session = get_session()
-                    session.add_all(func(cycle))
+                    session.add_all(f(cycle))
                     session.commit()
+                    session.close()
                     print("Done")
                     cycle += 1
                 except requests.exceptions.ReadTimeout:
