@@ -228,12 +228,20 @@ async function getDelegatedBalance(baker) {
 }
 
 async function getRewardStructs(baker, start_cycle, end_cycle) {
-    const response = JSON.parse(
-	await httpGet(`https://api.baking-bad.org/v2/bakers/${baker}?configs=true`))
-	  .config.rewardStruct
+    const response = await httpGet(`https://api.baking-bad.org/v2/bakers/${baker}?configs=true`)
+    const defaultStruct = 16383
     let structs = []
+
+    if (response=="") {
+	for (let i = start_cycle; i <= end_cycle; i++) 
+	    structs.push({"cycle":i, "value":defaultStruct})
+	return structs
+    }
+    
+    const responseStructs = JSON.parse(response).config.rewardStruct
+
     let i = end_cycle
-    response.forEach(entry => {
+    responseStructs.forEach(entry => {
 	for (;i >= start_cycle; i--) {
 	    if (entry.cycle <= i) {
 		structs.push({"cycle":i, "value":entry.value})
@@ -255,19 +263,26 @@ async function getBakerRewards(baker, start_cycle, end_cycle) {
 					   [{field:'baker', op:'eq', value:[baker]},
 					    {field:'cycle', op:'between', value:[start_cycle, end_cycle]}],
 					   {field:'cycle', dir:'asc'})
+
+    const accusationInfo = await getAccusationInfo(baker, start_cycle, end_cycle)
     const rewards = []
     for (let i = 0; i <= end_cycle - start_cycle; i++) { 
 	const bakerStats = rewardsInfo[i]
+	const accusationStats = accusationInfo[i]
     	const rewardStruct = structs[i].value
     	const cycle = structs[i].cycle
     	let extRewardStruct = {
-    	    blocks: (rewardStruct & 1) > 0 ? bakerStats.num_endorsements_in_baked * BAKING_REWARD_PER_ENDORSEMENT[0]: 0,
-    	    endorses: (rewardStruct & 2) > 0 ? bakerStats.high_priority_endorsements * REWARD_PER_ENDORSEMENT[0]: 0,
-    	    fees: (rewardStruct & 4) > 0 ? convertFromUtezToTez(bakerStats.fees_in_baked): 0,
-    	    // accusationRewards: (rewardStruct & 8) > 0,
-    	    // accusationLostDeposits: (rewardStruct & 16) > 0,
-    	    // accusationLostRewards: (rewardStruct & 32) > 0,
-    	    // accusationLostFees: (rewardStruct & 64) > 0,
+    	    blocks: (rewardStruct & 1) > 0 ? bakerStats.num_endorsements_in_baked * BAKING_REWARD_PER_ENDORSEMENT[0] : 0,
+    	    endorses: (rewardStruct & 2) > 0 ? bakerStats.high_priority_endorsements * REWARD_PER_ENDORSEMENT[0] : 0,
+    	    fees: (rewardStruct & 4) > 0 ? convertFromUtezToTez(bakerStats.fees_in_baked) : 0,
+    	    accusationRewards: (rewardStruct & 8) > 0 ?
+		accusationStats.double_baking_accusation_rewards + accusationStats.double_endorsement_accusation_rewards : 0,
+    	    accusationLostDeposits: ((rewardStruct & 16) > 0 ? -1 : 0) * 
+		accusationStats.double_baking_lost_deposits + accusationStats.double_endorsement_lost_deposits,
+    	    accusationLostRewards:  ((rewardStruct & 32) > 0 ? -1 : 0) * 
+		accusationStats.double_baking_lost_rewards + accusationStats.double_endorsement_lost_rewards,
+    	    accusationLostFees:  ((rewardStruct & 64) > 0 ? -1 : 0) * 
+		accusationStats.double_baking_lost_fees + accusationStats.double_endorsement_lost_fees,
     	    revelationRewards: (rewardStruct & 128) > 0 ?
     		(bakerStats.num_revelations_in_baked + bakerStats.num_revelations_in_stolen) * REWARD_PER_REVELATION : 0,
     	    revelationLostRewards: !((rewardStruct & 256) > 0) ?
@@ -282,7 +297,8 @@ async function getBakerRewards(baker, start_cycle, end_cycle) {
 		bakerStats.low_priority_endorsements * REWARD_PER_ENDORSEMENT[1],
     	}
     	rewards.push(extRewardStruct)
-   }
+    }
+    console.log(Object.values(rewards[0]).reduce(((acc, curr) => acc + curr), 0))
     return rewards
 }
 
@@ -365,5 +381,34 @@ async function getEndorsementRewards(baker, cycle, type) {
     sumEndorsements = response[endorsementType[table]]
     rewards = convertFromTezToUtez(sumEndorsements * rewardPerEndorsement)
     return rewards ? rewards : 0
+}
+
+function blank_query(fields) {
+    ret = {}
+    fields.forEach(field => ret[field] = 0)
+    return ret
+}
+
+async function getAccusationInfo(baker, start_cycle, end_cycle) {
+    const fields = ['cycle',
+		    'double_baking_accusation_rewards', 'double_endorsement_accusation_rewards',
+		    'double_baking_lost_fees', 'double_endorsement_lost_fees',
+		    'double_baking_lost_deposits', 'double_endorsement_lost_deposits',
+		    'double_baking_lost_rewards', 'double_endorsement_lost_rewards']
+
+    const accusationInfo = await getBakerInfo('accusations', fields,
+					      [{field:'baker', op:'eq', value:[baker]},
+					       {field:'cycle', op:'between', value:[start_cycle, end_cycle]}]);
+
+    let curr = 0;
+    for (let i=start_cycle; i <= end_cycle; i++, curr++) {
+	if (curr + 1 > accusationInfo.length || accusationInfo[curr].cycle > i) {
+	    blank = blank_query(fields)
+	    blank.cycle = i
+	    accusationInfo.splice(curr, 0, blank)
+	}
+    }
+
+    return accusationInfo
 }
 

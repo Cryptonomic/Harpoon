@@ -48,11 +48,15 @@ def populate_from_cycle(table):
                 time.sleep(time_to_sleep)
             else:
                 try:
-                    session = get_session()
-                    session.add_all(f(cycle))
-                    session.commit()
-                    session.close()
-                    print("Done")
+                    data = f(cycle)
+                    if len(data) != 0:
+                        session = get_session()
+                        session.add_all(data)
+                        session.commit()
+                        session.close()
+                        print("Done")
+                    else:
+                        print("No data for cycle %s. Skipping..." % cycle)
                     cycle += 1
                 except requests.exceptions.ReadTimeout:
                     print("Request timeout on cycle %s. Retrying..." % cycle)
