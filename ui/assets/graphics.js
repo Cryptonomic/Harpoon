@@ -282,6 +282,15 @@ function chainmap(id, data, values, blocks,
     render(toGraph);
 }
 
+/**
+ * Constructs a stacked bar graph provided an svg id
+ *
+ * @param {string} id - the id of the svg element to build on 
+ * @param {Array.<Object>} data - an array of elements with the data in them
+ * @param {number} colorSet - an integer 1 - 10 to choose the color scheme to use for
+ * the graph 
+ * @param {function} - a function to make when one of the boxes are clicked on
+ */ 
 function stackedBarGraph(id, data, values, colorSet=0, callback=d=>{return;}) {
     let toGraph = outline(id, data, values, {top:0, left:10, right:0, bottom:15});
     const colorSchemes = [d3.schemeSet1, d3.schemeSet2, d3.schemeSet3,
@@ -292,14 +301,18 @@ function stackedBarGraph(id, data, values, colorSet=0, callback=d=>{return;}) {
     const render = graph => {
 	const sum = d3.sum(graph.data, graph.xValue)
 	let tooltipHeight = 20    
+	
+	// Find the default box to highlight
 	let defaultInd = graph.data.findIndex(d => d.default == "true");
 	if (defaultInd == -1) 
 	    defaultInd = 0;
 	graph.data[defaultInd]["default"] = "true";
 	let defaultVal = graph.data[defaultInd];
 
+	// Sum the target field from the datapoints
 	graph.data.forEach((d, i) => d["sum"] = d3.sum(graph.data.slice(0,i), graph.xValue))
 
+	// Create the x and color scale to use
 	const x = d3.scaleLinear()
 	      .domain([0, sum])
 	      .range([0, graph.innerWidth])
@@ -313,6 +326,7 @@ function stackedBarGraph(id, data, values, colorSet=0, callback=d=>{return;}) {
 	const g = graph.svg.append("g")
 	      .attr("transform", `translate(${graph.margin.left}, ${graph.margin.top})`)
 	
+	// Add tooltip
 	let tooltip = g.append("g")
 	    .attr("class", "tooltip")
 	    .attr("transform", `translate(1, ${graph.innerHeight-tooltipHeight})`)
@@ -338,11 +352,13 @@ function stackedBarGraph(id, data, values, colorSet=0, callback=d=>{return;}) {
 	    .attr("width", d => graph.xValue(d)*graph.innerWidth)
 	    .attr("height", graph.innerHeight - tooltipHeight);
 	
+	// Set the default data box fill it
 	let defaultRect = g.select(".default")
 
 	defaultRect
 	    .style("fill", d3.rgb(defaultRect.attr("fill")).darker())		
 
+	// For each of the data rectangles, darken it on mouseover
 	g.selectAll("rect.databar")
 	    .on("mouseover", function(d) {
 		defaultRect
@@ -371,6 +387,15 @@ function stackedBarGraph(id, data, values, colorSet=0, callback=d=>{return;}) {
     render(toGraph)
 }    
 
+/**
+ * Constructs a linegraph in a given svg
+ * 
+ * @param {string} id - the id of the svg element to build on 
+ * @param {Array.<Object>} data - an array of elements with the data in them
+ * @param {Array.<number>} yExtent - an array of two numbers bounding the range of the graph
+ * @param {boolean} time - flag indicating whether or not the x axis should display time
+ * @param {boolean} area - flag indicating whehter or not the area under the line should be filled in
+ */
 function linegraph(id, data, values, yExtent, time=true, area=false) {
     let xScale = time ? d3.scaleTime() : d3.scaleLinear();
     let grapher = area ? areaGenerator : lineGenerator
