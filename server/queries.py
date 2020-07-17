@@ -53,16 +53,17 @@ def partition_query(partition_size=50):
     """
 
     def inner(f):
-        def sum_partitions(blocks, *args):
-            num_cycles = math.floor(len(blocks)/partition_size)
+        def sum_partitions(block_levels, *args):
+            num_cycles = math.floor(len(block_levels)/partition_size)
 
             # Get default empty value for function
             total = f([], *args)
             for i in range(num_cycles):
-                total += f(blocks[i * partition_size: (i+1) * partition_size],
+                total += f(block_levels[i * partition_size: (i+1) *
+                                        partition_size],
                            *args)
-            if (partition_size * num_cycles) < len(blocks):
-                total += f(blocks[partition_size * num_cycles:], *args)
+            if (partition_size * num_cycles) < len(block_levels):
+                total += f(block_levels[partition_size * num_cycles:], *args)
             return total
         return sum_partitions
     return inner
@@ -136,8 +137,8 @@ def blocks_missed_between(baker, start_cycle, end_cycle):
 
 
 def blocks_with_priority_between(start_cycle, end_cycle, priority="high"):
-    """Returns a list of levels of blocks that were baked with a priority 0 (high)
-    or a priority greater than 1 (low)"""
+    """Returns a list of levels of blocks that were baked with a priority 0
+    (high) or a priority greater than 1 (low)"""
 
     priority_filter = blocks.priority.__gt__(0) if priority == "low" else \
         blocks.priority.__eq__(0)
@@ -195,39 +196,39 @@ def endorsements_missed_between(baker, start_cycle, end_cycle):
 
 
 @partition_query(5000)
-def sum_endorsements_made_in(blocks, baker):
-    """Returns the number of endorsements made by baker in blocks"""
+def sum_endorsements_made_in(block_levels, baker):
+    """Returns the number of endorsements made by baker in block_levels"""
 
-    if len(blocks) == 0:
+    if len(block_levels) == 0:
         return 0
 
     return int(operations.query(operations.number_of_slots,
                                 operations.number_of_slots.sum())
                .filter(operations.delegate == baker,
-                       operations.level.in_(*blocks))
+                       operations.level.in_(*block_levels))
                .scalar())
 
 
 @partition_query()
-def sum_endorsements_in_blocks(blocks):
-    """Returns the sum endorsing power in blocks"""
+def sum_endorsements_in_blocks(block_levels):
+    """Returns the sum endorsing power in block_levels"""
 
-    if len(blocks) == 0:
+    if len(block_levels) == 0:
         return 0
 
     return int(operations.query(operations.number_of_slots,
                                 operations.number_of_slots.sum())
-               .filter(operations.block_level.in_(*blocks))
+               .filter(operations.block_level.in_(*block_levels))
                .scalar())
 
 
 @partition_query()
-def sum_fees_for_blocks(blocks):
-    if len(blocks) == 0:
+def sum_fees_for_blocks(block_levels):
+    if len(block_levels) == 0:
         return 0
     fees = operations.query(operations.fee,
                             operations.fee.sum()) \
-                     .filter(operations.block_level.in_(*blocks)) \
+                     .filter(operations.block_level.in_(*block_levels)) \
                      .scalar()
     if fees is None:
         return 0
@@ -235,15 +236,16 @@ def sum_fees_for_blocks(blocks):
 
 
 @partition_query(1000)
-def sum_revelations_in(blocks):
-    if len(blocks) == 0:
+def sum_revelations_in(block_levels):
+    if len(block_levels) == 0:
         return 0
     
     return int(operations.query(operations.operation_group_hash,
                                 operations.operation_group_hash.count()) 
-               .filter(operations.block_level.in_(*blocks),
+               .filter(operations.block_level.in_(*block_levels),
                        operations.kind == "seed_nonce_revelation")
                .scalar())
+
 
 @partition_query()
 def nonces_not_revealed_in(commitments):
@@ -349,4 +351,3 @@ def snapshot_index_to_block(index, cycle):
 
     return (cycle - PRESERVED_CYCLES - PENDING_CYCLES) * CYCLE_SIZE + \
         (index + 1) * SNAPSHOT_BLOCKS
-

@@ -1,5 +1,4 @@
 import math
-import sys
 import service_utils
 import queries as tezos
 from microseil import BakerPerformance
