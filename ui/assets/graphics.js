@@ -8,6 +8,15 @@ let getSVG = (id) => {
     return d3.select(`#${id}`);
 }
 
+/**
+ * A helper method to aid in constructing visualizations. Lays out necessary dimensions
+ * as well as data fields to use
+ * @param {string} id - the id of the svg element to use
+ * @param {Array.<Object>} data - array of objects containing all of the data
+ * @param {Object} values - an object of the form {"x":string, "y":string} that selects
+ *     the fields in data to use
+ * @param {Object} m - margins
+ */
 let outline = (id, data, values, m={top:0, left:0, right:0, bottom:0}) => {
     const svg = getSVG(id);
     const outline = dimensions(svg, m);
@@ -18,22 +27,42 @@ let outline = (id, data, values, m={top:0, left:0, right:0, bottom:0}) => {
     return outline
 }
 
+/**
+ * D3 linear scale wrapper
+ */
 let yMap = (outline) =>  d3.scaleLinear()
     .domain([0, 50])
     .range([outline.innerHeight, 0])
     .nice();
 
+/**
+ * D3 line wrapper
+ */
 let lineGenerator = (x, y, outline) => d3.line()
     .x(d => x(outline.xValue(d)))
     .y(d => y(outline.yValue(d)))
     .curve(d3.curveBasis);
 
+/**
+ * D3 area wrapper
+ */
 let areaGenerator = (x, y, outline) => d3.area()
     .x(d => x(outline.xValue(d)))
     .y0(outline.innerHeight)
     .y1(d => y(outline.yValue(d)))
     .curve(d3.curveBasis);
 
+/**
+ * A small box which contains information and follows the user's mouse around.
+ * Can be applied to any svg
+ *
+ * @param {Object} g = group element that the tooltip should reside in
+ * @param {number} width = tooltip width
+ * @param {number} height = tooltip height
+ * @param {number} padding = padding with the parent element
+ * @param {number} gwidth = width of g element
+ * @param {number} gheight = height of g element
+ */
 let tooltip = (g, width, height, padding, gwidth, gheight) => {
     let tt = g.append("rect")
 	.attr("class", "tooltip")
@@ -69,6 +98,12 @@ let tooltip = (g, width, height, padding, gwidth, gheight) => {
     return tt;
 }
 
+/**
+ * A helper function to allow switching panels to be shown. Hides all
+ * other panels
+ * 
+ * @param {string} panel - id of the panel to show
+ */ 
 function setPanel(panel) {
     document.querySelectorAll(".panel")
 	.forEach(node => node.style.display = "none");
@@ -76,6 +111,21 @@ function setPanel(panel) {
 	.forEach(node => node.style.display = "block");
 }
 
+/**
+ * Constructs a table where each row is colored based off of a selected data field
+ *
+ * @param {string} id - id of the svg element to use
+ * @param {Array.<Object>} data - data to be used in the table
+ * @param {Array.<string>} values - array of field names in data to use as columns for
+ *     each row in the table
+ * @param {string} mapColumn - name of the field to use for mapping the colors of the row
+ * @param {Array.<Array.<string>>} comparisons - used to map two columns to each other so that
+ *     for each element, e, of mapColumn, the color of the text of datapoints e[1] are based off of 
+ *     the values for datapoints in field e[0]
+ * @param {Array.<Object>} notices - an array of objects of the form {identifier:string, message:string}.
+ *     If the specified identifier shows up in the table, then a tooltip will be created with the coresponding
+ *     message for the row which the identifier appears in.
+ */
 function heatTable(id, data, values, mapColumn, comparisons=[], notices=[]) {
     let toGraph = outline(id, data, values,
 			  {top:10, left:10, right:10, bottom:10});
@@ -142,6 +192,13 @@ function heatTable(id, data, values, mapColumn, comparisons=[], notices=[]) {
     render(toGraph);
 }    
 
+/**
+ * Constructs a table where each row is colored based off of a selected data field
+ *
+ * @param {string} id - id of the svg element to use
+ * @param {Array.<Object>} data - data to be used in the table
+ * @param {Array.<string>} values - array of field names in data to use as columns for
+ */
 function chainmap(id, data, values, blocks,
 		  mapColor="green", tooltipLabel="", axis=true) {
     let toGraph = outline(id, data, values,

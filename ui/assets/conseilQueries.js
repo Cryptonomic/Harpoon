@@ -8,6 +8,41 @@ function convertFromTezToUtez(amountInTez) {
     return uTezAmount
 }
 
+async function httpGet(theUrl) {
+    return new Promise( function(resolve, reject) {
+	var xmlHttp = new XMLHttpRequest();
+	xmlHttp.onreadystatechange = function() { 
+	    if (xmlHttp.readyState == 4 && xmlHttp.status == 200)
+		resolve(xmlHttp.responseText);
+	    else if(xmlHttp.readyState == 4 && xmlHttp.status == 204) {
+		resolve("")
+	    }
+	}
+	xmlHttp.open("GET", theUrl, true);
+	xmlHttp.send(null);
+    });
+}
+
+async function httpPost(theUrl, params) {
+    return new Promise( function(resolve, reject) {
+	var xmlHttp = new XMLHttpRequest();
+	xmlHttp.onreadystatechange = function() { 
+	    if (xmlHttp.readyState == 4 && xmlHttp.status == 200)
+		resolve(xmlHttp.responseText);
+	    else if(xmlHttp.readyState == 4 && xmlHttp.status == 204) {
+		resolve("")
+	    }
+	}
+	xmlHttp.open("POST", theUrl, true);
+	xmlHttp.setRequestHeader('Content-type', 'application/json;charset=UTF-8');
+	xmlHttp.send(params);
+    });
+}
+
+// ==========================
+// Standard ConseilJS queries
+// ==========================
+
 async function getBlock(blockid) {
     block = (blockid == "head") ? 
 	await conseiljs.TezosConseilClient.getBlockHead(conseilServer, network) :
@@ -180,6 +215,11 @@ async function blocksBakedInTimestampBy(baker, start, end) {
     return ret
 }
 
+/**
+ * @param baker - baker address
+ * @param timestamps - array of unix timestamps to sample data at
+ * @returns array of json objects containing formatted timestamps and blocks baked per hour since the last timestamp
+ */ 
 async function blocksBakedPerHour(baker, timestamps) {
     let ret = []
     let delta = 0
@@ -227,19 +267,25 @@ async function getDelegatedBalance(baker) {
     return result[0].delegated_balance
 }
 
+/**
+ * A reward stuct is a 13 bit integer which contains information regarding the payout stucture of a baker.
+ * This information is sourced from Baking Bad. For more information on the reward struct, visit
+ * https://baking-bad.org/docs/api#get-bakers
+ * @returns an array of json objects in the form of {"cycle": int, "value": int} where "value"
+ * is the reward struct for that cycle
+ */
 async function getRewardStructs(baker, start_cycle, end_cycle) {
     const response = await httpGet(`https://api.baking-bad.org/v2/bakers/${baker}?configs=true`)
     const defaultStruct = 16383
     let structs = []
 
+    // If baker is not in the Baking Bad registry, use default value of 16383
     if (response=="") {
 	for (let i = start_cycle; i <= end_cycle; i++) 
 	    structs.push({"cycle":i, "value":defaultStruct})
 	return structs
     }
-    
     const responseStructs = JSON.parse(response).config.rewardStruct
-
     let i = end_cycle
     responseStructs.forEach(entry => {
 	for (;i >= start_cycle; i--) {
@@ -252,6 +298,10 @@ async function getRewardStructs(baker, start_cycle, end_cycle) {
     return structs
 }
 
+/**
+ * Returns an array of json objects (one for each cycle in [start_cycle, end_cycle]) with the corresponding rewards made in
+ * that cycle based off of the reward struct of that cycle. 
+ */
 async function getBakerRewards(baker, start_cycle, end_cycle) {
     const structs = await getRewardStructs(baker, start_cycle, end_cycle)
     const fields = ['num_endorsements_in_baked', 'num_endorsements_in_stolen', 'num_endorsements_in_missed',
@@ -302,38 +352,22 @@ async function getBakerRewards(baker, start_cycle, end_cycle) {
     return rewards
 }
 
+// ==============================================
+// Functions to interact with backend Postgres DB
+// (aka microseil)
+// ==============================================
 
-async function httpGet(theUrl) {
-    return new Promise( function(resolve, reject) {
-	var xmlHttp = new XMLHttpRequest();
-	xmlHttp.onreadystatechange = function() { 
-	    if (xmlHttp.readyState == 4 && xmlHttp.status == 200)
-		resolve(xmlHttp.responseText);
-	    else if(xmlHttp.readyState == 4 && xmlHttp.status == 204) {
-		resolve("")
-	    }
-	}
-	xmlHttp.open("GET", theUrl, true); // true for asynchronous 
-	xmlHttp.send(null);
-    });
-}
-
-async function httpPost(theUrl, params) {
-    return new Promise( function(resolve, reject) {
-	var xmlHttp = new XMLHttpRequest();
-	xmlHttp.onreadystatechange = function() { 
-	    if (xmlHttp.readyState == 4 && xmlHttp.status == 200)
-		resolve(xmlHttp.responseText);
-	    else if(xmlHttp.readyState == 4 && xmlHttp.status == 204) {
-		resolve("")
-	    }
-	}
-	xmlHttp.open("POST", theUrl, true); // true for asynchronous 
-	xmlHttp.setRequestHeader('Content-type', 'application/json;charset=UTF-8');
-	xmlHttp.send(params);
-    });
-}
-
+/**
+ * Function used to build and send queries to the postgresql server
+ * running on the backend (server host "microseilServer" is defined in 
+ * networkConstant.js). 
+ * 
+ * @params {string} table - name of the table to query 
+ * @params {Array.<string>} fields - array of fields to add to query
+ * @params {Array.<Object>} predicates - array of predicate objects to apply to query
+ * @params {Object} predicates - object representing an optional orderby statement for query
+ * @returns an array of json objects which have the specified fields
+ */
 async function getBakerInfo(table, fields, predicates, orderby) {
     let query = { "table": table, "fields": fields };
     if (predicates) query["predicates"] = predicates;
@@ -342,53 +376,24 @@ async function getBakerInfo(table, fields, predicates, orderby) {
     return JSON.parse(result)
 }
 
-
-async function getBlockFees(baker, cycle, type) {
-    const typeToPriority = {"baked":0, "stolen":1, "misssed":1}
-    const response = (await getBakerInfo("baker_performance", [`fees_in_${type}`],
-    					 [{field:"cycle", op:"eq", value:[cycle]},
-    					  {field:"baker", op:"eq", value:[baker]}]))[0]
-
-    const sumFees = response[`fees_in_${type}`]
-    return sumFees ? sumFees : 0
-}
-
-async function getBlockRewards(baker, cycle, type) {
-    const typeToPriority = {"baked":0, "stolen":1, "misssed":1}
-    const rewardPerEndorsement = BAKING_REWARD_PER_ENDORSEMENT[typeToPriority[type]]
-    const blocks = (await getBakerInfo("baker_performance", [`num_endorsements_in_${type}`],
-    				       [{field:"cycle", op:"eq", value:[cycle]},
-    					{field:"baker", op:"eq", value:[baker]}]))[0]
-
-    const sumBlockPower = blocks[`num_endorsements_in_${type}`]
-    const rewards = convertFromTezToUtez(rewardPerEndorsement * sumBlockPower)
-    return rewards ? rewards : 0
-}
-
-async function getEndorsementRewards(baker, cycle, type) {
-    const table = 0
-    const priority_ind = 1
-    typeData = {"low": ["low_priority_endorsements", 1],
-		"high": ["high_priority_endorsements", 0],
-		"missed": ["missed_endorsements", 0]}
-    endorsementType = typeData[type]
-
-    rewardPerEndorsement = REWARD_PER_ENDORSEMENT[endorsementType[priority_ind]]
-    response = (await getBakerInfo("baker_performance", [endorsementType[table]],
-    				   [{field:"cycle", op:"eq", value:[cycle]},
-    				    {field:"baker", op:"eq", value:[baker]}]))[0]
-
-    sumEndorsements = response[endorsementType[table]]
-    rewards = convertFromTezToUtez(sumEndorsements * rewardPerEndorsement)
-    return rewards ? rewards : 0
-}
-
+/**
+ * Used to help with populating objects in helper functions
+ * 
+ * @params {Array.<string>} fields - array of fields to populate
+ * @returns Object with all fields set to 0
+ */
 function blank_query(fields) {
     ret = {}
     fields.forEach(field => ret[field] = 0)
     return ret
 }
 
+/**
+ * Used to help with populating objects in helper functions
+ * 
+ * @params {Array.<string>} fields - array of fields to populate
+ * @returns Object with all fields set to 0
+ */
 async function getAccusationInfo(baker, start_cycle, end_cycle) {
     const fields = ['cycle',
 		    'double_baking_accusation_rewards', 'double_endorsement_accusation_rewards',
