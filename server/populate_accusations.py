@@ -1,5 +1,3 @@
-import math
-import sys
 import service_utils
 import queries as tezos
 from microseil import Accusations
@@ -10,6 +8,17 @@ SAMPLE_RANGE = 0
 
 def accusation_balance_updates_between(start_cycle, end_cycle,
                                        accusation_type):
+    """Returns a python dictionary with the balance updates from accusations
+    in the range [start_cycle, end_cycle]. 
+
+    Args:
+        start_cycle (int): Start of the range to search in
+        end_cycle (int): End of the range to search in
+        accusation_type (string): A string describing the kind of accustaions
+            to look in. "baking" for double baking accusations and
+            "endorsement" for double endorsement accusations
+    """
+
     accusations = tezos.accusations_between(start_cycle, end_cycle,
                                             accusation_type)
     balance_updates = []
@@ -28,6 +37,14 @@ def accusation_balance_updates_between(start_cycle, end_cycle,
 
 
 def parse_balance_updates(balance_updates):
+    """Returns a python dictionary where each key is an address and each value
+    is a dictionary containing balance updates categorized by type
+
+    Args:
+        balance_updates (dict): a dictionary containing balance update data
+        a block
+    """
+
     address_to_update = {}
 
     for update in balance_updates:
@@ -39,6 +56,7 @@ def parse_balance_updates(balance_updates):
                                            "lost_rewards":0}
         entry = address_to_update[delegate]
         change = int(update["change"])
+
         if update["category"] == "deposits":
             entry["lost_deposits"] += -1 * change
         elif update["category"] == "fees":
@@ -53,6 +71,8 @@ def parse_balance_updates(balance_updates):
 
 
 def empty_row():
+    """A helper function creating a default dictionary"""
+
     return {"double_baking_accusation_rewards": 0,
             "double_baking_lost_rewards":0,
             "double_baking_lost_fees":0,
