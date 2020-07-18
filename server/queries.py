@@ -274,6 +274,8 @@ def endorsements_made_between(baker, start_cycle, end_cycle, priority="high"):
 
 
 def commitments_made_between(baker, start_cycle, end_cycle):
+    """Returns a list of levels where a seed nonce commitement was made"""
+
     return blocks.query(blocks.level) \
                  .filter(blocks.baker == baker,
                          blocks.meta_cycle.between(start_cycle, end_cycle),
@@ -335,6 +337,15 @@ def operations_in(block_level):
 
             
 def accusations_between(start_cycle, end_cycle, accusation_type):
+    """Returns a list of levels where accusations were made
+    
+    Args:
+        start_cycle (int): Lower bound of range to search in
+        end_cycle (int): Upper bound of range to search in
+        accusation_type (string): The type of accusation to search for. 
+            "baking" for double baking accusations and "endorsement" for 
+            double endorsement accusations
+    """
     type_to_field = {"baking":"double_baking_evidence",
                      "endorsement":"double_endorsement_evidence"}
 
@@ -347,9 +358,19 @@ def accusations_between(start_cycle, end_cycle, accusation_type):
     
 
 def evidence_in(operations, evidence_type):
+    """Parses a dictionary containing chain operations and extracts double
+    baking/endorsing evidence
+
+    Args:
+        operations (dict): Python dictionary representing the tezos operations
+        evidence_type (string): A string indicating the type of evidence to
+            parse for. "baking" for double baking and "endorsement" for double
+            endorsement
+    """
+
     type_to_field = {"baking":"double_baking_evidence",
                      "endorsement":"double_endorsement_evidence"}
-
+    
     evidence = []
     for operation_group in operations:
         for operation in operation_group:
@@ -360,6 +381,8 @@ def evidence_in(operations, evidence_type):
 
     
 def snapshot_index(cycle):
+    """Returns the level of the snapshot for a given cycle"""
+
     cycleLevel = cycle_to_level(cycle) + 1
     r = requests.get(("%s/chains/main/blocks/%d/context/" +
                       "raw/json/cycle/%d/roll_snapshot") %
