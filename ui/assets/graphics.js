@@ -1,3 +1,8 @@
+//Colors
+const TEAL = "#447363"
+const DARK_BLUE = "#5255C6"
+const BRICK_RED = "#963A25"
+
 let dimensions = (svg, m={top:0, left:0, right:0, bottom:0}) =>
     ({width: +svg.attr("width"), height: +svg.attr("height"), margin: m,
       innerWidth: +svg.attr("width") - m.left- m.right,
@@ -118,7 +123,7 @@ function setPanel(panel) {
  * @param {Array.<Object>} data - data to be used in the table
  * @param {Array.<string>} values - array of field names in data to use as columns for
  *     each row in the table
- * @param {string} mapColumn - name of the field to use for mapping the colors of the row
+ * @param {Object} colorMappings - an object mapping the field to the column color to use in the heat table
  * @param {Array.<Array.<string>>} comparisons - used to map two columns to each other so that
  *     for each element, e, of mapColumn, the color of the text of datapoints e[1] are based off of 
  *     the values for datapoints in field e[0]
@@ -126,7 +131,7 @@ function setPanel(panel) {
  *     If the specified identifier shows up in the table, then a tooltip will be created with the coresponding
  *     message for the row which the identifier appears in.
  */
-function heatTable(id, data, values, mapColumn, comparisons=[], notices=[]) {
+function heatTable(id, data, values, colorMappings, comparisons=[], notices=[]) {
     let toGraph = outline(id, data, values,
 			  {top:10, left:10, right:10, bottom:10});
     const rowHeight = 40;
@@ -134,10 +139,23 @@ function heatTable(id, data, values, mapColumn, comparisons=[], notices=[]) {
     const textPadding = 5;
     const tooltipHeight = 20;
     const tooltipPadding = 5;
-    const color = d3.scaleLinear()
-	  .domain(d3.extent(data.map((d, i) => (i==0) ? data[i+1][mapColumn] : d[mapColumn])))
-	  .range(["white", "#65eb72"]);
-	
+
+    // Create a scale for each column that varies the opacity
+    const scaleOffset = .05
+    const opacityRange = [0.1, 0.8]
+    const scales = {}
+    Object.keys(colorMappings).forEach(entry => {
+	let extent = d3.extent(
+	    data.map((d, i) => (i==0) ? data[i+1][entry] : d[entry]));
+
+	// If there is no change in value, the column should look a tiny bit colored
+	// Adding 1 to the extent[1] to create a proper domain acheives this
+	if (extent[0] == extent[1]) extent[1] += 1
+	scales[entry] =  d3.scaleLinear()
+	    .domain(extent)
+	    .range(opacityRange)
+    });
+    
     const render = graph => {
 	const g = graph.svg.append("g")
 	      .attr("transform", `translate(${graph.margin.left}, ${graph.margin.top})`)
@@ -148,29 +166,29 @@ function heatTable(id, data, values, mapColumn, comparisons=[], notices=[]) {
 	    .attr("width", graph.innerWidth)
 	    .attr("height", rowHeight)
 	    .attr("y", (d, i) => i * (rowHeight + rowPadding))
-	    .attr("fill", (d, i) => i == 0 ? "#f5b505" : color(d[mapColumn]));
-	values.forEach((d, i) => {
+	    .attr("fill", (d, i) => i == 0 ? "#f5b505" : "white");
+	values.forEach((column, columnInd ) => { 
 	    g.selectAll(".data")
-		.each((r, i, n) => {
+		.each((data, nodeInd, nodes) => {
 		    noticeInd = notices.map(note => note.identifier)
-			.findIndex(elem => elem == r[d]);
+			.findIndex(elem => elem == data[column]);
 		    if (noticeInd != -1) {
-			tt = tooltip(d3.select(n[i]), 5, tooltipHeight,
+			tt = tooltip(d3.select(nodes[nodeInd]), 5, tooltipHeight,
 				tooltipPadding, graph.innerWidth, rowHeight);
 			tt.setText(notices[noticeInd].message)
 			tt.fitSizeToText()
 		    }
 		})
 		.append("text")
-		.text(r => r[d])
-		.attr("x", (graph.innerWidth - textPadding * 2)/(2*values.length) * (2 * i + 1) + textPadding)
-		.attr("y", (d, i) => i * (rowHeight + rowPadding) + (rowHeight + rowPadding)/2)
-		.style("fill", (r, i) => {
+		.text(d => d[column])
+		.attr("x", (graph.innerWidth - textPadding * 2)/(2*values.length) * (2 * columnInd + 1) + textPadding)
+		.attr("y", (row, rowInd) => rowInd * (rowHeight + rowPadding) + (rowHeight + rowPadding)/2)
+		.style("fill", (row, rowInd) => {
 		    let color = "black";
 		    comparisons.forEach(compareCol => {
 			if (d ==  compareCol[1] &&
-			    !notices.map(d => d.identifier).includes(r[compareCol[0]]) &&
-			    i != 0) {
+			    !notices.map(d => d.identifier).includes(row[compareCol[0]]) &&
+			    rowInd != 0) {
 			    positive = "blue"
 			    negative = "red"
 			    if (compareCol[2] == "inverse") {
@@ -178,14 +196,26 @@ function heatTable(id, data, values, mapColumn, comparisons=[], notices=[]) {
 				negative = "blue"
 			    }
 
-			    if (r[compareCol[0]] == r[compareCol[1]]) color = "green";
-			    else if (r[compareCol[0]] > r[compareCol[1]]) color = negative;
-			    else if (r[compareCol[0]] < r[compareCol[1]]) color = positive;
+			    if (row[compareCol[0]] == row[compareCol[1]]) color = "green";
+			    else if (row[compareCol[0]] > row[compareCol[1]]) color = negative;
+			    else if (row[compareCol[0]] < row[compareCol[1]]) color = positive;
 			}
 		    });
 		    return color;
 		})
 		.style("text-anchor", "middle")
+		.each((row, rowInd, nodes) => {
+		    if (rowInd != 0){
+			d3.select(nodes[rowInd].parentNode)
+			    .insert("rect", "text")
+			    .attr("x", graph.innerWidth/(2*values.length) * (2 * columnInd))
+			    .attr("y",  rowInd * (rowHeight + rowPadding))
+			    .attr("width", graph.innerWidth/(values.length))
+			    .attr("height", rowHeight + rowPadding)
+			    .style("fill", colorMappings[column] ? colorMappings[column] : "white")
+			    .style("opacity", scales[column] ? scales[column](data[rowInd][column]) : 0)
+		    }
+		})
 	});
 	
     }
