@@ -2,7 +2,6 @@
 
 * {
   box-sizing: border-box;
-  
 }
 
 body,
@@ -13,8 +12,72 @@ button {
   background-color: var(--color-background);
 }
 
-.footer-txt {
+p {
+  margin: 0;
+}
+
+/* Text styles */
+
+.extra-large {
+  font-size: 48px;
+  font-weight: 500;
+  line-height: 56px;
+}
+
+.large {
+  font-size: 34px;
+  line-height: 40px;
+  font-weight: 400;
+  letter-spacing: 0.0025em;
+}
+
+.large-middle {
+  font-size: 24px;
+  line-height: 28px;
+  font-weight: 400;
+}
+
+.middle {
+  font-size: 20px;
+  line-height: 23px;
+  font-weight: 400;
+  letter-spacing: 0.0015em;
+}
+
+.middle-small {
   font-size: 16px;
   line-height: 19px;
+  font-weight: 400;
   letter-spacing: 0.005em;
+}
+
+.small {
+  font-size: 14px;
+  line-height: 16px;
+  font-weight: 400;
+  letter-spacing: 0.0025em;
+}
+
+.title-text {
+  color: var(--color-title-text);
+}
+
+.subtitle-text {
+  color: var(--color-sub-title);
+}
+
+.weight-500 {
+  font-weight: 500;
+}
+
+/* Div styles */
+
+.flex-row {
+  display: flex;
+  justify-content: space-between;
+}
+
+.flex-column {
+  display: flex;
+  flex-direction: column;
 }
