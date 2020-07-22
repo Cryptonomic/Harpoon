@@ -43,17 +43,14 @@ async function calculateRewardsForDelegate() {
     calcRewards = await getBakerRewards(delegateAddress, lastFullCycle-9, lastFullCycle)
     for (let i = 0; i < rewards.length; i++) {
 	rewards[i]["rewards"] = Object.values(calcRewards[i]).reduce(((acc, curr) => acc + curr), 0)
-	console.log(Object.values(calcRewards[i]).reduce(((acc, curr) => acc + curr), 0))
     }
 
-    console.log(rewards)
     const delegations = await getBakerInfo("delegate_history", ["cycle", "baker"],
 					   [{"field":"delegator", "op":"eq", "value":[delegator]},
 					    {"field":"cycle", "op":"between", "value":[lastFullCycle-9, lastFullCycle]},
 					    {"field":"baker", "op":"eq", "value":[delegateAddress]}],
 					   {"field":"cycle", "dir":"asc"});
 
-    console.log(delegations)
     const delegation_cycles = delegations ? delegations.map(d => d.cycle): []
 
     for (d of rewards) {
@@ -201,8 +198,7 @@ async function updateBakerInfo(baker) {
 	    heatTable("performance_table", d.reverse(),
 		      ["cycle","num_baked", "num_missed", "num_stolen",
 		       "endorsements", "missed_endorsements"], "num_baked");
-    	});
-    
+    	}); 
     getBakerInfo("snapshot_info", ["cycle", "rewards"],
 		 [{"field":"cycle", "op":"between", "value":[lastFullCycle-9, lastFullCycle]},
 		  {"field":"baker", "op":"eq", "value":[baker]}])
@@ -213,7 +209,7 @@ async function updateBakerInfo(baker) {
 	    linegraph("rewards_chart", d, {x:"cycle", y:"rewards"}, [0, Math.max(...d.map(r =>r.rewards))], false);
 	    d.push({cycle:"Cycle", rewards:"Rewards Earned", staking_balance:"Staking Balance"});
 	    heatTable("rewards_table", d.reverse(), ["cycle", "rewards"], "rewards");
-    	});
+    	});  
     getBakerInfo("baker_performance", ["baker", "grade"], [{"field":"cycle", "op":"eq", "value":[lastFullCycle]}])
     	.then(d => {
 	    let values = d.map(item => item.grade).sort((a, b) => a - b)
@@ -232,8 +228,7 @@ async function updateBakerInfo(baker) {
 	    else if (numDeviations > -1.5) letterGrade = "D";
 	    else letterGrade = "F";
 	    set("baker_grade", `${letterGrade}`);
-	});
-	      
+	});	      
     blocksBakedPerHour(baker,createGraphTimestamps(16)).then(d => linegraph("blocks_per_hour_graph", d,
 									    {x:"timestamp", y:"blocksPerHour"},
 									    [0, Math.max(...d.map(r =>r.blocksPerHour))],

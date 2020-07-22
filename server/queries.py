@@ -245,6 +245,7 @@ def sum_revelations_in(blocks):
                        operations.kind == "seed_nonce_revelation")
                .scalar())
 
+
 @partition_query()
 def nonces_not_revealed_in(commitments):
     if len(commitments) == 0:
@@ -280,7 +281,7 @@ def commitments_made_between(baker, start_cycle, end_cycle):
                          blocks.nonce_hash.isnot(None)) \
                  .vector()
 
-    
+
 def all_bakers():
     return bakers.query(bakers.pkh).order_by(bakers.staking_balance.desc()) \
                                    .filter(bakers.deactivated == False) \
@@ -319,6 +320,45 @@ def baker_info_at_level(baker, level):
     return (json.loads(response.text))
 
 
+def operations_in(block_level):
+    """Returns a dictionary containing the operation data in the block at
+    block level. 
+    
+    The rpc endpoint is used instead of conseil because double 
+    baking/endorsing data is not available at the time of this writing.
+    """
+
+    r = requests.get(("%s/chains/main/blocks/%d/operations" %
+                     (BASE_URL, block_level)))
+    
+    return json.loads(r.text)
+
+            
+def accusations_between(start_cycle, end_cycle, accusation_type):
+    type_to_field = {"baking":"double_baking_evidence",
+                     "endorsement":"double_endorsement_evidence"}
+
+    accusations = operations.query(operations.block_level) \
+                            .filter(operations.cycle.between(start_cycle, end_cycle),
+                                    operations.kind == type_to_field[accusation_type]) \
+                            .vector()
+
+    return accusations
+    
+
+def evidence_in(operations, evidence_type):
+    type_to_field = {"baking":"double_baking_evidence",
+                     "endorsement":"double_endorsement_evidence"}
+
+    evidence = []
+    for operation_group in operations:
+        for operation in operation_group:
+            for content in operation["contents"]:
+                if content["kind"] == type_to_field[evidence_type]:
+                    evidence.append(content)
+    return evidence
+
+    
 def snapshot_index(cycle):
     cycleLevel = cycle_to_level(cycle) + 1
     r = requests.get(("%s/chains/main/blocks/%d/context/" +
@@ -349,4 +389,3 @@ def snapshot_index_to_block(index, cycle):
 
     return (cycle - PRESERVED_CYCLES - PENDING_CYCLES) * CYCLE_SIZE + \
         (index + 1) * SNAPSHOT_BLOCKS
-
