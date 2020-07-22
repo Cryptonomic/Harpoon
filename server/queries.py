@@ -165,10 +165,10 @@ def endorsements_made_in_levels_with_priority(baker, start_cycle, end_cycle,
     """Returns a list of levels which baker has endorsed where the block was
     priority 0 (high) or a priority greater than 1 (low)"""
 
-    blocks = blocks_with_priority_between(start_cycle, end_cycle, priority)
+    block_levels = blocks_with_priority_between(start_cycle, end_cycle, priority)
     endorsements = endorsements_made_in_levels_between(baker, start_cycle,
                                                        end_cycle)
-    return [level for level in endorsements if level+1 in blocks]
+    return [level for level in endorsements if level+1 in block_levels]
 
 
 def endorsements_missed_between(baker, start_cycle, end_cycle):
@@ -294,12 +294,12 @@ def all_bakers():
 def active_bakers_between(start_cycle, end_cycle):
     """Returns all bakers who've baked a block in [start_cycle, end_cycle]"""
 
-    bakers = all_bakers()
+    baker_list = all_bakers()
     active = list(set(blocks.query(blocks.baker)
                       .filter(blocks.meta_cycle.between(start_cycle,
                                                         end_cycle))
                       .vector()))
-    return [baker for baker in bakers if baker in active]
+    return [baker for baker in baker_list if baker in active]
 
 
 def transaction_sources_in_cycle(destination, cycle):

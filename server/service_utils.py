@@ -33,7 +33,7 @@ def populate_from_cycle(table):
             print("%s has data from %s. Skipping to cycle %s..." % 
                 (table.__tablename__, latest_cycle, cycle))
         
-        while (True):
+        while True:
             latest_cycle = tezos.current_cycle()
             print("Checking cycle")
             if cycle >= latest_cycle:
