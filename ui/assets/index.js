@@ -107,7 +107,10 @@ async function calculateRewardsForDelegate() {
 		       "delegator_rewards_received", "advertised_fee",
 		       "actual_fee"]
 
-    heatTable("rewards_table", rewards.reverse(), heatTableFields, "rewards",
+    const colorMappings = {"delegator_rewards": TEAL,
+			   "delegator_rewards_received": TEAL}
+
+    heatTable("rewards_table", rewards.reverse(), heatTableFields, colorMappings,
 	      [["delegator_rewards", "delegator_rewards_received"], ["advertised_fee", "actual_fee", "inverse"]],
 	      [{identifier:"*", message: undelegatedMsg},
 	       {identifier:"...", message: inProgressMsg}]);
@@ -240,9 +243,12 @@ async function updateBakerInfo(baker) {
 				  "endorsements": "Endorsements Made", "missed_endorsements": "Endorsements Missed"}
 	    d.forEach(entry => entry["endorsements"] = entry.high_priority_endorsements + entry.low_priority_endorsements)
 	    d.push(columnTitles)
+	    const colorMappings = {"num_baked": TEAL, "num_missed": BRICK_RED, "num_stolen": DARK_BLUE,
+				   "endorsements": TEAL, "missed_endorsements": BRICK_RED }
+
 	    heatTable("performance_table", d.reverse(),
 		      ["cycle","num_baked", "num_missed", "num_stolen",
-		       "endorsements", "missed_endorsements"], "num_baked");
+		       "endorsements", "missed_endorsements"], colorMappings);
     	}); 
     
     // Create the rewards heat table
@@ -255,7 +261,8 @@ async function updateBakerInfo(baker) {
 	    d.forEach(r => r.rewards = convertFromUtezToTez(r.rewards));
 	    linegraph("rewards_chart", d, {x:"cycle", y:"rewards"}, [0, Math.max(...d.map(r =>r.rewards))], false);
 	    d.push({cycle:"Cycle", rewards:"Rewards Earned", staking_balance:"Staking Balance"});
-	    heatTable("rewards_table", d.reverse(), ["cycle", "rewards"], "rewards");
+
+	    heatTable("rewards_table", d.reverse(), ["cycle", "rewards"], {"rewards": TEAL});
     	});  
 
     // Set the baker grade for baker
@@ -367,7 +374,7 @@ async function updateBakerInfo(baker) {
 	    set("baker_blocks_missed", `Blocks missed in cycle ${lastFullCycle}: ${d.length}`);
 	    d.forEach(block => block["label"] = `Level: ${block.meta_level}`);
 	    chainmap("blocks_missed_chart", d, {x:"meta_cycle_position", y:"label"},
-		     blocksPerCycle, "red", "Blocks missed ", true);
+		     blocksPerCycle, BRICK_RED, "Blocks missed ", true);
 	});
 
     // Create the blocks baked chainmap (bar graph)
@@ -376,7 +383,7 @@ async function updateBakerInfo(baker) {
 	    set("baker_blocks_stolen", `Blocks stolen in cycle ${lastFullCycle}: ${d.length}`)
 	    d.forEach(block => block["label"] = `Level: ${block.meta_level}`);
 	    chainmap("blocks_stolen_chart", d, {x:"meta_cycle_position", y:"label"},
-		     blocksPerCycle, "green", "Blocks stolen ", false);
+		     blocksPerCycle, DARK_BLUE, "Blocks stolen ", false);
 	});
 
     // Create the blocks missed chainmap (bar graph)
@@ -389,7 +396,7 @@ async function updateBakerInfo(baker) {
 	    set("baker_blocks_baked_last_cycle", `Blocks baked in cycle ${lastFullCycle}: ${d.length}`);
 	    d.forEach(block => block["label"] = `${block.meta_level}`);
 	    chainmap("blocks_baked_chart", d, {x:"meta_cycle_position", y:"label"},
-		     blocksPerCycle, "#eb7610", "Blocks baked ", false);
+		     blocksPerCycle, TEAL, "Blocks baked ", false);
 	});
     
 }
