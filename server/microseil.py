@@ -1,8 +1,8 @@
 import json
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy import create_engine, Column, Integer, String, BigInteger, \
-    Numeric
+from sqlalchemy import create_engine, func, Column, Integer, String, \
+    BigInteger, Numeric
 
 Base = declarative_base()
 
@@ -118,6 +118,21 @@ class BakerPerformance(Base):
     grade = Column(Numeric)
 
 
+class Accusations(Base):
+    
+    __tablename__ = "accusations"
+    cycle = Column(Integer, primary_key=True)
+    baker = Column(String(255), primary_key=True)
+    double_endorsement_accusation_rewards = Column(BigInteger)
+    double_baking_accusation_rewards = Column(BigInteger)
+    double_endorsement_lost_fees = Column(BigInteger)
+    double_endorsement_lost_deposits = Column(BigInteger)
+    double_endorsement_lost_rewards = Column(BigInteger)
+    double_baking_lost_fees = Column(BigInteger)
+    double_baking_lost_deposits = Column(BigInteger)
+    double_baking_lost_rewards = Column(BigInteger)
+
+    
 class BakerPayouts(Base):
     """Wrapper for baker_payouts table
 
@@ -138,7 +153,8 @@ class BakerPayouts(Base):
 
 def all_tables():
     return ["delegate_history", "snapshot_info",
-            "baker_performance", "baker_payouts"]
+            "baker_performance", "baker_payouts",
+            "accusations"]
 
 
 def get_user_config():

@@ -103,7 +103,7 @@ def get_baker_performance(baker, current_cycle):
     return row
 
 
-@service_utils.populate_from_cycle()
+@service_utils.populate_from_cycle(BakerPerformance)
 def populate_baker_performance(cycle):
     """Populates baker_performance table with data for each baker at a given
     cycle"""

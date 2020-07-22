@@ -17,3 +17,5 @@ services:
     depends_on:
       - db
     command: "<start_cycle>"
+    volumes:
+      - microseil:/var/lib/postgresql/data

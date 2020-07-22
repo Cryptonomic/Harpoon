@@ -54,7 +54,7 @@ def count_sources(receiver_list, cycle):
     return source_count
 
 
-@service_utils.populate_from_cycle()
+@service_utils.populate_from_cycle(BakerPayouts)
 def populate_baker_payouts(cycle):
     """Populates baker_payouts table with data for each baker at given cycle"""
 
