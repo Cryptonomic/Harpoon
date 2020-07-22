@@ -1,3 +1,48 @@
+function convertFromUtezToTez(amountInUtez) {
+    const tezAmount = amountInUtez / 1000000
+    return tezAmount
+}
+
+function convertFromTezToUtez(amountInTez) {
+    const uTezAmount = amountInTez * 1000000
+    return uTezAmount
+}
+
+async function httpGet(theUrl) {
+    return new Promise( function(resolve, reject) {
+	var xmlHttp = new XMLHttpRequest();
+	xmlHttp.onreadystatechange = function() { 
+	    if (xmlHttp.readyState == 4 && xmlHttp.status == 200)
+		resolve(xmlHttp.responseText);
+	    else if(xmlHttp.readyState == 4 && xmlHttp.status == 204) {
+		resolve("")
+	    }
+	}
+	xmlHttp.open("GET", theUrl, true);
+	xmlHttp.send(null);
+    });
+}
+
+async function httpPost(theUrl, params) {
+    return new Promise( function(resolve, reject) {
+	var xmlHttp = new XMLHttpRequest();
+	xmlHttp.onreadystatechange = function() { 
+	    if (xmlHttp.readyState == 4 && xmlHttp.status == 200)
+		resolve(xmlHttp.responseText);
+	    else if(xmlHttp.readyState == 4 && xmlHttp.status == 204) {
+		resolve("")
+	    }
+	}
+	xmlHttp.open("POST", theUrl, true);
+	xmlHttp.setRequestHeader('Content-type', 'application/json;charset=UTF-8');
+	xmlHttp.send(params);
+    });
+}
+
+// ==========================
+// Standard ConseilJS queries
+// ==========================
+
 async function getBlock(blockid) {
     block = (blockid == "head") ? 
 	await conseiljs.TezosConseilClient.getBlockHead(conseilServer, network) :
@@ -170,6 +215,11 @@ async function blocksBakedInTimestampBy(baker, start, end) {
     return ret
 }
 
+/**
+ * @param baker - baker address
+ * @param timestamps - array of unix timestamps to sample data at
+ * @returns array of json objects containing formatted timestamps and blocks baked per hour since the last timestamp
+ */ 
 async function blocksBakedPerHour(baker, timestamps) {
     let ret = []
     let delta = 0
@@ -216,3 +266,154 @@ async function getDelegatedBalance(baker) {
     const result = await conseiljs.ConseilDataClient.executeEntityQuery(conseilServer, platform, network, 'bakers', query);
     return result[0].delegated_balance
 }
+
+/**
+ * A reward stuct is a 13 bit integer which contains information regarding the payout stucture of a baker.
+ * This information is sourced from Baking Bad. For more information on the reward struct, visit
+ * https://baking-bad.org/docs/api#get-bakers
+ * @returns an array of json objects in the form of {"cycle": int, "value": int} where "value"
+ * is the reward struct for that cycle
+ */
+async function getRewardStructs(baker, start_cycle, end_cycle) {
+    const response = await httpGet(`https://api.baking-bad.org/v2/bakers/${baker}?configs=true`)
+    const defaultStruct = 16383
+    let structs = []
+
+    // If baker is not in the Baking Bad registry, use default value of 16383
+    if (response=="") {
+	for (let i = start_cycle; i <= end_cycle; i++) 
+	    structs.push({"cycle":i, "value":defaultStruct})
+	return structs
+    }
+    const responseStructs = JSON.parse(response).config.rewardStruct
+    let i = end_cycle
+    responseStructs.forEach(entry => {
+	for (;i >= start_cycle; i--) {
+	    if (entry.cycle <= i) {
+		structs.push({"cycle":i, "value":entry.value})
+	    }
+	    else return;
+	}
+    });
+    return structs
+}
+
+/**
+ * Returns an array of json objects (one for each cycle in [start_cycle, end_cycle]) with the corresponding rewards made in
+ * that cycle based off of the reward struct of that cycle. 
+ */
+async function getBakerRewards(baker, start_cycle, end_cycle) {
+    const structs = await getRewardStructs(baker, start_cycle, end_cycle)
+    const fields = ['num_endorsements_in_baked', 'num_endorsements_in_stolen', 'num_endorsements_in_missed',
+		    'fees_in_baked', 'fees_in_stolen', 'high_priority_endorsements', 'low_priority_endorsements',
+		    'missed_endorsements', 'num_revelations_in_baked', 'num_revelations_in_stolen', 'num_revelations_in_missed',
+		    'endorsements_in_not_revealed', 'fees_in_not_revealed']
+
+    const rewardsInfo = await getBakerInfo('baker_performance', fields,
+					   [{field:'baker', op:'eq', value:[baker]},
+					    {field:'cycle', op:'between', value:[start_cycle, end_cycle]}],
+					   {field:'cycle', dir:'asc'})
+
+    const accusationInfo = await getAccusationInfo(baker, start_cycle, end_cycle)
+    const rewards = []
+    for (let i = 0; i <= end_cycle - start_cycle; i++) { 
+	const bakerStats = rewardsInfo[i]
+	const accusationStats = accusationInfo[i]
+    	const rewardStruct = structs[i].value
+    	const cycle = structs[i].cycle
+    	let extRewardStruct = {
+    	    blocks: (rewardStruct & 1) > 0 ? bakerStats.num_endorsements_in_baked * BAKING_REWARD_PER_ENDORSEMENT[0] : 0,
+    	    endorses: (rewardStruct & 2) > 0 ? bakerStats.high_priority_endorsements * REWARD_PER_ENDORSEMENT[0] : 0,
+    	    fees: (rewardStruct & 4) > 0 ? convertFromUtezToTez(bakerStats.fees_in_baked) : 0,
+    	    accusationRewards: (rewardStruct & 8) > 0 ?
+		accusationStats.double_baking_accusation_rewards + accusationStats.double_endorsement_accusation_rewards : 0,
+    	    accusationLostDeposits: ((rewardStruct & 16) > 0 ? -1 : 0) * 
+		accusationStats.double_baking_lost_deposits + accusationStats.double_endorsement_lost_deposits,
+    	    accusationLostRewards:  ((rewardStruct & 32) > 0 ? -1 : 0) * 
+		accusationStats.double_baking_lost_rewards + accusationStats.double_endorsement_lost_rewards,
+    	    accusationLostFees:  ((rewardStruct & 64) > 0 ? -1 : 0) * 
+		accusationStats.double_baking_lost_fees + accusationStats.double_endorsement_lost_fees,
+    	    revelationRewards: (rewardStruct & 128) > 0 ?
+    		(bakerStats.num_revelations_in_baked + bakerStats.num_revelations_in_stolen) * REWARD_PER_REVELATION : 0,
+    	    revelationLostRewards: !((rewardStruct & 256) > 0) ?
+		bakerStats.endorsements_in_not_revealed * REWARD_PER_REVELATION : 0,
+  	    revelationLostFees: !((rewardStruct & 512) > 0) ? convertFromUtezToTez(bakerStats.fees_in_not_revealed) : 0,
+    	    missedBlocks: !((rewardStruct & 1024) > 0) ? bakerStats.num_endorsements_in_missed * BAKING_REWARD_PER_ENDORSEMENT[0] : 0,
+    	    stolenBlocks: (rewardStruct & 2048) > 0 ? bakerStats.num_endorsements_in_stolen * BAKING_REWARD_PER_ENDORSEMENT[1] +
+    		convertFromUtezToTez(bakerStats.fees_in_stolen) : 0,
+    	    missedEndorses: !((rewardStruct & 4096) > 0) ? bakerStats.missed_endorsements * REWARD_PER_ENDORSEMENT[0]: 0,
+    	    lowPriorityEndorses: !((rewardStruct & 8192) > 0) ?
+		bakerStats.low_priority_endorsements * REWARD_PER_ENDORSEMENT[0] :
+		bakerStats.low_priority_endorsements * REWARD_PER_ENDORSEMENT[1],
+    	}
+    	rewards.push(extRewardStruct)
+    }
+    console.log(Object.values(rewards[0]).reduce(((acc, curr) => acc + curr), 0))
+    return rewards
+}
+
+// ==============================================
+// Functions to interact with backend Postgres DB
+// (aka microseil)
+// ==============================================
+
+/**
+ * Function used to build and send queries to the postgresql server
+ * running on the backend (server host "microseilServer" is defined in 
+ * networkConstant.js). 
+ * 
+ * @params {string} table - name of the table to query 
+ * @params {Array.<string>} fields - array of fields to add to query
+ * @params {Array.<Object>} predicates - array of predicate objects to apply to query
+ * @params {Object} predicates - object representing an optional orderby statement for query
+ * @returns an array of json objects which have the specified fields
+ */
+async function getBakerInfo(table, fields, predicates, orderby) {
+    let query = { "table": table, "fields": fields };
+    if (predicates) query["predicates"] = predicates;
+    if (orderby) query["orderby"] = orderby;
+    const result = await httpPost(microseilServer, JSON.stringify(query));
+    return JSON.parse(result)
+}
+
+/**
+ * Used to help with populating objects in helper functions
+ * 
+ * @params {Array.<string>} fields - array of fields to populate
+ * @returns Object with all fields set to 0
+ */
+function blank_query(fields) {
+    ret = {}
+    fields.forEach(field => ret[field] = 0)
+    return ret
+}
+
+/**
+ * Used to help with populating objects in helper functions
+ * 
+ * @params {Array.<string>} fields - array of fields to populate
+ * @returns Object with all fields set to 0
+ */
+async function getAccusationInfo(baker, start_cycle, end_cycle) {
+    const fields = ['cycle',
+		    'double_baking_accusation_rewards', 'double_endorsement_accusation_rewards',
+		    'double_baking_lost_fees', 'double_endorsement_lost_fees',
+		    'double_baking_lost_deposits', 'double_endorsement_lost_deposits',
+		    'double_baking_lost_rewards', 'double_endorsement_lost_rewards']
+
+    const accusationInfo = await getBakerInfo('accusations', fields,
+					      [{field:'baker', op:'eq', value:[baker]},
+					       {field:'cycle', op:'between', value:[start_cycle, end_cycle]}]);
+
+    let curr = 0;
+    for (let i=start_cycle; i <= end_cycle; i++, curr++) {
+	if (curr + 1 > accusationInfo.length || accusationInfo[curr].cycle > i) {
+	    blank = blank_query(fields)
+	    blank.cycle = i
+	    accusationInfo.splice(curr, 0, blank)
+	}
+    }
+
+    return accusationInfo
+}
+
