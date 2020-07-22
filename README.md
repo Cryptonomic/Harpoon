@@ -52,7 +52,7 @@ Baker are scored once at the end of every cycle. The formula used to calculate t
 
 As of now, endorsement data has not been factored into grading yet.
 
-## Delegate History
+### Delegate History
 
 Delegate history is not pulled through Conseil in order to have more fine grain control over when the data is recorded. In order to ensure accuracy in baker payout calculations, the delegate history is also taken at the `snapshot_level` for every cycle
 

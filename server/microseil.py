@@ -66,7 +66,7 @@ class BakerPerformance(Base):
     endorsements for each baker by cycle.
 
     Attributes:
-        cycle: (Column) Cycle which perfromance was recorded
+        cycle: (Column) Cycle which performance was recorded
         baker: (Column) Address of baker
         num_baked: (Column) Number of blocks baked in cycle
         num_stolen: (Column) Number of stolen baked in cycle
@@ -119,6 +119,30 @@ class BakerPerformance(Base):
 
 
 class Accusations(Base):
+    """Wrapper for accusation table
+
+    accusations records the gains/ losses in cycles where accusations took
+    place. Cycles without any accusations are omitted
+
+    Attributes:
+        cycle: (Column) Cycle which accusation was recorded
+        baker: (Column) Address of baker
+        double_endorsement_accusation_rewards: (Column) Rewards from accusing
+            a baker of double endorsing
+        double_baking_accusation_rewards: (Column) Rewards from accusing
+            a baker of double baking
+        double_endorsement_lost_fees: (Column) Total fees lost from double
+            endorsing
+        double_endorsement_lost_deposits: (Column) Total deposits lost from
+            double endorsing
+        double_endorsement_lost_rewards: (Column) Total rewards lost from
+            double endorsing
+        double_baking_lost_fees: (Column) Total fees lost from double baking
+        double_baking_lost_deposits: (Column)  Total deposits lost from double
+            baking
+        double_baking_lost_rewards: (Column)  Total rewards lost from double
+            baking
+    """
     
     __tablename__ = "accusations"
     cycle = Column(Integer, primary_key=True)

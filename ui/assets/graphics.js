@@ -8,6 +8,15 @@ let getSVG = (id) => {
     return d3.select(`#${id}`);
 }
 
+/**
+ * A helper method to aid in constructing visualizations. Lays out necessary dimensions
+ * as well as data fields to use
+ * @param {string} id - the id of the svg element to use
+ * @param {Array.<Object>} data - array of objects containing all of the data
+ * @param {Object} values - an object of the form {"x":string, "y":string} that selects
+ *     the fields in data to use
+ * @param {Object} m - margins
+ */
 let outline = (id, data, values, m={top:0, left:0, right:0, bottom:0}) => {
     const svg = getSVG(id);
     const outline = dimensions(svg, m);
@@ -18,22 +27,42 @@ let outline = (id, data, values, m={top:0, left:0, right:0, bottom:0}) => {
     return outline
 }
 
+/**
+ * D3 linear scale wrapper
+ */
 let yMap = (outline) =>  d3.scaleLinear()
     .domain([0, 50])
     .range([outline.innerHeight, 0])
     .nice();
 
+/**
+ * D3 line wrapper
+ */
 let lineGenerator = (x, y, outline) => d3.line()
     .x(d => x(outline.xValue(d)))
     .y(d => y(outline.yValue(d)))
     .curve(d3.curveBasis);
 
+/**
+ * D3 area wrapper
+ */
 let areaGenerator = (x, y, outline) => d3.area()
     .x(d => x(outline.xValue(d)))
     .y0(outline.innerHeight)
     .y1(d => y(outline.yValue(d)))
     .curve(d3.curveBasis);
 
+/**
+ * A small box which contains information and follows the user's mouse around.
+ * Can be applied to any svg
+ *
+ * @param {Object} g = group element that the tooltip should reside in
+ * @param {number} width = tooltip width
+ * @param {number} height = tooltip height
+ * @param {number} padding = padding with the parent element
+ * @param {number} gwidth = width of g element
+ * @param {number} gheight = height of g element
+ */
 let tooltip = (g, width, height, padding, gwidth, gheight) => {
     let tt = g.append("rect")
 	.attr("class", "tooltip")
@@ -69,6 +98,12 @@ let tooltip = (g, width, height, padding, gwidth, gheight) => {
     return tt;
 }
 
+/**
+ * A helper function to allow switching panels to be shown. Hides all
+ * other panels
+ * 
+ * @param {string} panel - id of the panel to show
+ */ 
 function setPanel(panel) {
     document.querySelectorAll(".panel")
 	.forEach(node => node.style.display = "none");
@@ -76,6 +111,21 @@ function setPanel(panel) {
 	.forEach(node => node.style.display = "block");
 }
 
+/**
+ * Constructs a table where each row is colored based off of a selected data field
+ *
+ * @param {string} id - id of the svg element to use
+ * @param {Array.<Object>} data - data to be used in the table
+ * @param {Array.<string>} values - array of field names in data to use as columns for
+ *     each row in the table
+ * @param {string} mapColumn - name of the field to use for mapping the colors of the row
+ * @param {Array.<Array.<string>>} comparisons - used to map two columns to each other so that
+ *     for each element, e, of mapColumn, the color of the text of datapoints e[1] are based off of 
+ *     the values for datapoints in field e[0]
+ * @param {Array.<Object>} notices - an array of objects of the form {identifier:string, message:string}.
+ *     If the specified identifier shows up in the table, then a tooltip will be created with the coresponding
+ *     message for the row which the identifier appears in.
+ */
 function heatTable(id, data, values, mapColumn, comparisons=[], notices=[]) {
     let toGraph = outline(id, data, values,
 			  {top:10, left:10, right:10, bottom:10});
@@ -142,6 +192,13 @@ function heatTable(id, data, values, mapColumn, comparisons=[], notices=[]) {
     render(toGraph);
 }    
 
+/**
+ * Constructs a table where each row is colored based off of a selected data field
+ *
+ * @param {string} id - id of the svg element to use
+ * @param {Array.<Object>} data - data to be used in the table
+ * @param {Array.<string>} values - array of field names in data to use as columns for
+ */
 function chainmap(id, data, values, blocks,
 		  mapColor="green", tooltipLabel="", axis=true) {
     let toGraph = outline(id, data, values,
@@ -225,6 +282,15 @@ function chainmap(id, data, values, blocks,
     render(toGraph);
 }
 
+/**
+ * Constructs a stacked bar graph provided an svg id
+ *
+ * @param {string} id - the id of the svg element to build on 
+ * @param {Array.<Object>} data - an array of elements with the data in them
+ * @param {number} colorSet - an integer 1 - 10 to choose the color scheme to use for
+ * the graph 
+ * @param {function} - a function to make when one of the boxes are clicked on
+ */ 
 function stackedBarGraph(id, data, values, colorSet=0, callback=d=>{return;}) {
     let toGraph = outline(id, data, values, {top:0, left:10, right:0, bottom:15});
     const colorSchemes = [d3.schemeSet1, d3.schemeSet2, d3.schemeSet3,
@@ -235,14 +301,18 @@ function stackedBarGraph(id, data, values, colorSet=0, callback=d=>{return;}) {
     const render = graph => {
 	const sum = d3.sum(graph.data, graph.xValue)
 	let tooltipHeight = 20    
+	
+	// Find the default box to highlight
 	let defaultInd = graph.data.findIndex(d => d.default == "true");
 	if (defaultInd == -1) 
 	    defaultInd = 0;
 	graph.data[defaultInd]["default"] = "true";
 	let defaultVal = graph.data[defaultInd];
 
+	// Sum the target field from the datapoints
 	graph.data.forEach((d, i) => d["sum"] = d3.sum(graph.data.slice(0,i), graph.xValue))
 
+	// Create the x and color scale to use
 	const x = d3.scaleLinear()
 	      .domain([0, sum])
 	      .range([0, graph.innerWidth])
@@ -256,6 +326,7 @@ function stackedBarGraph(id, data, values, colorSet=0, callback=d=>{return;}) {
 	const g = graph.svg.append("g")
 	      .attr("transform", `translate(${graph.margin.left}, ${graph.margin.top})`)
 	
+	// Add tooltip
 	let tooltip = g.append("g")
 	    .attr("class", "tooltip")
 	    .attr("transform", `translate(1, ${graph.innerHeight-tooltipHeight})`)
@@ -281,11 +352,13 @@ function stackedBarGraph(id, data, values, colorSet=0, callback=d=>{return;}) {
 	    .attr("width", d => graph.xValue(d)*graph.innerWidth)
 	    .attr("height", graph.innerHeight - tooltipHeight);
 	
+	// Set the default data box fill it
 	let defaultRect = g.select(".default")
 
 	defaultRect
 	    .style("fill", d3.rgb(defaultRect.attr("fill")).darker())		
 
+	// For each of the data rectangles, darken it on mouseover
 	g.selectAll("rect.databar")
 	    .on("mouseover", function(d) {
 		defaultRect
@@ -314,6 +387,15 @@ function stackedBarGraph(id, data, values, colorSet=0, callback=d=>{return;}) {
     render(toGraph)
 }    
 
+/**
+ * Constructs a linegraph in a given svg
+ * 
+ * @param {string} id - the id of the svg element to build on 
+ * @param {Array.<Object>} data - an array of elements with the data in them
+ * @param {Array.<number>} yExtent - an array of two numbers bounding the range of the graph
+ * @param {boolean} time - flag indicating whether or not the x axis should display time
+ * @param {boolean} area - flag indicating whehter or not the area under the line should be filled in
+ */
 function linegraph(id, data, values, yExtent, time=true, area=false) {
     let xScale = time ? d3.scaleTime() : d3.scaleLinear();
     let grapher = area ? areaGenerator : lineGenerator
