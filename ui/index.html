@@ -38,14 +38,14 @@
           <div class="flex-column tezos">
             <p class="extra-large title-text">Tezos Vote </p>
             <div class="baker-code flex-row">
-              <p class="large-middle copyPanel">tz1bHzftcTKZMTZgLLtnrXydCm6UEqf4ivca</p>
+              <p class="large-middle copyPanel" id="baker_name">tz1bHzftcTKZMTZgLLtnrXydCm6UEqf4ivca</p>
               <img onclick="copyToClipBoard('copyPanel')" src="./assets/images/clone.svg" class="copy-button" />
             </div>
           </div>
           <div class="flex-column">
             <div class="performance-grade flex-column">
               <p class="large title-text">Grade</p>
-              <p class="grade">B</p>
+              <p class="grade" id="baker_grade">B</p>
             </div>
             <div class="info flex-row">
               <object type="image/svg+xml" data="./assets/images/info.svg"></object>
@@ -84,14 +84,14 @@
                     <object type="image/svg+xml" data="./assets/images/timer.svg"></object>
                     <div class="flex-column">
                       <p class="small subtitle-text weight-500">Time</p>
-                      <p class="middle-small">06-22-2020 15:09:02</p>
+                      <p class="middle-small" id="baker_last_bake"></p>
                     </div>
                   </div>
                   <div class="timer-body chart-card flex-row">
                     <object type="image/svg+xml" data="./assets/images/chart.svg"></object>
                     <div class="flex-column">
                       <p class="small subtitle-text weight-500">Level</p>
-                      <p class="middle-small">1008339</p>
+                      <p class="middle-small" id="baker_last_bake_level"></p>
                     </div>
                   </div>
                 </div>
@@ -104,14 +104,14 @@
                     <object type="image/svg+xml" data="./assets/images/timer.svg"></object>
                     <div class="flex-column">
                       <p class="small subtitle-text weight-500">Time</p>
-                      <p class="middle-small">06-22-2020 15:09:02</p>
+                      <p class="middle-small" id="baker_next_bake"></p>
                     </div>
                   </div>
                   <div class="timer-body chart-card flex-row">
                     <object type="image/svg+xml" data="./assets/images/chart.svg"></object>
                     <div class="flex-column">
                       <p class="small subtitle-text weight-500">Level</p>
-                      <p class="middle-small">1008339</p>
+                      <p class="middle-small" id="baker_next_bake_level"></p>
                     </div>
                   </div>
                 </div>
@@ -120,39 +120,39 @@
             <div class="delegate-box flex-column">
               <div class="delegate-item">
                 <p class="middle delegate-title subtitle-text weight-500">Number of Delegators</p>
-                <p class="middle-small delegate-value">2247 Delegators</p>
+                <p class="middle-small delegate-value" id="baker_num_delegators"></p>
               </div>
               <div class="delegate-item">
                 <p class="middle delegate-title subtitle-text weight-500">Amount Staked</p>
-                <p class="middle-small delegate-value">3714870 XTZ</p>
+                <p class="middle-small delegate-value" id="baker_amount_staked"></p>
               </div>
               <div class="delegate-item">
                 <p class="middle delegate-title subtitle-text weight-500">Amount Delegated</p>
-                <p class="middle-small delegate-value">1952 XTZ</p>
+                <p class="middle-small delegate-value" id="baker_amount_delegated"></p>
               </div>
             </div>
             <div class="delegate-box flex-column">
               <div class="delegate-item">
                 <p class="middle delegate-title subtitle-text weight-500">Lifetime Blocks Baked </p>
-                <p class="middle-small delegate-value">5009 Blocks</p>
+                <p class="middle-small delegate-value" id="baker_blocks_baked"></p>
               </div>
               <div class="delegate-item">
-                <p class="middle delegate-title subtitle-text weight-500">Rewards Made in Cycle 245</p>
-                <p class="middle-small delegate-value">92570 XTZ</p>
+                <p class="middle delegate-title subtitle-text weight-500" id="baker_rewards_title">Rewards Made in Cycle</p>
+                <p class="middle-small delegate-value" id="baker_rewards"></p>
               </div>
               <div class="delegate-item">
                 <p class="middle delegate-title subtitle-text weight-500">Blocks per XTZ</p>
-                <p class="middle-small delegate-value">79807 Blocks</p>
+                <p class="middle-small delegate-value" id="baker_blocks_per_stake"></p>
               </div>
             </div>
             <div class="current flex-row">
               <div class="cycle flex-row">
                 <object type="image/svg+xml" data="./assets/images/cycle.svg"></object>
-                <p class="large-middle title-text">Current Cycle: 253</p>
+                <p class="large-middle title-text" id="current_cycle">Current Cycle: </p>
               </div>
               <div class="level flex-row">
                 <object type="image/svg+xml" data="./assets/images/level.svg"></object>
-                <p class="large-middle title-text">Current Level: 1008339</p>
+                <p class="large-middle title-text" id="net_level">Current Level:</p>
               </div>
             </div>
           </div>
@@ -162,17 +162,23 @@
               <div class="blocks-chart flex-row">
                 <p class="middle subtitle-text weight-500">Blocks baked</p>
                 <svg id="blocks_baked_chart" width="523" height="100"> </svg>
-
+              </div>
+              <div class="blocks-numbers">
+                <p class="small subtitle-text" id="baker_blocks_baked_last_cycle"></p>
               </div>
               <div class="blocks-chart flex-row">
                 <p class="middle subtitle-text weight-500">Blocks stolen</p>
                 <svg id="blocks_stolen_chart" width="523" height="100"> </svg>
-
+              </div>
+              <div class="blocks-numbers">
+                <p class="small subtitle-text" id="baker_blocks_stolen"></p>
               </div>
               <div class="blocks-chart flex-row">
                 <p class="middle subtitle-text weight-500">Blocks missed</p>
                 <svg id="blocks_missed_chart" width="523" height="100"> </svg>
-
+              </div>
+              <div class="blocks-numbers">
+                <p class="small subtitle-text" id="baker_blocks_missed"></p>
               </div>
             </div>
           </div>
@@ -231,7 +237,7 @@
 <script src="assets/graphics.js"></script>
 <script src="assets/networkConf.js"></script>
 <script src="assets/tezosConstants.js"></script>
-<script src="assets/index.js"></script>
+<script src="assets/js/index.js"></script>
 <script src="assets/conseilQueries.js"></script>
 
 </html>
