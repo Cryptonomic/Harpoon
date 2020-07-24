@@ -64,6 +64,11 @@
   align-self: flex-end;
 }
 
+/* Chart Styles */
+svg {
+  width: 100%;
+}
+
 /* Content Styles */
 .content-container {
   display: flex;
@@ -72,6 +77,7 @@
 
 .content-main {
   min-width: 1280px;
+  padding-bottom: 150px;
 }
 
 /* Tezos Vote box Styles */
@@ -82,7 +88,6 @@
 
 .tezos {
   background-color: var(--color-tezos-background);
-  box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.25);
   max-width: 680px;
   padding: 17px 90px;
   height: 170px;
@@ -117,7 +122,6 @@
   width: 415px;
   height: 170px;
   background-color: var(--color-tezos-background);
-  box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.25);
   align-items: center;
   padding: 0 27px 0 19px;
   justify-content: center;
@@ -144,7 +148,7 @@
 
 /* Top bakers Styles */
 .top-bakers {
-  margin: 32px 0 0 18px;
+  margin: 32px 7px 0 18px;
 }
 
 .top-bakers > p {
@@ -235,6 +239,27 @@
   width: 55%;
 }
 
+.current {
+  margin-top: 32px;
+  justify-content: flex-start;
+}
+
+.cycle,
+.level {
+  width: 240px;
+  padding-left: 14px;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.cycle > p {
+  margin-left: 14px;
+}
+
+.level > p {
+  margin-left: 24px;
+}
+
 .production-right {
   margin-left: 30px;
   flex: 1;
@@ -276,7 +301,7 @@
 
 /* Performance Reward box */
 .performance-reward {
-  margin: 37px 2px 34px 8px;
+  margin: 37px 2px 0 8px;
 }
 
 .performance-box {
@@ -299,6 +324,7 @@
 
 .panel {
   background-color: var(--color-white);
+  box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.25);
 }
 
 .performance {
@@ -323,7 +349,7 @@
   justify-content: center;
   align-items: center;
   display: flex;
-  width: 443px;
+  width: 409px;
   margin-top: 18px;
   box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.25);
 }
@@ -363,7 +389,6 @@
     margin-bottom: 20px;
   }
 
-
   .content-main {
     min-width: 100%;
     padding-right: 15px;
@@ -395,6 +420,12 @@
 
   .last-bake-body {
     width: auto;
+  }
+
+  .cycle,
+  .level {
+    width: auto;
+    flex: 1;
   }
 
   .production-right {

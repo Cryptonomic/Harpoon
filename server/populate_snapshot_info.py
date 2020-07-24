@@ -47,4 +47,3 @@ def get_snapshot_data(cycle):
                                  rewards=reward))
 
     return data
-

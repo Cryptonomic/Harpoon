@@ -63,12 +63,12 @@
             <!-- Top 100 Bakers by staking balances -->
             <div class="column-chart flex-column">
               <p class="large-middle title-text">Top 100 Bakers by staking balances:</p>
-              <svg id="staking_balances_chart" height="60"> </svg>
+              <svg id="staking_balances_chart" width="1212" height="60"> </svg>
             </div>
             <!-- Top 100 Bakers by "blocks baked" -->
             <div class="column-chart flex-column">
               <p class="large-middle title-text">Top 100 Bakers by “blocks baked” in the last cycle:</p>
-              <svg id="num_blocks_baked_chart" height="60"> </svg>
+              <svg id="num_blocks_baked_chart" width="1212" height="60"> </svg>
             </div>
           </div>
         </div>
@@ -145,23 +145,33 @@
                 <p class="middle-small delegate-value">79807 Blocks</p>
               </div>
             </div>
+            <div class="current flex-row">
+              <div class="cycle flex-row">
+                <object type="image/svg+xml" data="./assets/images/cycle.svg"></object>
+                <p class="large-middle title-text">Current Cycle: 253</p>
+              </div>
+              <div class="level flex-row">
+                <object type="image/svg+xml" data="./assets/images/level.svg"></object>
+                <p class="large-middle title-text">Current Level: 1008339</p>
+              </div>
+            </div>
           </div>
           <div class="production-right flex-column">
             <p class="large-middle title-text">Baker Production</p>
             <div class="blocks-charts flex-column">
               <div class="blocks-chart flex-row">
                 <p class="middle subtitle-text weight-500">Blocks baked</p>
-                <svg id="blocks_baked_chart" height="100"> </svg>
+                <svg id="blocks_baked_chart" width="523" height="100"> </svg>
 
               </div>
               <div class="blocks-chart flex-row">
                 <p class="middle subtitle-text weight-500">Blocks stolen</p>
-                <svg id="blocks_stolen_chart" height="100"> </svg>
+                <svg id="blocks_stolen_chart" width="523" height="100"> </svg>
 
               </div>
               <div class="blocks-chart flex-row">
                 <p class="middle subtitle-text weight-500">Blocks missed</p>
-                <svg id="blocks_missed_chart" height="100"> </svg>
+                <svg id="blocks_missed_chart" width="523" height="100"> </svg>
 
               </div>
             </div>
@@ -175,13 +185,13 @@
               <p class="large-middle tab-title active">Performance</p>
             </div>
             <div class="panel">
-              <svg id="performance_table" height="363"> </svg>
+              <svg id="performance_table" width="820" height="363"> </svg>
             </div>
           </div>
           <div class="blocks-hour flex-column">
             <p class="large-middle title-text">Blocks per Hour</p>
             <div class="line-chart">
-              <svg id="blocks_per_hour_graph" height="363"> </svg>
+              <svg id="blocks_per_hour_graph" width="400" height="363"> </svg>
             </div>
           </div>
         </div>
@@ -191,13 +201,13 @@
               <p class="large-middle tab-title active">Rewards</p>
             </div>
             <div class="panel">
-              <svg id="rewards_table" height="363"> </svg> <br>
+              <svg id="rewards_table" width="820" height="363"> </svg> <br>
             </div>
           </div>
           <div class="blocks-hour flex-column">
             <p class="large-middle title-text">Reward</p>
             <div class="line-chart">
-              <svg id="rewards_chart" height="363"> </svg>
+              <svg id="rewards_chart" width="400" height="363"> </svg>
             </div>
           </div>
         </div>

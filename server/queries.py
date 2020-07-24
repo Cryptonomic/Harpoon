@@ -53,16 +53,17 @@ def partition_query(partition_size=50):
     """
 
     def inner(f):
-        def sum_partitions(blocks, *args):
-            num_cycles = math.floor(len(blocks)/partition_size)
+        def sum_partitions(block_levels, *args):
+            num_cycles = math.floor(len(block_levels)/partition_size)
 
             # Get default empty value for function
             total = f([], *args)
             for i in range(num_cycles):
-                total += f(blocks[i * partition_size: (i+1) * partition_size],
+                total += f(block_levels[i * partition_size: (i+1) *
+                                        partition_size],
                            *args)
-            if (partition_size * num_cycles) < len(blocks):
-                total += f(blocks[partition_size * num_cycles:], *args)
+            if (partition_size * num_cycles) < len(block_levels):
+                total += f(block_levels[partition_size * num_cycles:], *args)
             return total
         return sum_partitions
     return inner
@@ -136,8 +137,8 @@ def blocks_missed_between(baker, start_cycle, end_cycle):
 
 
 def blocks_with_priority_between(start_cycle, end_cycle, priority="high"):
-    """Returns a list of levels of blocks that were baked with a priority 0 (high)
-    or a priority greater than 1 (low)"""
+    """Returns a list of levels of blocks that were baked with a priority 0
+    (high) or a priority greater than 1 (low)"""
 
     priority_filter = blocks.priority.__gt__(0) if priority == "low" else \
         blocks.priority.__eq__(0)
@@ -164,10 +165,10 @@ def endorsements_made_in_levels_with_priority(baker, start_cycle, end_cycle,
     """Returns a list of levels which baker has endorsed where the block was
     priority 0 (high) or a priority greater than 1 (low)"""
 
-    blocks = blocks_with_priority_between(start_cycle, end_cycle, priority)
+    block_levels = blocks_with_priority_between(start_cycle, end_cycle, priority)
     endorsements = endorsements_made_in_levels_between(baker, start_cycle,
                                                        end_cycle)
-    return [level for level in endorsements if level+1 in blocks]
+    return [level for level in endorsements if level+1 in block_levels]
 
 
 def endorsements_missed_between(baker, start_cycle, end_cycle):
@@ -195,39 +196,39 @@ def endorsements_missed_between(baker, start_cycle, end_cycle):
 
 
 @partition_query(5000)
-def sum_endorsements_made_in(blocks, baker):
-    """Returns the number of endorsements made by baker in blocks"""
+def sum_endorsements_made_in(block_levels, baker):
+    """Returns the number of endorsements made by baker in block_levels"""
 
-    if len(blocks) == 0:
+    if len(block_levels) == 0:
         return 0
 
     return int(operations.query(operations.number_of_slots,
                                 operations.number_of_slots.sum())
                .filter(operations.delegate == baker,
-                       operations.level.in_(*blocks))
+                       operations.level.in_(*block_levels))
                .scalar())
 
 
 @partition_query()
-def sum_endorsements_in_blocks(blocks):
-    """Returns the sum endorsing power in blocks"""
+def sum_endorsements_in_blocks(block_levels):
+    """Returns the sum endorsing power in block_levels"""
 
-    if len(blocks) == 0:
+    if len(block_levels) == 0:
         return 0
 
     return int(operations.query(operations.number_of_slots,
                                 operations.number_of_slots.sum())
-               .filter(operations.block_level.in_(*blocks))
+               .filter(operations.block_level.in_(*block_levels))
                .scalar())
 
 
 @partition_query()
-def sum_fees_for_blocks(blocks):
-    if len(blocks) == 0:
+def sum_fees_for_blocks(block_levels):
+    if len(block_levels) == 0:
         return 0
     fees = operations.query(operations.fee,
                             operations.fee.sum()) \
-                     .filter(operations.block_level.in_(*blocks)) \
+                     .filter(operations.block_level.in_(*block_levels)) \
                      .scalar()
     if fees is None:
         return 0
@@ -235,13 +236,13 @@ def sum_fees_for_blocks(blocks):
 
 
 @partition_query(1000)
-def sum_revelations_in(blocks):
-    if len(blocks) == 0:
+def sum_revelations_in(block_levels):
+    if len(block_levels) == 0:
         return 0
     
     return int(operations.query(operations.operation_group_hash,
                                 operations.operation_group_hash.count()) 
-               .filter(operations.block_level.in_(*blocks),
+               .filter(operations.block_level.in_(*block_levels),
                        operations.kind == "seed_nonce_revelation")
                .scalar())
 
@@ -274,6 +275,8 @@ def endorsements_made_between(baker, start_cycle, end_cycle, priority="high"):
 
 
 def commitments_made_between(baker, start_cycle, end_cycle):
+    """Returns a list of levels where a seed nonce commitement was made"""
+
     return blocks.query(blocks.level) \
                  .filter(blocks.baker == baker,
                          blocks.meta_cycle.between(start_cycle, end_cycle),
@@ -291,12 +294,12 @@ def all_bakers():
 def active_bakers_between(start_cycle, end_cycle):
     """Returns all bakers who've baked a block in [start_cycle, end_cycle]"""
 
-    bakers = all_bakers()
+    baker_list = all_bakers()
     active = list(set(blocks.query(blocks.baker)
                       .filter(blocks.meta_cycle.between(start_cycle,
                                                         end_cycle))
                       .vector()))
-    return [baker for baker in bakers if baker in active]
+    return [baker for baker in baker_list if baker in active]
 
 
 def transaction_sources_in_cycle(destination, cycle):
@@ -335,6 +338,15 @@ def operations_in(block_level):
 
             
 def accusations_between(start_cycle, end_cycle, accusation_type):
+    """Returns a list of levels where accusations were made
+    
+    Args:
+        start_cycle (int): Lower bound of range to search in
+        end_cycle (int): Upper bound of range to search in
+        accusation_type (string): The type of accusation to search for. 
+            "baking" for double baking accusations and "endorsement" for 
+            double endorsement accusations
+    """
     type_to_field = {"baking":"double_baking_evidence",
                      "endorsement":"double_endorsement_evidence"}
 
@@ -347,9 +359,19 @@ def accusations_between(start_cycle, end_cycle, accusation_type):
     
 
 def evidence_in(operations, evidence_type):
+    """Parses a dictionary containing chain operations and extracts double
+    baking/endorsing evidence
+
+    Args:
+        operations (dict): Python dictionary representing the tezos operations
+        evidence_type (string): A string indicating the type of evidence to
+            parse for. "baking" for double baking and "endorsement" for double
+            endorsement
+    """
+
     type_to_field = {"baking":"double_baking_evidence",
                      "endorsement":"double_endorsement_evidence"}
-
+    
     evidence = []
     for operation_group in operations:
         for operation in operation_group:
@@ -360,6 +382,8 @@ def evidence_in(operations, evidence_type):
 
     
 def snapshot_index(cycle):
+    """Returns the level of the snapshot for a given cycle"""
+
     cycleLevel = cycle_to_level(cycle) + 1
     r = requests.get(("%s/chains/main/blocks/%d/context/" +
                       "raw/json/cycle/%d/roll_snapshot") %
