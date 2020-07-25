@@ -36,9 +36,9 @@
         <!-- Tezos Vote box -->
         <div class="tezos-vote flex-row">
           <div class="flex-column tezos">
-            <p class="extra-large title-text">Tezos Vote </p>
+            <p class="extra-large title-text" id="baker_name">Tezos Vote</p>
             <div class="baker-code flex-row">
-              <p class="large-middle copyPanel" id="baker_name">tz1bHzftcTKZMTZgLLtnrXydCm6UEqf4ivca</p>
+              <p class="large-middle copyPanel" id="baker_hash">tz1bHzftcTKZMTZgLLtnrXydCm6UEqf4ivca</p>
               <img onclick="copyToClipBoard('copyPanel')" src="./assets/images/clone.svg" class="copy-button" />
             </div>
           </div>
@@ -63,12 +63,20 @@
             <!-- Top 100 Bakers by staking balances -->
             <div class="column-chart flex-column">
               <p class="large-middle title-text">Top 100 Bakers by staking balances:</p>
-              <svg id="staking_balances_chart" width="1212" height="60"> </svg>
+              <div class="flex-row links">
+                <a class="info-text middle-small" href="javascript: void(0)">View Query in Arronax </a>
+                <a class="info-text middle-small" href="javascript: void(0)">View Graph in Periscope</a>
+              </div>
+              <svg id="staking_balances_chart" width="1212" height="93"> </svg>
             </div>
             <!-- Top 100 Bakers by "blocks baked" -->
             <div class="column-chart flex-column">
               <p class="large-middle title-text">Top 100 Bakers by “blocks baked” in the last cycle:</p>
-              <svg id="num_blocks_baked_chart" width="1212" height="60"> </svg>
+              <div class="flex-row links">
+                <a class="info-text middle-small" href="javascript: void(0)">View Query in Arronax </a>
+                <a class="info-text middle-small" href="javascript: void(0)">View Graph in Periscope</a>
+              </div>
+              <svg id="num_blocks_baked_chart" width="1212" height="93"> </svg>
             </div>
           </div>
         </div>
@@ -191,13 +199,15 @@
               <p class="large-middle tab-title active">Performance</p>
             </div>
             <div class="panel">
-              <svg id="performance_table" width="820" height="363"> </svg>
+              <div class="absolute table-header" id="performance_table_header">
+              </div>
+              <svg id="performance_table" width="820" height="390"> </svg>
             </div>
           </div>
           <div class="blocks-hour flex-column">
             <p class="large-middle title-text">Blocks per Hour</p>
             <div class="line-chart">
-              <svg id="blocks_per_hour_graph" width="400" height="363"> </svg>
+              <svg id="blocks_per_hour_graph" width="400" height="323"> </svg>
             </div>
           </div>
         </div>
@@ -207,13 +217,15 @@
               <p class="large-middle tab-title active">Rewards</p>
             </div>
             <div class="panel">
-              <svg id="rewards_table" width="820" height="363"> </svg> <br>
+              <div class="absolute table-header" id="rewards_table_header">
+              </div>
+              <svg id="rewards_table" width="820" height="390"> </svg> <br>
             </div>
           </div>
           <div class="blocks-hour flex-column">
             <p class="large-middle title-text">Reward</p>
             <div class="line-chart">
-              <svg id="rewards_chart" width="400" height="363"> </svg>
+              <svg id="rewards_chart" width="400" height="323"> </svg>
             </div>
           </div>
         </div>
@@ -234,7 +246,7 @@
 <script src="https://cdn.jsdelivr.net/gh/cryptonomic/conseiljs/dist-web/conseiljs.min.js"
   integrity="sha384-g7ZPuT8xCBXLdgu2vBXWuOiEQIes6tPyFP4DIJBbgGfGSLRkOvET5Ra6dN9AePbQ" crossorigin="anonymous"></script>
 
-<script src="assets/graphics.js"></script>
+<script src="assets/js/graphics.js"></script>
 <script src="assets/networkConf.js"></script>
 <script src="assets/tezosConstants.js"></script>
 <script src="assets/js/index.js"></script>

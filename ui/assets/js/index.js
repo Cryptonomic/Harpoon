@@ -7,6 +7,24 @@ const millisThirtyDays = millisOneDay * 30;
 var clock;
 var delegateAddress;
 
+const performanceField = [
+  "Cycle",
+  "Blocks Baked",
+  "Blocks Missed",
+  "Blocks Stolen",
+  "Endorsements",
+  "Endorsements Missed",
+];
+
+const rewardField = [
+  "Cycle",
+  "Total Rewards",
+  "Rewards Expected",
+  "Rewards Received",
+  "Advertised Fee",
+  "Actual Fee Taken",
+];
+
 function UTCToDateTime(timestamp) {
   const dateNow = new Date(timestamp);
   const date =
@@ -35,15 +53,15 @@ async function updatePayoutInfo(baker) {
       [{ field: "baker", op: "eq", value: [baker] }]
     )
   )[0];
-  document.getElementById("payout").value = payout_response
-    ? payout_response.payout
-    : "";
-  document.getElementById("fee").value = JSON.parse(
-    await httpGet(`https://api.baking-bad.org/v2/bakers/${baker}`)
-  ).fee;
-  document.getElementById("payout_delay").value = JSON.parse(
-    await httpGet(`https://api.baking-bad.org/v2/bakers/${baker}`)
-  ).payoutDelay;
+  // document.getElementById("payout").value = payout_response
+  //   ? payout_response.payout
+  //   : "";
+  // document.getElementById("fee").value = JSON.parse(
+  //   await httpGet(`https://api.baking-bad.org/v2/bakers/${baker}`)
+  // ).fee;
+  // document.getElementById("payout_delay").value = JSON.parse(
+  //   await httpGet(`https://api.baking-bad.org/v2/bakers/${baker}`)
+  // ).payoutDelay;
 }
 
 /**
@@ -77,7 +95,6 @@ async function calculateRewardsForDelegate() {
       { field: "baker", op: "eq", value: [delegateAddress] },
     ]
   );
-
   // Attain the rewards actually paid out using the payout structs
   calcRewards = await getBakerRewards(
     delegateAddress,
@@ -185,6 +202,7 @@ async function calculateRewardsForDelegate() {
     rewards.reverse(),
     heatTableFields,
     colorMappings,
+    82,
     [
       ["delegator_rewards", "delegator_rewards_received"],
       ["advertised_fee", "actual_fee", "inverse"],
@@ -333,12 +351,8 @@ async function updateBakerInfo(baker) {
   // Set the baker name/address on top
   httpGet(`https://api.baking-bad.org/v2/bakers/${baker}`).then((d) =>
     d == ""
-      ? set("baker_name", baker)
-      : set(
-          "baker_name",
-          // JSON.parse(d).name + `<h5 style="margin-top:10"> (${baker}) </h5>`
-          baker
-        )
+      ? (set("baker_name", ""), set("baker_hash", baker))
+      : (set("baker_name", JSON.parse(d).name), set("baker_hash", baker))
   );
 
   // Create the block performance heat table
@@ -355,7 +369,7 @@ async function updateBakerInfo(baker) {
       num_baked: "Blocks Baked",
       num_missed: "Blocks Missed",
       num_stolen: "Blocks Stolen",
-      endorsements: "Endorsements Made",
+      endorsements: "Endorsements",
       missed_endorsements: "Endorsements Missed",
     };
     d.forEach(
@@ -383,24 +397,29 @@ async function updateBakerInfo(baker) {
         "endorsements",
         "missed_endorsements",
       ],
-      colorMappings
+      colorMappings,
+      48
     );
   });
 
   // Create the rewards heat table
-  getBakerInfo(
-    "snapshot_info",
-    ["cycle", "rewards"],
-    [
-      {
-        field: "cycle",
-        op: "between",
-        value: [lastFullCycle - 9, lastFullCycle],
-      },
-      { field: "baker", op: "eq", value: [baker] },
-    ]
-  ).then((d) => {
-    console.log("===", d, lastFullCycle);
+  heatTableFields = [
+    "cycle",
+    "rewards",
+    // "rewards_expected",
+    // "delegator_rewards_received",
+    // "advertised_fee",
+    // "actual_fee",
+  ];
+
+  getBakerInfo("snapshot_info", heatTableFields, [
+    {
+      field: "cycle",
+      op: "between",
+      value: [lastFullCycle - 9, lastFullCycle],
+    },
+    { field: "baker", op: "eq", value: [baker] },
+  ]).then((d) => {
     set(
       "baker_rewards",
       `${convertFromUtezToTez(d[d.length - 1].rewards).toFixed(2)} XTZ`
@@ -420,12 +439,22 @@ async function updateBakerInfo(baker) {
       staking_balance: "Staking Balance",
     });
 
-    heatTable("rewards_table", d.reverse(), ["cycle", "rewards"], {
-      rewards: TEAL,
-    });
-  })
-  .catch((err) => {
-    console.log("---", err)
+    heatTable(
+      "rewards_table",
+      d.reverse(),
+      [
+        "cycle",
+        "rewards",
+        "rewards_expected",
+        "delegator_rewards_received",
+        "advertised_fee",
+        "actual_fee",
+      ],
+      {
+        rewards: TEAL,
+      },
+      98
+    );
   });
 
   // Set the baker grade for baker
@@ -491,7 +520,7 @@ async function updateBakerInfo(baker) {
       `staking_balances_chart`,
       topHundred,
       { x: "staking_balance", y: "name" },
-      8,
+      10,
       (d) => updateBakerInfo(d.pkh)
     );
   });
@@ -514,7 +543,7 @@ async function updateBakerInfo(baker) {
       `num_blocks_baked_chart`,
       d,
       { x: "count_hash", y: "name" },
-      7,
+      10,
       (d) => updateBakerInfo(d.baker)
     );
   });
@@ -552,10 +581,10 @@ async function updateBakerInfo(baker) {
 
   // Create the blocks missed chainmap (bar graph)
   blocksMissedBy(baker, lastFullCycle).then((d) => {
-    set(
-      "baker_blocks_missed",
-      `${d.length} Block Missed: ${!!d[0] && d[0].level}`
-    );
+    // set(
+    //   "baker_blocks_missed",
+    //   `${d.length} Block Missed: ${!!d[0] && d[0].level}`
+    // );
     d.forEach((block) => (block["label"] = `Level: ${block.meta_level}`));
     chainmap(
       "blocks_missed_chart",
@@ -563,17 +592,18 @@ async function updateBakerInfo(baker) {
       { x: "meta_cycle_position", y: "label" },
       blocksPerCycle,
       BRICK_RED,
-      "Blocks missed ",
-      true
+      " Block(s) missed",
+      true,
+      "baker_blocks_missed"
     );
   });
 
   // Create the blocks baked chainmap (bar graph)
   blocksStolenBy(baker, lastFullCycle).then((d) => {
-    set(
-      "baker_blocks_stolen",
-      `${d.length} Block Stolen: ${!!d[0] && d[0].level}`
-    );
+    // set(
+    //   "baker_blocks_stolen",
+    //   `${d.length} Block Stolen: ${!!d[0] && d[0].level}`
+    // );
     d.forEach((block) => (block["label"] = `Level: ${block.meta_level}`));
     chainmap(
       "blocks_stolen_chart",
@@ -581,8 +611,9 @@ async function updateBakerInfo(baker) {
       { x: "meta_cycle_position", y: "label" },
       blocksPerCycle,
       DARK_BLUE,
-      "Blocks stolen ",
-      false
+      " Block(s) stolen",
+      true,
+      "baker_blocks_stolen"
     );
   });
 
@@ -599,10 +630,10 @@ async function updateBakerInfo(baker) {
     //       : "You've been unlucky!"
     //   }`
     // );
-    set(
-      "baker_blocks_baked_last_cycle",
-      `${d.length} Block baked: ${d[0].level}`
-    );
+    // set(
+    //   "baker_blocks_baked_last_cycle",
+    //   `${d.length} Block baked: ${d[0].level}`
+    // );
     d.forEach((block) => (block["label"] = `${block.meta_level}`));
     chainmap(
       "blocks_baked_chart",
@@ -610,8 +641,9 @@ async function updateBakerInfo(baker) {
       { x: "meta_cycle_position", y: "label" },
       blocksPerCycle,
       TEAL,
-      "Blocks baked ",
-      false
+      " Block(s) baked",
+      true,
+      "baker_blocks_baked_last_cycle"
     );
   });
 }
@@ -642,7 +674,7 @@ async function updateNetworkInfo() {
       // set("net_last_baker", `Latest baker: ${head.baker}`);
       return numBlocksBakedFrom(head.timestamp - millisOneHour);
     })
-    .then((blocksLastHour) =>{
+    .then((blocksLastHour) => {
       // set("net_blocks_last_hour", `#Blocks baked last hour: ${blocksLastHour}`)
     });
 
@@ -670,8 +702,18 @@ async function updateNetworkInfo() {
   });
 }
 
+const tableHeader = (id, tableField) => {
+  let headerList = "";
+  tableField.forEach((field) => {
+    headerList += `<p class="middle subtitle-text weight-500">${field}</p>`;
+  });
+  document.getElementById(id).innerHTML = headerList;
+};
+
 function initialize() {
   updateNetworkInfo();
+  tableHeader("performance_table_header", performanceField);
+  tableHeader("rewards_table_header", rewardField);
   getBlock("head").then((head) => updateBakerInfo(head.baker));
   setTimeout(updateNetworkInfo, 60000);
 }

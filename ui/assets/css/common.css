@@ -66,6 +66,10 @@ p {
   color: var(--color-sub-title);
 }
 
+.info-text {
+  color: var(--color-info-text); 
+} 
+
 .weight-500 {
   font-weight: 500;
 }
@@ -80,4 +84,8 @@ p {
 .flex-column {
   display: flex;
   flex-direction: column;
+}
+
+.absolute {
+  position: absolute;
 }

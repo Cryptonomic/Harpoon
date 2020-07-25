@@ -154,15 +154,24 @@ svg {
   margin-left: 6px;
 }
 
+.links {
+  max-width: 370px;
+  margin-bottom: 9px;
+}
+
+.links > a {
+  margin: 0;
+}
+
 .column-charts {
   background-color: var(--color-white);
   box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.25);
-  padding: 4px 37px 35px 20px;
+  padding: 20px 37px 15px 20px;
   margin-top: 11px;
 }
 
 .column-chart {
-  margin-top: 40px;
+  margin-top: 5px;
 }
 
 .column-chart > p {
@@ -224,7 +233,6 @@ svg {
   padding: 15px 0 4px 15px;
   box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.25);
   margin-top: 14px;
-  margin-right: 7px;
 }
 
 .delegate-item {
@@ -286,12 +294,18 @@ svg {
 }
 
 .blocks-numbers {
-  border: 1px solid #E4EAF2;
+  border: 1px solid #e4eaf2;
   border-radius: 5px;
   background-color: var(--color-background);
   max-width: 495px;
   margin-bottom: 19px;
   min-height: 18px;
+}
+
+.blocks-numbers > p {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .blocks-chart {
@@ -333,6 +347,22 @@ svg {
 .panel {
   background-color: var(--color-white);
   box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.25);
+  padding-top: 10px;
+  position: relative;
+  overflow: hidden;
+}
+
+.table-header {
+  display: flex;
+  align-items: center;
+  width: 835px;
+  padding: 0 16px;
+}
+
+.table-header > p {
+  flex: 1;
+  text-align: center;
+  padding: 0 6px;
 }
 
 .performance {
@@ -356,6 +386,7 @@ svg {
   flex: 1;
   justify-content: center;
   align-items: center;
+  padding: 20px 5px;
   display: flex;
   width: 409px;
   margin-top: 18px;
