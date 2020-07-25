@@ -154,7 +154,7 @@ function heatTable(
   colorMappings,
   cellWidth = 92,
   comparisons = [],
-  notices = [],
+  notices = []
 ) {
   let toGraph = outline(id, data, values, {
     top: 10,
@@ -199,7 +199,7 @@ function heatTable(
       .attr("width", graph.innerWidth)
       .attr("height", rowHeight)
       .attr("y", (d, i) => i * (rowHeight + rowPadding))
-      .attr("fill", (d, i) => ("white"));
+      .attr("fill", (d, i) => "white");
     values.forEach((column, columnInd) => {
       g.selectAll(".data")
         .each((data, nodeInd, nodes) => {
@@ -220,7 +220,7 @@ function heatTable(
           }
         })
         .append("text")
-		.text((d, i) => i === 0 ? "" : d[column])
+        .text((d, i) => (i === 0 ? "" : d[column]))
         .attr(
           "x",
           ((graph.innerWidth - textPadding * 2) / (2 * values.length)) *
@@ -255,10 +255,10 @@ function heatTable(
             }
           });
           return color;
-		})
-		.style("font-size", (row, rowInd)=> {
-			return rowInd === 0 ? 20 : 16;
-		})
+        })
+        .style("font-size", (row, rowInd) => {
+          return rowInd === 0 ? 20 : 16;
+        })
         .style("text-anchor", "middle")
         .each((row, rowInd, nodes) => {
           if (rowInd != 0) {
@@ -266,21 +266,27 @@ function heatTable(
               .insert("rect", "text")
               .attr(
                 "x",
-                ((graph.innerWidth - 8) / (2 * values.length)) * (2 * columnInd + 1) - cellWidth / 2 + 3
+                ((graph.innerWidth - 8) / (2 * values.length)) *
+                  (2 * columnInd + 1) -
+                  cellWidth / 2 +
+                  3
               )
               .attr("y", rowInd * (rowHeight + rowPadding))
               .attr("width", cellWidth)
-			  .attr("height", 27)
-			  .attr("rx", 5)
-			  .attr("ry", 5)
+              .attr("height", 27)
+              .attr("rx", 5)
+              .attr("ry", 5)
               .style(
                 "fill",
                 colorMappings[column] ? colorMappings[column] : "white"
-			  )
+              )
               .style(
-                "opacity",
+                "fill-opacity",
                 scales[column] ? scales[column](data[rowInd][column]) : 0
-              );
+              )
+              .style("stroke-width", 1)
+              .style("stroke", colorMappings[column] ? "#C4C4C4" : "white")
+              .style("stroke-opacity", 1);
           }
         });
     });
@@ -294,6 +300,7 @@ function heatTable(
  * @param {string} id - id of the svg element to use
  * @param {Array.<Object>} data - data to be used in the table
  * @param {Array.<string>} values - array of field names in data to use as columns for
+ * @param {string} tooltipID - id of tooltip div.
  */
 function chainmap(
   id,
@@ -413,6 +420,7 @@ function chainmap(
  * @param {number} colorSet - an integer 1 - 10 to choose the color scheme to use for
  * the graph
  * @param {function} - a function to make when one of the boxes are clicked on
+ * @param {string} - id of the anchor symbol with baker's name
  */
 
 function stackedBarGraph(
@@ -420,13 +428,14 @@ function stackedBarGraph(
   data,
   values,
   colorSet = 0,
+  anchorId,
   callback = (d) => {
     return;
   }
 ) {
   let toGraph = outline(id, data, values, {
     top: 0,
-    left: 0,
+    left: 1,
     right: 0,
     bottom: 15,
   });
@@ -523,10 +532,18 @@ function stackedBarGraph(
       .attr("width", (d) => graph.xValue(d) * graph.innerWidth)
       .attr("height", graph.innerHeight - tooltipHeight - 8);
 
-    // Set the default data box fill it
+    // Set the anchor above default data
     let defaultRect = g.select(".default");
     let defaultNext = defaultRect._groups[0][0].nextSibling;
-    // defaultRect.style("fill", d3.rgb(defaultRect.attr("fill")).darker());
+    let anchor = document.getElementById(anchorId);
+    anchor.style.left = !!defaultNext
+      ? defaultRect._groups[0][0].x.baseVal.value +
+        (defaultNext.x.baseVal.value -
+          defaultRect._groups[0][0].x.baseVal.value) /
+          2 -
+        anchor.clientWidth / 2 +
+        20
+      : defaultRect._groups[0][0].x.baseVal.value;
     let outRect = g
       .append("rect")
       .style("stroke-width", 2)
@@ -539,22 +556,20 @@ function stackedBarGraph(
           : 0
       )
       .attr("fill", "none")
-      .attr("height", graph.innerHeight - tooltipHeight + 8)
+      .attr("height", graph.innerHeight - tooltipHeight + 7)
       .attr("x", defaultRect._groups[0][0].x.baseVal.value)
-      .attr("y", 0);
+      .attr("y", 1);
 
-    // For each of the data rectangles, darken it on mouseover
+    // For each of the data rectangles, highlight it on mouseover
     g.selectAll("rect.databar")
       .on("mouseover", function (d) {
-        // defaultRect.style("fill", color(graph.yValue(defaultVal)));
         let rect = d3.select(this);
         let nextNode = rect._groups[0][0].nextSibling;
-        // rect.style("fill", d3.rgb(rect.attr("fill")).darker(2));
         outRect
-          .attr("x", rect._groups[0][0].x.baseVal.value)
+          .attr("x", rect._groups[0][0].x.baseVal.value - 1)
           .attr(
             "width",
-            nextNode.x.baseVal.value - rect._groups[0][0].x.baseVal.value
+            nextNode.x.baseVal.value - rect._groups[0][0].x.baseVal.value + 2
           );
         g.select("#tooltip_text")
           .attr("opacity", 0)
@@ -564,7 +579,6 @@ function stackedBarGraph(
           .attr("opacity", 1);
       })
       .on("mouseout", function (d) {
-        // d3.select(this).style("fill", color(graph.yValue(d)));
         g.select("#tooltip_text").text(graph.yValue(defaultVal));
         outRect
           .attr(
@@ -575,7 +589,6 @@ function stackedBarGraph(
               : 0
           )
           .attr("x", defaultRect._groups[0][0].x.baseVal.value);
-        // defaultRect.style("fill", d3.rgb(defaultRect.attr("fill")).darker(2));
       })
       .on("click", function (d) {
         callback(d);
@@ -651,15 +664,14 @@ function linegraph(id, data, values, yExtent, time = true, area = false) {
     g.append("g")
       .call(xAxis)
       .attr("transform", `translate(0, ${graph.innerHeight})`)
-      .selectAll(".tick text") // select all the x tick texts
+      .selectAll(".tick text") 
       .call(function (t) {
         t.each(function (d) {
-          // for each one
-		  var self = d3.select(this);
-          var s = self.text().split(" "); // get the text and split it
-          self.text(""); // clear it out
+          var self = d3.select(this);
+          var s = self.text().split(" "); 
+          self.text("");
           self
-            .append("tspan") // insert two tspans
+            .append("tspan")
             .attr("x", 0)
             .attr("dy", ".8em")
             .text(s[0]);

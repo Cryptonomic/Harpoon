@@ -138,11 +138,27 @@ svg {
   align-items: center;
   padding-left: 12px;
   margin-top: 9px;
+  position: relative;
+  cursor: help;
 }
 
-.info > p {
+.info:hover .grade-popup {
+  display: block;
+}
+
+.info-detail > p {
   color: var(--color-info-text);
   margin-left: 8px;
+}
+
+.grade-popup {
+  display: none;
+  width: 320px;
+  padding: 22px 20px 20px 32px;
+  background-color: var(--color-white);
+  box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.25);
+  left: 0;
+  z-index: 1;
 }
 
 /* Top bakers Styles */
@@ -168,6 +184,11 @@ svg {
   box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.25);
   padding: 20px 37px 15px 20px;
   margin-top: 11px;
+  position: relative;
+}
+
+.anchor {
+  transition: left 1s ease 0s;
 }
 
 .column-chart {
@@ -176,6 +197,9 @@ svg {
 
 .column-chart > p {
   margin-bottom: 12px;
+  z-index: 1;
+  background-color: white;
+  align-self: flex-start;
 }
 
 .crytium-labs {
@@ -363,6 +387,19 @@ svg {
   flex: 1;
   text-align: center;
   padding: 0 6px;
+}
+
+.info-cell::after {
+  content: "ℹ";
+  color: var(--color-white);
+  background-color: var(--color-info-text);
+  border-radius: 50%;
+  font-size: 10px;
+  padding: 2px 7px;
+  position: relative;
+  top: -3px;
+  left: 2px;
+  cursor: help;
 }
 
 .performance {

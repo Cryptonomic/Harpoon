@@ -53,15 +53,6 @@ async function updatePayoutInfo(baker) {
       [{ field: "baker", op: "eq", value: [baker] }]
     )
   )[0];
-  // document.getElementById("payout").value = payout_response
-  //   ? payout_response.payout
-  //   : "";
-  // document.getElementById("fee").value = JSON.parse(
-  //   await httpGet(`https://api.baking-bad.org/v2/bakers/${baker}`)
-  // ).fee;
-  // document.getElementById("payout_delay").value = JSON.parse(
-  //   await httpGet(`https://api.baking-bad.org/v2/bakers/${baker}`)
-  // ).payoutDelay;
 }
 
 /**
@@ -348,11 +339,17 @@ async function updateBakerInfo(baker) {
     "missed_endorsements",
   ];
 
-  // Set the baker name/address on top
+  // Set the baker name/address on top and anchor
   httpGet(`https://api.baking-bad.org/v2/bakers/${baker}`).then((d) =>
     d == ""
-      ? (set("baker_name", ""), set("baker_hash", baker))
-      : (set("baker_name", JSON.parse(d).name), set("baker_hash", baker))
+      ? (set("baker_name", "Baker"),
+        set("baker_hash", baker),
+        set("anchor_balances_name", "Baker"),
+        set("anchor_baked_name", "Baker"))
+      : (set("baker_name", JSON.parse(d).name),
+        set("baker_hash", baker),
+        set("anchor_balances_name", JSON.parse(d).name),
+        set("anchor_baked_name", JSON.parse(d).name))
   );
 
   // Create the block performance heat table
@@ -406,10 +403,10 @@ async function updateBakerInfo(baker) {
   heatTableFields = [
     "cycle",
     "rewards",
-    // "rewards_expected",
-    // "delegator_rewards_received",
-    // "advertised_fee",
-    // "actual_fee",
+    "snapshot_index",
+    "snapshot_block_level",
+    "staking_balance",
+    "delegated_balance",
   ];
 
   getBakerInfo("snapshot_info", heatTableFields, [
@@ -435,23 +432,20 @@ async function updateBakerInfo(baker) {
     );
     d.push({
       cycle: "Cycle",
-      rewards: "Rewards Earned",
-      staking_balance: "Staking Balance",
+      rewards: "Total Rewards",
+      snapshot_index: "Rewards Expected",
+      snapshot_block_level: "Rewards Received",
+      staking_balance: "Advertised Fee",
+      delegated_balance: "Actual Fee Taken",
     });
 
     heatTable(
       "rewards_table",
       d.reverse(),
-      [
-        "cycle",
-        "rewards",
-        "rewards_expected",
-        "delegator_rewards_received",
-        "advertised_fee",
-        "actual_fee",
-      ],
+      heatTableFields,
       {
         rewards: TEAL,
+        snapshot_block_level: TEAL,
       },
       98
     );
@@ -521,6 +515,7 @@ async function updateBakerInfo(baker) {
       topHundred,
       { x: "staking_balance", y: "name" },
       10,
+      "anchor_balances",
       (d) => updateBakerInfo(d.pkh)
     );
   });
@@ -544,6 +539,7 @@ async function updateBakerInfo(baker) {
       d,
       { x: "count_hash", y: "name" },
       10,
+      "anchor_baked",
       (d) => updateBakerInfo(d.baker)
     );
   });
@@ -581,10 +577,6 @@ async function updateBakerInfo(baker) {
 
   // Create the blocks missed chainmap (bar graph)
   blocksMissedBy(baker, lastFullCycle).then((d) => {
-    // set(
-    //   "baker_blocks_missed",
-    //   `${d.length} Block Missed: ${!!d[0] && d[0].level}`
-    // );
     d.forEach((block) => (block["label"] = `Level: ${block.meta_level}`));
     chainmap(
       "blocks_missed_chart",
@@ -600,10 +592,6 @@ async function updateBakerInfo(baker) {
 
   // Create the blocks baked chainmap (bar graph)
   blocksStolenBy(baker, lastFullCycle).then((d) => {
-    // set(
-    //   "baker_blocks_stolen",
-    //   `${d.length} Block Stolen: ${!!d[0] && d[0].level}`
-    // );
     d.forEach((block) => (block["label"] = `Level: ${block.meta_level}`));
     chainmap(
       "blocks_stolen_chart",
@@ -622,18 +610,6 @@ async function updateBakerInfo(baker) {
     const percentStaked =
       (await getRollsStaked(baker)) / (await getRollsStaked());
     const percentBaked = d.length / blocksPerCycle;
-    // set(
-    //   "baker_luck",
-    //   `Luck in current cycle: ${
-    //     percentStaked - percentBaked < 0
-    //       ? "You've been lucky!"
-    //       : "You've been unlucky!"
-    //   }`
-    // );
-    // set(
-    //   "baker_blocks_baked_last_cycle",
-    //   `${d.length} Block baked: ${d[0].level}`
-    // );
     d.forEach((block) => (block["label"] = `${block.meta_level}`));
     chainmap(
       "blocks_baked_chart",
@@ -658,24 +634,15 @@ async function updateNetworkInfo() {
   );
   const conversionRate = JSON.parse(response).USD;
   getTezInCirculation().then((totalTez) => {
-    // set(
-    //   "net_market_cap",
-    //   `Market cap: $${(convertFromUtezToTez(totalTez) * conversionRate).toFixed(
-    //     2
-    //   )}`
-    // );
   });
 
   getBlock("head")
     .then((head) => {
       set("current_cycle", `Current Cycle: ${head.meta_cycle}`);
       set("net_level", `Current level: ${head.level}`);
-      // set("net_last_block", `Latest block: ${head.hash}`);
-      // set("net_last_baker", `Latest baker: ${head.baker}`);
       return numBlocksBakedFrom(head.timestamp - millisOneHour);
     })
     .then((blocksLastHour) => {
-      // set("net_blocks_last_hour", `#Blocks baked last hour: ${blocksLastHour}`)
     });
 
   httpGet("https://api.baking-bad.org/v2/bakers").then((data) => {
@@ -686,26 +653,15 @@ async function updateNetworkInfo() {
       bakerRegistry.map(({ fee }) => fee).reduce((a, b) => a + b, 0) /
       bakerRegistry.length
     ).toFixed(2);
-    // set(
-    //   "net_min_baker_fee",
-    //   `Min baker fee: ${Math.floor(minFeeBaker.fee * 100)}%  ${
-    //     minFeeBaker.name
-    //   },`
-    // );
-    // set(
-    //   "net_max_baker_fee",
-    //   `Max baker fee: ${Math.floor(maxFeeBaker.fee * 100)}%  ${
-    //     maxFeeBaker.name
-    //   },`
-    // );
-    // set("net_avg_baker_fee", `Avg baker fee: ${Math.floor(averageFee * 100)}%`);
   });
 }
 
-const tableHeader = (id, tableField) => {
+const tableHeader = (id, tableField, info = []) => {
   let headerList = "";
-  tableField.forEach((field) => {
-    headerList += `<p class="middle subtitle-text weight-500">${field}</p>`;
+  tableField.forEach((field, index) => {
+    headerList += `<p class="middle subtitle-text weight-500 ${
+      !!info[index] ? "info-cell" : ""
+    }">${field}</p>`;
   });
   document.getElementById(id).innerHTML = headerList;
 };
@@ -713,7 +669,14 @@ const tableHeader = (id, tableField) => {
 function initialize() {
   updateNetworkInfo();
   tableHeader("performance_table_header", performanceField);
-  tableHeader("rewards_table_header", rewardField);
+  tableHeader("rewards_table_header", rewardField, [
+    false,
+    true,
+    true,
+    false,
+    false,
+    true,
+  ]);
   getBlock("head").then((head) => updateBakerInfo(head.baker));
   setTimeout(updateNetworkInfo, 60000);
 }
