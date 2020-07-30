@@ -209,7 +209,6 @@ async function updateBakerInfo(baker) {
     let getAddressFromName = name => bakerRegistry.find(baker => baker.name.toLowerCase() == name.toLowerCase()) || {"address": name}
     baker = getAddressFromName(baker).address
 
-    console.log(baker.length)
     if (baker.charAt(0) != "t" && baker.charAt(0) != "k"
 	&& baker.length != 36)
 	return;
