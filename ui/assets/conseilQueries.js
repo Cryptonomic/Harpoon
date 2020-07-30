@@ -352,6 +352,23 @@ async function getBakerRewards(baker, start_cycle, end_cycle) {
     return rewards
 }
 
+
+async function lastDelegateFor(pkh) {
+    let query = conseiljs.ConseilQueryBuilder.blankQuery();
+    query = conseiljs.ConseilQueryBuilder.addFields(query, 'delegate_value');
+    query = conseiljs.ConseilQueryBuilder.addPredicate(query, 'account_id', conseiljs.ConseilOperator.EQ, [pkh], false);
+    const result = await conseiljs.ConseilDataClient.executeEntityQuery(conseilServer, platform, network, 'accounts', query);
+    return result[0].delegate_value
+}
+
+async function isBaker(pkh) {
+    let query = conseiljs.ConseilQueryBuilder.blankQuery();
+    query = conseiljs.ConseilQueryBuilder.addFields(query, 'is_baker');
+    query = conseiljs.ConseilQueryBuilder.addPredicate(query, 'account_id', conseiljs.ConseilOperator.EQ, [pkh], false);
+    const result = await conseiljs.ConseilDataClient.executeEntityQuery(conseilServer, platform, network, 'accounts', query);
+    return result[0].is_baker
+}
+
 // ==============================================
 // Functions to interact with backend Postgres DB
 // (aka microseil)

@@ -208,7 +208,16 @@ async function updateBakerInfo(baker) {
     let searchRegistry = pkh => bakerRegistry.find(baker => baker.address == pkh) || {"name":pkh};
     let getAddressFromName = name => bakerRegistry.find(baker => baker.name.toLowerCase() == name.toLowerCase()) || {"address": name}
     baker = getAddressFromName(baker).address
-    if (baker.charAt(0) != "t") return;
+
+    // Check to see if the address is a regular account. If it is, show the page for
+    // that account's delegate
+    if (baker.charAt(0) != "t")
+	return;
+    else if (!(await isBaker(baker))) {
+	updateBakerInfo(await lastDelegateFor(baker))
+	return
+    }
+    
     delegateAddress = baker
     updatePayoutInfo(baker)
 
