@@ -353,6 +353,12 @@ async function getBakerRewards(baker, start_cycle, end_cycle) {
 }
 
 
+/**
+ * Returns the most current delegate for an account
+ * 
+ * @params {String} pkh - the public key of the account whose delegate should be found
+ * @returns string of baker pkh
+ */
 async function lastDelegateFor(pkh) {
     let query = conseiljs.ConseilQueryBuilder.blankQuery();
     query = conseiljs.ConseilQueryBuilder.addFields(query, 'delegate_value');
@@ -361,6 +367,12 @@ async function lastDelegateFor(pkh) {
     return result[0].delegate_value
 }
 
+/**
+ * Returns a boolean value corresponding to if the account with address pkh is a baker
+ * 
+ * @params {String} pkh - the public key to check
+ * @returns true if pkh is a baker, false otherwise
+ */
 async function isBaker(pkh) {
     let query = conseiljs.ConseilQueryBuilder.blankQuery();
     query = conseiljs.ConseilQueryBuilder.addFields(query, 'is_baker');

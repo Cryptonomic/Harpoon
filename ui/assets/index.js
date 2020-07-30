@@ -209,13 +209,16 @@ async function updateBakerInfo(baker) {
     let getAddressFromName = name => bakerRegistry.find(baker => baker.name.toLowerCase() == name.toLowerCase()) || {"address": name}
     baker = getAddressFromName(baker).address
 
+    console.log(baker.length)
+    if (baker.charAt(0) != "t" && baker.charAt(0) != "k"
+	&& baker.length != 36)
+	return;
+
     // Check to see if the address is a regular account. If it is, show the page for
     // that account's delegate
-    if (baker.charAt(0) != "t")
-	return;
-    else if (!(await isBaker(baker))) {
+    if (!(await isBaker(baker))) {
 	updateBakerInfo(await lastDelegateFor(baker))
-	return
+	return;
     }
     
     delegateAddress = baker
