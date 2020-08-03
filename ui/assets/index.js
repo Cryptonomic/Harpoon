@@ -207,7 +207,7 @@ async function updateBakerInfo(baker) {
     let bakerRegistry = JSON.parse(await httpGet(`https://api.baking-bad.org/v2/bakers`));
     let searchRegistry = pkh => bakerRegistry.find(baker => baker.address == pkh) || {"name":pkh};
     let getAddressFromName = name => bakerRegistry.find(baker => baker.name.toLowerCase() == name.toLowerCase()) || {"address": name}
-    baker = getAddressFromName(baker).address
+	baker = getAddressFromName(baker).address
     if (baker.charAt(0) != "t") return;
     delegateAddress = baker
     updatePayoutInfo(baker)

@@ -15,13 +15,14 @@
 
     <!-- Header section start -->
     <div class="header-container">
-      <div class="logo-box flex-column">
+      <div class="logo-box flex-row">
         <img src="./assets/images/logo_.png" alt="logo" width="250px" class="logo" />
-        <p class="large-middle">Baker Performance Stats</p>
+        <p class="large-middle subtitle-text">Baker Performance Stats</p>
       </div>
       <div class="header-box flex-row">
         <div class="search-bar">
-          <input class="search" type="text" id="baker" placeholder="Search by baker or delegator address/name"></input>
+          <input class="search" type="text" id="baker" onkeydown="return searchBaker(event)"
+            placeholder="Search by baker address/name"></input>
           <i class="fa fa-search"></i>
         </div>
         <p class="large-middle header-title">Tezos Mainnet</p>
@@ -32,6 +33,16 @@
     <!-- Content section start -->
     <div class="content-container">
       <div class="content-main flex-column">
+        <!-- Current Cycle and Level -->
+
+        <div class="current flex-row">
+          <div class="cycle flex-row">
+            <p class="subtitle-text weight-500" id="current_cycle">Current Cycle: </p>
+          </div>
+          <div class="level flex-row">
+            <p class="subtitle-text weight-500" id="net_level">Current Level:</p>
+          </div>
+        </div>
 
         <!-- Tezos Vote box -->
         <div class="tezos-vote flex-row">
@@ -44,7 +55,7 @@
           </div>
           <div class="flex-column">
             <div class="performance-grade flex-column">
-              <p class="large title-text">Grade</p>
+              <p class="extra-large title-text">Grade</p>
               <p class="grade" id="baker_grade">B</p>
             </div>
             <div class="info flex-row">
@@ -62,35 +73,104 @@
         </div>
 
         <!-- Top bakers box -->
-        <div class="top-bakers flex-column">
-          <p class="large-middle title-text">How does this baker rank among top bakers?</p>
-          <p class="middle-small subtitle-text">Mouse over each section to view and compare baker stats. Click to view
-            that bakers performance stats page. </p>
-          <div class="column-charts flex-column">
-            <!-- Top 100 Bakers by staking balances -->
-            <div class="column-chart flex-column">
-              <p class="large-middle title-text">Top 100 Bakers by staking balances:</p>
-              <div class="flex-row links">
-                <a class="info-text middle-small" href="javascript: void(0)">View Query in Arronax </a>
-                <a class="info-text middle-small" href="javascript: void(0)">View Graph in Periscope</a>
+        <div class="production-topbaker flex-row">
+          <div class="production-left flex-column">
+            <div class="flex-row">
+              <div class="last-bake first">
+                <p class="large-middle title-text weight-500">Last Bake</p>
+                <div class="last-bake-body flex-column">
+                  <div class="timer-body flex-row">
+                    <object type="image/svg+xml" data="./assets/images/timer.svg"></object>
+                    <div class="flex-column">
+                      <p class="small subtitle-text weight-500">Time</p>
+                      <p class="small" id="baker_last_bake"></p>
+                    </div>
+                  </div>
+                  <div class="timer-body chart-card flex-row">
+                    <object type="image/svg+xml" data="./assets/images/chart.svg"></object>
+                    <div class="flex-column">
+                      <p class="small subtitle-text weight-500">Level</p>
+                      <p class="small" id="baker_last_bake_level"></p>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <svg id="staking_balances_chart" width="1212" height="93"> </svg>
-              <div class="absolute anchor flex-column" id="anchor_balances">
-                <p class="middle subtitle-text" id="anchor_balances_name">Baker</p>
-                <img src="./assets//images/anchor.svg" />
+
+              <div class="last-bake">
+                <p class="large-middle title-text weight-500">Upcoming Bake</p>
+                <div class="last-bake-body flex-column">
+                  <div class="timer-body flex-row">
+                    <object type="image/svg+xml" data="./assets/images/timer.svg"></object>
+                    <div class="flex-column">
+                      <p class="small subtitle-text weight-500">Time</p>
+                      <p class="small" id="baker_next_bake"></p>
+                    </div>
+                  </div>
+                  <div class="timer-body chart-card flex-row">
+                    <object type="image/svg+xml" data="./assets/images/chart.svg"></object>
+                    <div class="flex-column">
+                      <p class="small subtitle-text weight-500">Level</p>
+                      <p class="small" id="baker_next_bake_level"></p>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
-            <!-- Top 100 Bakers by "blocks baked" -->
-            <div class="column-chart flex-column">
-              <p class="large-middle title-text">Top 100 Bakers by “blocks baked” in the last cycle:</p>
-              <div class="flex-row links">
-                <a class="info-text middle-small" href="javascript: void(0)">View Query in Arronax </a>
-                <a class="info-text middle-small" href="javascript: void(0)">View Graph in Periscope</a>
+            <div class="delegate-box flex-column">
+              <div class="delegate-item">
+                <p class="small delegate-title subtitle-text weight-500">Number of Delegators</p>
+                <p class="small delegate-value" id="baker_num_delegators"></p>
               </div>
-              <svg id="num_blocks_baked_chart" width="1212" height="93"> </svg>
-              <div class="absolute anchor flex-column" id="anchor_baked">
-                <p class="middle subtitle-text" id="anchor_baked_name">Baker</p>
-                <img src="./assets//images/anchor.svg" />
+              <div class="delegate-item">
+                <p class="small delegate-title subtitle-text weight-500">Amount Staked</p>
+                <p class="small delegate-value" id="baker_amount_staked"></p>
+              </div>
+              <div class="delegate-item">
+                <p class="small delegate-title subtitle-text weight-500">Amount Delegated</p>
+                <p class="small delegate-value" id="baker_amount_delegated"></p>
+              </div>
+            </div>
+            <div class="delegate-box flex-column">
+              <div class="delegate-item">
+                <p class="small delegate-title subtitle-text weight-500">Lifetime Blocks Baked </p>
+                <p class="small delegate-value" id="baker_blocks_baked"></p>
+              </div>
+              <div class="delegate-item">
+                <p class="small delegate-title subtitle-text weight-500" id="baker_rewards_title">Rewards Made in Cycle
+                </p>
+                <p class="small delegate-value" id="baker_rewards"></p>
+              </div>
+              <div class="delegate-item">
+                <p class="small delegate-title subtitle-text weight-500">Blocks per XTZ</p>
+                <p class="small delegate-value" id="baker_blocks_per_stake"></p>
+              </div>
+            </div>
+          </div>
+
+          <div class="top-bakers flex-column">
+            <p class="title-text middle-middle weight-500">Where does this baker rank among top bakers?</p>
+            <div class="column-charts flex-column">
+              <!-- Top 100 Bakers by staking balances -->
+              <div class="column-chart flex-column">
+                <div class="flex-row">
+                  <p class="middle-middle weight-500 subtitle-text">Bakers by staking balances</p>
+                  <div class="flex-row links">
+                    <a class="info-text middle-small" href="javascript: void(0)">View Query in Arronax </a>
+                    <a class="info-text middle-small" href="javascript: void(0)">View Graph in Periscope</a>
+                  </div>
+                </div>
+                <svg id="staking_balances_chart" width="800" height="93"> </svg>
+              </div>
+              <!-- Top 100 Bakers by "blocks baked" -->
+              <div class="column-chart flex-column">
+                <div class="flex-row">
+                  <p class="middle-middle weight-500 subtitle-text">Bakers by blocks baked in the last cycle</p>
+                  <div class="flex-row links">
+                    <a class="info-text middle-small" href="javascript: void(0)">View Query in Arronax </a>
+                    <a class="info-text middle-small" href="javascript: void(0)">View Graph in Periscope</a>
+                  </div>
+                </div>
+                <svg id="num_blocks_baked_chart" width="800" height="93"> </svg>
               </div>
             </div>
           </div>
@@ -98,108 +178,26 @@
 
         <!-- Baker Production box -->
         <div class="baker-production flex-row">
-          <div class="production-left flex-column">
-            <div class="flex-row">
-              <div class="last-bake first">
-                <p class="large-middle title-text">Last Bake</p>
-                <div class="last-bake-body">
-                  <div class="timer-body flex-row">
-                    <object type="image/svg+xml" data="./assets/images/timer.svg"></object>
-                    <div class="flex-column">
-                      <p class="small subtitle-text weight-500">Time</p>
-                      <p class="middle-small" id="baker_last_bake"></p>
-                    </div>
-                  </div>
-                  <div class="timer-body chart-card flex-row">
-                    <object type="image/svg+xml" data="./assets/images/chart.svg"></object>
-                    <div class="flex-column">
-                      <p class="small subtitle-text weight-500">Level</p>
-                      <p class="middle-small" id="baker_last_bake_level"></p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div class="last-bake">
-                <p class="large-middle title-text">Upcoming Bake</p>
-                <div class="last-bake-body">
-                  <div class="timer-body flex-row">
-                    <object type="image/svg+xml" data="./assets/images/timer.svg"></object>
-                    <div class="flex-column">
-                      <p class="small subtitle-text weight-500">Time</p>
-                      <p class="middle-small" id="baker_next_bake"></p>
-                    </div>
-                  </div>
-                  <div class="timer-body chart-card flex-row">
-                    <object type="image/svg+xml" data="./assets/images/chart.svg"></object>
-                    <div class="flex-column">
-                      <p class="small subtitle-text weight-500">Level</p>
-                      <p class="middle-small" id="baker_next_bake_level"></p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div class="delegate-box flex-column">
-              <div class="delegate-item">
-                <p class="middle delegate-title subtitle-text weight-500">Number of Delegators</p>
-                <p class="middle-small delegate-value" id="baker_num_delegators"></p>
-              </div>
-              <div class="delegate-item">
-                <p class="middle delegate-title subtitle-text weight-500">Amount Staked</p>
-                <p class="middle-small delegate-value" id="baker_amount_staked"></p>
-              </div>
-              <div class="delegate-item">
-                <p class="middle delegate-title subtitle-text weight-500">Amount Delegated</p>
-                <p class="middle-small delegate-value" id="baker_amount_delegated"></p>
-              </div>
-            </div>
-            <div class="delegate-box flex-column">
-              <div class="delegate-item">
-                <p class="middle delegate-title subtitle-text weight-500">Lifetime Blocks Baked </p>
-                <p class="middle-small delegate-value" id="baker_blocks_baked"></p>
-              </div>
-              <div class="delegate-item">
-                <p class="middle delegate-title subtitle-text weight-500" id="baker_rewards_title">Rewards Made in Cycle
-                </p>
-                <p class="middle-small delegate-value" id="baker_rewards"></p>
-              </div>
-              <div class="delegate-item">
-                <p class="middle delegate-title subtitle-text weight-500">Blocks per XTZ</p>
-                <p class="middle-small delegate-value" id="baker_blocks_per_stake"></p>
-              </div>
-            </div>
-            <div class="current flex-row">
-              <div class="cycle flex-row">
-                <object type="image/svg+xml" data="./assets/images/cycle.svg"></object>
-                <p class="large-middle title-text" id="current_cycle">Current Cycle: </p>
-              </div>
-              <div class="level flex-row">
-                <object type="image/svg+xml" data="./assets/images/level.svg"></object>
-                <p class="large-middle title-text" id="net_level">Current Level:</p>
-              </div>
-            </div>
-          </div>
           <div class="production-right flex-column">
-            <p class="large-middle title-text">Baker Production</p>
+            <p class="large-middle title-text weight-500" id="baker_production">Baker Production</p>
             <div class="blocks-charts flex-column">
               <div class="blocks-chart flex-row">
-                <p class="middle subtitle-text weight-500">Blocks baked</p>
-                <svg id="blocks_baked_chart" width="523" height="100"> </svg>
+                <p class="middle-middle subtitle-text weight-500">Blocks baked</p>
+                <svg id="blocks_baked_chart" width="1050" height="100"> </svg>
               </div>
               <div class="blocks-numbers">
                 <p class="small subtitle-text" id="baker_blocks_baked_last_cycle"></p>
               </div>
               <div class="blocks-chart flex-row">
-                <p class="middle subtitle-text weight-500">Blocks stolen</p>
-                <svg id="blocks_stolen_chart" width="523" height="100"> </svg>
+                <p class="middle-middle subtitle-text weight-500">Blocks stolen</p>
+                <svg id="blocks_stolen_chart" width="1050" height="100"> </svg>
               </div>
               <div class="blocks-numbers">
                 <p class="small subtitle-text" id="baker_blocks_stolen"></p>
               </div>
               <div class="blocks-chart flex-row">
-                <p class="middle subtitle-text weight-500">Blocks missed</p>
-                <svg id="blocks_missed_chart" width="523" height="100"> </svg>
+                <p class="middle-middle subtitle-text weight-500">Blocks missed</p>
+                <svg id="blocks_missed_chart" width="1050" height="100"> </svg>
               </div>
               <div class="blocks-numbers">
                 <p class="small subtitle-text" id="baker_blocks_missed"></p>
@@ -212,16 +210,16 @@
         <div class="performance-reward flex-row">
           <div class="performance-box flex-column">
             <div class="tabs flex-row">
-              <p class="large-middle tab-title active">Performance</p>
+              <p class="large-middle tab-title weight-500 title-text">Performance</p>
             </div>
             <div class="panel">
               <div class="absolute table-header" id="performance_table_header">
               </div>
-              <svg id="performance_table" width="820" height="390"> </svg>
+              <svg id="performance_table" width="870" height="390"> </svg>
             </div>
           </div>
           <div class="blocks-hour flex-column">
-            <p class="large-middle title-text">Blocks per Hour</p>
+            <p class="large-middle title-text weight-500">Blocks per Hour</p>
             <div class="line-chart">
               <svg id="blocks_per_hour_graph" width="400" height="323"> </svg>
             </div>
@@ -230,19 +228,31 @@
         <div class="performance-reward flex-row">
           <div class="performance-box flex-column">
             <div class="tabs flex-row">
-              <p class="large-middle tab-title active">Rewards</p>
+              <p class="large-middle tab-title weight-500 title-text">Rewards</p>
             </div>
             <div class="panel">
               <div class="absolute table-header" id="rewards_table_header">
               </div>
-              <svg id="rewards_table" width="820" height="390"> </svg> <br>
+              <svg id="rewards_table" width="870" height="390"> </svg> <br>
             </div>
           </div>
           <div class="blocks-hour flex-column">
-            <p class="large-middle title-text">Reward</p>
+            <p class="large-middle weight-500 title-text">Rewards per Cycle</p>
             <div class="line-chart">
               <svg id="rewards_chart" width="400" height="323"> </svg>
             </div>
+          </div>
+        </div>
+        <div class="reward-calc flex-column">
+          <p class="middle-middle subtitle-text weight-500">Type in Information to Calculate Rewards Chart</p>
+          <div class="reward-calc-inputs flex-row">
+            <input type="text" id="delegator" placeholder="Delegator" value=""> </input>
+            <input type="text" id="payout" placeholder="Payout" value=""> </input>
+            <input type="text" id="fee" placeholder="Fee" value="0.15"> </input>
+            <input type="text" id="payout_delay" placeholder="Payout Delay" value="6"> </input>
+            <button id="calculate_rewards_button" class="reward-calc-btn middle-middle weight-500 title-text" onclick="calculateRewardsForDelegate()">
+              Calculate
+            </button>
           </div>
         </div>
       </div>
@@ -251,7 +261,7 @@
 
     <!-- Footer section start -->
     <div class="footer-container">
-      <p class="middle-small"> A product by Cryptonomic</p>
+      <!-- <p class="middle-small"> A product by Cryptonomic</p> -->
     </div>
     <!-- Footer section end -->
 
@@ -260,8 +270,7 @@
 
 <script src="https://d3js.org/d3.v5.min.js"></script>
 <script src="https://cdn.jsdelivr.net/gh/cryptonomic/conseiljs/dist-web/conseiljs.min.js"
-  integrity="sha384-g7ZPuT8xCBXLdgu2vBXWuOiEQIes6tPyFP4DIJBbgGfGSLRkOvET5Ra6dN9AePbQ" crossorigin="anonymous"></script>
-
+  integrity="sha384-IufW5flMmPmFPiUm4GlKLocLuEWZlGoCA5ukejQgI66LcXELSsraBP7dux+BE9Ds" crossorigin="anonymous"></script>
 <script src="assets/js/graphics.js"></script>
 <script src="assets/networkConf.js"></script>
 <script src="assets/tezosConstants.js"></script>

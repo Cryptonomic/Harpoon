@@ -22,7 +22,7 @@ const rewardField = [
   "Rewards Expected",
   "Rewards Received",
   "Advertised Fee",
-  "Actual Fee Taken",
+  "Fee Taken",
 ];
 
 function UTCToDateTime(timestamp) {
@@ -72,7 +72,14 @@ async function calculateRewardsForDelegate() {
   const undelegatedMsg =
     "You are not qualified for rewards from this baker at this cycle";
   const inProgressMsg = "Rewards payouts are still in progress for this cycle";
-
+  tableHeader("rewards_table_header", rewardField, [
+    false,
+    true,
+    true,
+    false,
+    false,
+    true,
+  ]);
   // Query snapshot_info for the proper staking balances
   let rewards = await getBakerInfo(
     "snapshot_info",
@@ -184,7 +191,7 @@ async function calculateRewardsForDelegate() {
   ];
 
   const colorMappings = {
-    delegator_rewards: TEAL,
+    rewards: TEAL,
     delegator_rewards_received: TEAL,
   };
 
@@ -193,7 +200,6 @@ async function calculateRewardsForDelegate() {
     rewards.reverse(),
     heatTableFields,
     colorMappings,
-    82,
     [
       ["delegator_rewards", "delegator_rewards_received"],
       ["advertised_fee", "actual_fee", "inverse"],
@@ -343,13 +349,9 @@ async function updateBakerInfo(baker) {
   httpGet(`https://api.baking-bad.org/v2/bakers/${baker}`).then((d) =>
     d == ""
       ? (set("baker_name", "Baker"),
-        set("baker_hash", baker),
-        set("anchor_balances_name", "Baker"),
-        set("anchor_baked_name", "Baker"))
+        set("baker_hash", baker))
       : (set("baker_name", JSON.parse(d).name),
-        set("baker_hash", baker),
-        set("anchor_balances_name", JSON.parse(d).name),
-        set("anchor_baked_name", JSON.parse(d).name))
+        set("baker_hash", baker))
   );
 
   // Create the block performance heat table
@@ -400,6 +402,15 @@ async function updateBakerInfo(baker) {
   });
 
   // Create the rewards heat table
+  tableHeader("rewards_table_header", rewardField, [
+    false,
+    true,
+    true,
+    false,
+    false,
+    true,
+  ],[false, false, true, true, true, true]);
+
   heatTableFields = [
     "cycle",
     "rewards",
@@ -409,7 +420,7 @@ async function updateBakerInfo(baker) {
     "delegated_balance",
   ];
 
-  getBakerInfo("snapshot_info", heatTableFields, [
+  getBakerInfo("snapshot_info", ["cycle", "rewards"], [
     {
       field: "cycle",
       op: "between",
@@ -445,9 +456,7 @@ async function updateBakerInfo(baker) {
       heatTableFields,
       {
         rewards: TEAL,
-        snapshot_block_level: TEAL,
       },
-      98
     );
   });
 
@@ -593,6 +602,7 @@ async function updateBakerInfo(baker) {
   // Create the blocks baked chainmap (bar graph)
   blocksStolenBy(baker, lastFullCycle).then((d) => {
     d.forEach((block) => (block["label"] = `Level: ${block.meta_level}`));
+    set("baker_production", `Baker Production in Cycle ${lastFullCycle}`);
     chainmap(
       "blocks_stolen_chart",
       d,
@@ -656,12 +666,12 @@ async function updateNetworkInfo() {
   });
 }
 
-const tableHeader = (id, tableField, info = []) => {
+const tableHeader = (id, tableField, info = [], disable = []) => {
   let headerList = "";
   tableField.forEach((field, index) => {
-    headerList += `<p class="middle subtitle-text weight-500 ${
+    headerList += `<p class="middle-middle subtitle-text weight-500 ${
       !!info[index] ? "info-cell" : ""
-    }">${field}</p>`;
+    } ${!!disable[index] ? "disabled-cell" : ""}">${field}</p>`;
   });
   document.getElementById(id).innerHTML = headerList;
 };
@@ -676,7 +686,7 @@ function initialize() {
     false,
     false,
     true,
-  ]);
+  ],[false, false, true, true, true, true]);
   getBlock("head").then((head) => updateBakerInfo(head.baker));
   setTimeout(updateNetworkInfo, 60000);
 }
@@ -690,3 +700,9 @@ const copyToClipBoard = (copyPanel) => {
   document.execCommand("copy");
   document.body.removeChild(el);
 };
+
+const searchBaker = e => {
+  if(e.keyCode != 13) return;
+  updateBakerInfo(document.getElementById("baker").value);
+  document.getElementById("baker").value = '';
+}

@@ -19,9 +19,9 @@ p {
 /* Text styles */
 
 .extra-large {
-  font-size: 48px;
+  font-size: 32px;
   font-weight: 500;
-  line-height: 56px;
+  line-height: 37px;
 }
 
 .large {
@@ -42,6 +42,11 @@ p {
   line-height: 23px;
   font-weight: 400;
   letter-spacing: 0.0015em;
+}
+
+.middle-middle {
+  font-size: 18px;
+  line-height: 21px;
 }
 
 .middle-small {

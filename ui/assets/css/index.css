@@ -7,29 +7,26 @@
 .header-container {
   display: flex;
   justify-content: space-between;
-  align-items: flex-end;
-  padding: 21px 30px;
-  height: 138px;
+  align-items: center;
+  padding: 8px 30px 0 37px;
+  height: 130px;
   box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
 }
 
 .logo-box {
   align-items: center;
-  margin-right: 75px;
-}
-
-.logo-box > p {
-  margin-top: -10px;
-  margin-bottom: 10px;
+  margin-right: 142px;
 }
 
 .logo {
   width: 309px;
   height: auto;
+  margin-right: 8px;
 }
 
 .header-box {
   flex: 1;
+  align-items: center;
 }
 
 .search-bar {
@@ -44,7 +41,7 @@
   height: 40px;
   padding-left: 30px;
   padding-right: 44px;
-  border: 1px solid #000000;
+  border: 1px solid #636e95;
   border-radius: 10px;
   outline: none;
   background-color: var(--color-white);
@@ -60,14 +57,27 @@
 }
 
 .header-title {
-  margin-left: 77px;
-  align-self: flex-end;
+  margin-left: 27px;
 }
 
 /* Chart Styles */
 svg {
   width: 100%;
 }
+
+/* Shadow Boxes */
+.grade-popup,
+.last-bake-body,
+.delegate-box,
+.column-charts,
+.baked-box,
+.blocks-charts,
+.panel,
+.line-chart {
+  box-shadow: 2px 2px 5px rgba(210, 216, 222, 0.5);
+}
+
+
 
 /* Content Styles */
 .content-container {
@@ -77,7 +87,33 @@ svg {
 
 .content-main {
   min-width: 1280px;
-  padding-bottom: 150px;
+  padding-bottom: 60px;
+}
+
+/* Current Cycle and Level */
+.current {
+  margin-top: 32px;
+  justify-content: flex-start;
+}
+
+.cycle,
+.level {
+  padding-left: 14px;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.cycle > p {
+  margin-left: 14px;
+}
+
+.level > p {
+  margin-left: 24px;
+}
+
+.current p {
+  font-size: 20px;
+  line-height: 23px;
 }
 
 /* Tezos Vote box Styles */
@@ -88,15 +124,15 @@ svg {
 
 .tezos {
   background-color: var(--color-tezos-background);
-  min-width: 680px;
-  height: 170px;
+  min-width: 695px;
+  height: 120px;
   justify-content: center;
 }
 
 .tezos .title-text {
   text-align: center;
   padding: 0 50px;
-  margin-bottom: 22px;
+  margin-bottom: 10px;
   line-height: 43px;
 }
 
@@ -118,8 +154,8 @@ svg {
 }
 
 .performance-grade {
-  width: 415px;
-  height: 170px;
+  width: 352px;
+  height: 120px;
   background-color: var(--color-tezos-background);
   align-items: center;
   padding: 0 27px 0 19px;
@@ -156,33 +192,98 @@ svg {
   width: 320px;
   padding: 22px 20px 20px 32px;
   background-color: var(--color-white);
-  box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.25);
   left: 0;
   z-index: 1;
 }
 
 /* Top bakers Styles */
-.top-bakers {
+.production-topbaker {
   margin: 32px 7px 0 18px;
+}
+
+.baker-production {
+  margin: 32px 5px 0 18px;
+}
+
+.last-bake > p {
+  margin-bottom: 13px;
+}
+
+.production-left .first {
+  margin-right: 20px;
+}
+
+.last-bake-body {
+  background: var(--color-white);
+  padding: 10px 0 4px 13px;
+  width: 197px;
+  height: 120px;
+  margin-bottom: 4px;
+  justify-content: space-between;
+}
+
+.timer-body {
+  justify-content: flex-start;
+  align-items: center;
+  margin-bottom: 11px;
+}
+
+.timer-body > object {
+  margin-right: 9px;
+  width: 28px;
+}
+
+.timer-body .subtitle-text {
+  margin-bottom: 4px;
+}
+
+.chart-card > object {
+  width: 23px;
+  margin-left: 2px;
+  margin-right: 12px;
+}
+
+.delegate-box {
+  background-color: var(--color-white);
+  padding: 15px 0 4px 15px;
+  margin-top: 10px;
+}
+
+.delegate-item {
+  display: flex;
+  justify-content: flex-start;
+  margin-bottom: 12px;
+  align-items: center;
+}
+
+.delegate-title {
+  width: 55%;
+}
+.top-bakers {
+  margin-left: 25px;
+  flex: 1;
 }
 
 .top-bakers > p {
   margin-left: 6px;
+  font-size: 18px;
+  line-height: 21px;
+  margin-top: 9px;
 }
 
 .links {
-  max-width: 370px;
   margin-bottom: 9px;
+  min-width: 365px;
 }
 
 .links > a {
   margin: 0;
+  text-decoration: none;
 }
 
 .column-charts {
   background-color: var(--color-white);
-  box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.25);
-  padding: 20px 37px 15px 20px;
+  padding: 64px 37px 35px 20px;
   margin-top: 11px;
   position: relative;
 }
@@ -212,87 +313,7 @@ svg {
 }
 
 /* Baker Production box */
-.baker-production {
-  margin: 32px 5px 0 18px;
-}
-
-.last-bake > p {
-  margin-bottom: 13px;
-}
-
-.baker-production .first {
-  margin-right: 23px;
-}
-
-.last-bake-body {
-  background: var(--color-white);
-  box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.25);
-  padding: 10px 0 4px 13px;
-  width: 239px;
-  margin-bottom: 4px;
-}
-
-.timer-body {
-  justify-content: flex-start;
-  align-items: center;
-  margin-bottom: 11px;
-}
-
-.timer-body > object {
-  margin-right: 9px;
-  width: 40px;
-}
-
-.timer-body .subtitle-text {
-  margin-bottom: 4px;
-}
-
-.chart-card > object {
-  margin: 0 15px 0 10px;
-  width: 24px;
-}
-
-.delegate-box {
-  background-color: var(--color-white);
-  padding: 15px 0 4px 15px;
-  box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.25);
-  margin-top: 14px;
-}
-
-.delegate-item {
-  display: flex;
-  justify-content: flex-start;
-  margin-bottom: 12px;
-  align-items: center;
-}
-
-.delegate-title {
-  width: 55%;
-}
-
-.current {
-  margin-top: 32px;
-  justify-content: flex-start;
-}
-
-.cycle,
-.level {
-  width: 240px;
-  padding-left: 14px;
-  align-items: center;
-  justify-content: flex-start;
-}
-
-.cycle > p {
-  margin-left: 14px;
-}
-
-.level > p {
-  margin-left: 24px;
-}
-
 .production-right {
-  margin-left: 30px;
   flex: 1;
 }
 
@@ -303,7 +324,6 @@ svg {
 .baked-box {
   background-color: var(--color-white);
   max-width: 490;
-  box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.25);
   margin-top: 19px;
   margin-left: 5px;
   padding: 11px 0 8px 19px;
@@ -311,7 +331,6 @@ svg {
 
 .blocks-charts {
   background-color: var(--color-white);
-  box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.25);
   padding: 12px;
   padding-left: 26px;
   margin-top: 13px;
@@ -324,6 +343,7 @@ svg {
   max-width: 495px;
   margin-bottom: 19px;
   min-height: 18px;
+  margin-left: 150px;
 }
 
 .blocks-numbers > p {
@@ -347,7 +367,7 @@ svg {
 
 /* Performance Reward box */
 .performance-reward {
-  margin: 37px 2px 0 8px;
+  margin: 37px 2px 0 18px;
 }
 
 .performance-box {
@@ -370,23 +390,29 @@ svg {
 
 .panel {
   background-color: var(--color-white);
-  box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.25);
-  padding-top: 10px;
+  padding-top: 20px;
   position: relative;
   overflow: hidden;
 }
 
 .table-header {
+  top: 30px;
   display: flex;
   align-items: center;
-  width: 835px;
+  width: 887px;
   padding: 0 16px;
+  justify-content: space-between;
+}
+
+.table-header > p:first-of-type {
+  max-width: 50px;
 }
 
 .table-header > p {
   flex: 1;
   text-align: center;
   padding: 0 6px;
+  white-space: nowrap;
 }
 
 .info-cell::after {
@@ -402,6 +428,14 @@ svg {
   cursor: help;
 }
 
+.disabled-cell {
+  color: #e0e2ea;
+}
+
+.disabled-cell::after {
+  background-color: #e0e2ea;
+}
+
 .performance {
   display: block;
 }
@@ -411,7 +445,7 @@ svg {
 }
 
 .blocks-hour {
-  margin-left: 40px;
+  margin-left: 11px;
 }
 
 .reward-block {
@@ -423,17 +457,45 @@ svg {
   flex: 1;
   justify-content: center;
   align-items: center;
-  padding: 20px 5px;
+  padding: 20px 15px;
   display: flex;
-  width: 409px;
+  width: 403px;
   margin-top: 18px;
-  box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.25);
+}
+
+.reward-calc {
+  margin: 20px 0 0 15px;
+}
+
+.reward-calc-inputs {
+  max-width: 900px;
+  justify-content: space-between;
+  margin-top: 10px;
+}
+
+.reward-calc-inputs > input {
+  width: 165px;
+  height: 33px;
+  border-radius: 5px;
+  border: 1px solid #636e95;
+  background-color: white;
+  padding-left: 8px;
+  font-size: 16px;
+  line-height: 19px;
+}
+
+.reward-calc-btn {
+  background: #c7e9ff;
+  box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+  border-radius: 5px;
+  outline: none;
+  border: none;
 }
 
 /* Footer Styles */
 .footer-container {
   width: 100%;
-  height: 50px;
+  height: 65px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -487,8 +549,13 @@ svg {
     padding: 0 90px;
   }
 
-  .baker-production {
+  .production-topbaker {
     flex-direction: column;
+  }
+
+  .top-bakers {
+    margin: 0;
+    margin-top: 20px;
   }
 
   .last-bake {
@@ -497,17 +564,6 @@ svg {
 
   .last-bake-body {
     width: auto;
-  }
-
-  .cycle,
-  .level {
-    width: auto;
-    flex: 1;
-  }
-
-  .production-right {
-    margin: 0;
-    margin-top: 20px;
   }
 
   .performance-reward {

@@ -1,7 +1,34 @@
 //Colors
-const TEAL = "#447363";
-const DARK_BLUE = "#5255C6";
-const BRICK_RED = "#963A25";
+const TEAL = [
+  "white",
+  "#B7D6CC",
+  "#B7D6CC",
+  "#8BC7B2",
+  "#8BC7B2",
+  "#63A68F",
+  "#63A68F",
+  "#447363",
+];
+const DARK_BLUE = [
+  "white",
+  "#D8D9FF",
+  "#D8D9FF",
+  "#BEBFF1",
+  "#BEBFF1",
+  "#8F91D0",
+  "#8F91D0",
+  "#5255C6",
+];
+const BRICK_RED = [
+  "white",
+  "#E0C4B2",
+  "#E0C4B2",
+  "#cda298",
+  "#cda298",
+  "#b67667",
+  "#b67667",
+  "#963A25",
+];
 
 let dimensions = (svg, m = { top: 0, left: 0, right: 0, bottom: 0 }) => ({
   width: +svg.attr("width"),
@@ -164,6 +191,7 @@ function heatTable(
   });
   const rowHeight = 30;
   const rowPadding = 5;
+  const cycleWidth = 60;
   const textPadding = 5;
   const tooltipHeight = 20;
   const tooltipPadding = 5;
@@ -223,9 +251,13 @@ function heatTable(
         .text((d, i) => (i === 0 ? "" : d[column]))
         .attr(
           "x",
-          ((graph.innerWidth - textPadding * 2) / (2 * values.length)) *
-            (2 * columnInd + 1) +
-            textPadding
+          columnInd == 0
+            ? cycleWidth / 2 + textPadding
+            : ((graph.innerWidth - textPadding * 2 - cycleWidth) /
+                (2 * (values.length - 1))) *
+                (2 * columnInd - 1) +
+                textPadding +
+                cycleWidth
         )
         .attr(
           "y",
@@ -233,7 +265,11 @@ function heatTable(
             rowInd * (rowHeight + rowPadding) + (rowHeight + rowPadding) / 2
         )
         .style("fill", (row, rowInd) => {
-          let color = rowInd === 0 ? "#636E95" : "black";
+          let color = scales[column]
+            ? scales[column](data[rowInd][column]) == 0.8
+              ? "white"
+              : "black"
+            : "black";
           comparisons.forEach((compareCol) => {
             if (
               d == compareCol[1] &&
@@ -266,27 +302,41 @@ function heatTable(
               .insert("rect", "text")
               .attr(
                 "x",
-                ((graph.innerWidth - 8) / (2 * values.length)) *
-                  (2 * columnInd + 1) -
-                  cellWidth / 2 +
-                  3
+                columnInd == 0
+                  ? textPadding
+                  : ((graph.innerWidth - textPadding * 2 - cycleWidth) /
+                      (2 * (values.length - 1))) *
+                      (2 * columnInd - 2) +
+                      textPadding +
+                      cycleWidth
               )
-              .attr("y", rowInd * (rowHeight + rowPadding))
-              .attr("width", cellWidth)
-              .attr("height", 27)
-              .attr("rx", 5)
-              .attr("ry", 5)
+              .attr("y", rowInd * (rowHeight + rowPadding) - rowPadding)
+              .attr(
+                "width",
+                columnInd == 0
+                  ? cycleWidth
+                  : (graph.innerWidth - textPadding * 2 - cycleWidth) /
+                      (values.length - 1)
+              )
+              .attr("height", rowHeight + rowPadding)
               .style(
                 "fill",
-                colorMappings[column] ? colorMappings[column] : "white"
+                colorMappings[column]
+                  ? colorMappings[column][
+                      Math.floor(scales[column](data[rowInd][column]) * 10 - 1)
+                    ]
+                    ? colorMappings[column][
+                        Math.floor(
+                          scales[column](data[rowInd][column]) * 10 - 1
+                        )
+                      ]
+                    : "white"
+                  : "white"
               )
               .style(
                 "fill-opacity",
                 scales[column] ? scales[column](data[rowInd][column]) : 0
-              )
-              .style("stroke-width", 1)
-              .style("stroke", colorMappings[column] ? "#C4C4C4" : "white")
-              .style("stroke-opacity", 1);
+              );
           }
         });
     });
@@ -307,7 +357,7 @@ function chainmap(
   data,
   values,
   blocks,
-  mapColor = "green",
+  mapColor = TEAL,
   tooltipLabel = "",
   axis = true,
   tooltipID
@@ -320,7 +370,7 @@ function chainmap(
       ? { top: 0, left: 10, right: 0, bottom: 20 }
       : { top: 0, left: 10, right: 0, bottom: 0 }
   );
-  const blockWidth = 11;
+  const blockWidth = 22.5;
   const numBlocks = Math.floor(toGraph.innerWidth / blockWidth);
   const blockVal = Math.floor(blocks / numBlocks);
   const blockPadding = 5;
@@ -343,10 +393,9 @@ function chainmap(
   });
 
   const color = d3
-    .scaleLinear()
-    .domain([0, d3.max(blocksArr.map((d) => d.mapVal)) + 0.01])
-    .range(["white", mapColor]);
-
+    .scaleQuantize()
+    .domain([0, d3.max(blocksArr.map((d) => d.mapVal)) - 1])
+    .range(mapColor);
   const y = d3
     .scaleLinear()
     .domain([0, d3.max(blocksArr.map((d) => d.mapVal)) + 0.01])
@@ -378,16 +427,13 @@ function chainmap(
       .attr("x", (d, i) => i * blockWidth)
       .attr("width", blockWidth - blockPadding)
       .attr("height", (d) => y(d.mapVal))
-      .style("fill", (d) => color(d.mapVal))
+      .style("fill", (d) => (d.mapVal == 0 ? "white" : color(d.mapVal)))
       .style("stroke-width", 1)
-      .style("stroke", "#707070");
-
-    // let label = tooltip(g, tooltipWidth, tooltipHeight, tooltipPadding,
-    // 		    graph.innerWidth, graph.innerHeight);
+      .style("stroke", (d) =>
+        d.mapVal == 0 || color(d.mapVal) == "white" ? "#707070" : "white"
+      );
 
     g.selectAll(".databar").on("mouseover", function (d) {
-      // label.setText(`${tooltipLabel}${d.mapVal}: ${d.data}`);
-      // label.fitSizeToText();
       document.getElementById(
         tooltipID
       ).innerHTML = `${d.mapVal}${tooltipLabel}: ${d.data}`;
@@ -406,7 +452,6 @@ function chainmap(
           `translate(${graph.innerWidth / 2},${graph.innerHeight})`
         )
         .style("text-anchor", "middle");
-      // .text("Cycle Position")
     }
   };
   render(toGraph);
@@ -535,15 +580,6 @@ function stackedBarGraph(
     // Set the anchor above default data
     let defaultRect = g.select(".default");
     let defaultNext = defaultRect._groups[0][0].nextSibling;
-    let anchor = document.getElementById(anchorId);
-    anchor.style.left = !!defaultNext
-      ? defaultRect._groups[0][0].x.baseVal.value +
-        (defaultNext.x.baseVal.value -
-          defaultRect._groups[0][0].x.baseVal.value) /
-          2 -
-        anchor.clientWidth / 2 +
-        20
-      : defaultRect._groups[0][0].x.baseVal.value;
     let outRect = g
       .append("rect")
       .style("stroke-width", 2)
@@ -664,17 +700,13 @@ function linegraph(id, data, values, yExtent, time = true, area = false) {
     g.append("g")
       .call(xAxis)
       .attr("transform", `translate(0, ${graph.innerHeight})`)
-      .selectAll(".tick text") 
+      .selectAll(".tick text")
       .call(function (t) {
         t.each(function (d) {
           var self = d3.select(this);
-          var s = self.text().split(" "); 
+          var s = self.text().split(" ");
           self.text("");
-          self
-            .append("tspan")
-            .attr("x", 0)
-            .attr("dy", ".8em")
-            .text(s[0]);
+          self.append("tspan").attr("x", 0).attr("dy", ".8em").text(s[0]);
           self.append("tspan").attr("x", 0).attr("dy", ".8em").text(s[1]);
         });
       });
