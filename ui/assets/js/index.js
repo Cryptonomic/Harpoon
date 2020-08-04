@@ -53,6 +53,17 @@ async function updatePayoutInfo(baker) {
       [{ field: "baker", op: "eq", value: [baker] }]
     )
   )[0];
+  document.getElementById("payout").value = payout_response
+    ? payout_response.payout
+    : "";
+  let bakerInfo = !!payout_response.payout
+    ? JSON.parse(await httpGet(`https://api.baking-bad.org/v2/bakers/${baker}`))
+    : {
+        fee: 0,
+        payoutDelay: 0,
+      };
+  document.getElementById("fee").value = bakerInfo.fee;
+  document.getElementById("payout_delay").value = bakerInfo.payoutDelay;
 }
 
 /**
@@ -275,7 +286,7 @@ let getMean = function (data) {
   return (
     data.reduce(function (a, b) {
       return Number(a) + Number(b);
-    }) / data.length
+    }, "") / data.length
   );
 };
 
@@ -348,10 +359,8 @@ async function updateBakerInfo(baker) {
   // Set the baker name/address on top and anchor
   httpGet(`https://api.baking-bad.org/v2/bakers/${baker}`).then((d) =>
     d == ""
-      ? (set("baker_name", "Baker"),
-        set("baker_hash", baker))
-      : (set("baker_name", JSON.parse(d).name),
-        set("baker_hash", baker))
+      ? (set("baker_name", "Baker"), set("baker_hash", baker))
+      : (set("baker_name", JSON.parse(d).name), set("baker_hash", baker))
   );
 
   // Create the block performance heat table
@@ -396,20 +405,17 @@ async function updateBakerInfo(baker) {
         "endorsements",
         "missed_endorsements",
       ],
-      colorMappings,
-      48
+      colorMappings
     );
   });
 
   // Create the rewards heat table
-  tableHeader("rewards_table_header", rewardField, [
-    false,
-    true,
-    true,
-    false,
-    false,
-    true,
-  ],[false, false, true, true, true, true]);
+  tableHeader(
+    "rewards_table_header",
+    rewardField,
+    [false, true, true, false, false, true],
+    [false, false, true, true, true, true]
+  );
 
   heatTableFields = [
     "cycle",
@@ -420,14 +426,18 @@ async function updateBakerInfo(baker) {
     "delegated_balance",
   ];
 
-  getBakerInfo("snapshot_info", ["cycle", "rewards"], [
-    {
-      field: "cycle",
-      op: "between",
-      value: [lastFullCycle - 9, lastFullCycle],
-    },
-    { field: "baker", op: "eq", value: [baker] },
-  ]).then((d) => {
+  getBakerInfo(
+    "snapshot_info",
+    ["cycle", "rewards"],
+    [
+      {
+        field: "cycle",
+        op: "between",
+        value: [lastFullCycle - 9, lastFullCycle],
+      },
+      { field: "baker", op: "eq", value: [baker] },
+    ]
+  ).then((d) => {
     set(
       "baker_rewards",
       `${convertFromUtezToTez(d[d.length - 1].rewards).toFixed(2)} XTZ`
@@ -450,14 +460,9 @@ async function updateBakerInfo(baker) {
       delegated_balance: "Actual Fee Taken",
     });
 
-    heatTable(
-      "rewards_table",
-      d.reverse(),
-      heatTableFields,
-      {
-        rewards: TEAL,
-      },
-    );
+    heatTable("rewards_table", d.reverse(), heatTableFields, {
+      rewards: TEAL,
+    });
   });
 
   // Set the baker grade for baker
@@ -602,7 +607,7 @@ async function updateBakerInfo(baker) {
   // Create the blocks baked chainmap (bar graph)
   blocksStolenBy(baker, lastFullCycle).then((d) => {
     d.forEach((block) => (block["label"] = `Level: ${block.meta_level}`));
-    set("baker_production", `Baker Production in Cycle ${lastFullCycle}`);
+    set("baker_production", `Block Production In Cycle ${lastFullCycle}`);
     chainmap(
       "blocks_stolen_chart",
       d,
@@ -643,8 +648,7 @@ async function updateNetworkInfo() {
     "https://min-api.cryptocompare.com/data/price?fsym=XTZ&tsyms=USD"
   );
   const conversionRate = JSON.parse(response).USD;
-  getTezInCirculation().then((totalTez) => {
-  });
+  getTezInCirculation().then((totalTez) => {});
 
   getBlock("head")
     .then((head) => {
@@ -652,8 +656,7 @@ async function updateNetworkInfo() {
       set("net_level", `Current level: ${head.level}`);
       return numBlocksBakedFrom(head.timestamp - millisOneHour);
     })
-    .then((blocksLastHour) => {
-    });
+    .then((blocksLastHour) => {});
 
   httpGet("https://api.baking-bad.org/v2/bakers").then((data) => {
     const bakerRegistry = JSON.parse(data);
@@ -679,14 +682,12 @@ const tableHeader = (id, tableField, info = [], disable = []) => {
 function initialize() {
   updateNetworkInfo();
   tableHeader("performance_table_header", performanceField);
-  tableHeader("rewards_table_header", rewardField, [
-    false,
-    true,
-    true,
-    false,
-    false,
-    true,
-  ],[false, false, true, true, true, true]);
+  tableHeader(
+    "rewards_table_header",
+    rewardField,
+    [false, true, true, false, false, true],
+    [false, false, true, true, true, true]
+  );
   getBlock("head").then((head) => updateBakerInfo(head.baker));
   setTimeout(updateNetworkInfo, 60000);
 }
@@ -701,8 +702,8 @@ const copyToClipBoard = (copyPanel) => {
   document.body.removeChild(el);
 };
 
-const searchBaker = e => {
-  if(e.keyCode != 13) return;
+const searchBaker = (e) => {
+  if (e.keyCode != 13) return;
   updateBakerInfo(document.getElementById("baker").value);
-  document.getElementById("baker").value = '';
-}
+  document.getElementById("baker").value = "";
+};

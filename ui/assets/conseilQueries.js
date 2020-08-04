@@ -311,7 +311,7 @@ async function getBakerRewards(baker, start_cycle, end_cycle) {
 
     const rewardsInfo = await getBakerInfo('baker_performance', fields,
 					   [{field:'baker', op:'eq', value:[baker]},
-					    {field:'cycle', op:'between', value:[start_cycle, end_cycle]}],
+					    {field:'cycle', op:'between', value:[start_cycle - 1, end_cycle]}],
 					   {field:'cycle', dir:'asc'})
 
     const accusationInfo = await getAccusationInfo(baker, start_cycle, end_cycle)

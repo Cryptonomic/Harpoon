@@ -390,7 +390,7 @@ svg {
 
 .panel {
   background-color: var(--color-white);
-  padding-top: 20px;
+  padding: 20px 0;
   position: relative;
   overflow: hidden;
 }
@@ -490,6 +490,14 @@ svg {
   border-radius: 5px;
   outline: none;
   border: none;
+}
+
+.reward-calc-btn:hover {
+  cursor: pointer;
+}
+
+.reward-calc-btn:active {
+  box-shadow: 0px 1px 1px rgba(0, 0, 0, 0.65);
 }
 
 /* Footer Styles */
