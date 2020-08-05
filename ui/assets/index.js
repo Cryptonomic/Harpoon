@@ -222,11 +222,7 @@ async function updateBakerInfo(baker, delegator=null) {
 	return;
     }
     // If delegator is set, autofill the field, else clear it
-    if (delegator) {
-	document.getElementById("delegator").value = delegator
-    } else {
-	document.getElementById("delegator").value = ""
-    }
+    document.getElementById("delegator").value = delegator ? delegator : ""
 
     delegateAddress = baker
     updatePayoutInfo(baker)
