@@ -198,7 +198,7 @@ let getSD = function (data) {
  * Updates all of the panels except for "Network Info" on the page
  * @params {string} baker - the baker to display all of the information for
  */ 
-async function updateBakerInfo(baker) {
+async function updateBakerInfo(baker, delegator=null) {
     const head = await getBlock("head");
     const timeNow = head.timestamp;
     const lastFullCycle = head.meta_cycle - 1;
@@ -212,17 +212,22 @@ async function updateBakerInfo(baker) {
     let getAddressFromName = name => bakerRegistry.find(baker => baker.name.toLowerCase() == name.toLowerCase()) || {"address": name}
     baker = getAddressFromName(baker).address
 
-    if (baker.charAt(0) != "t" && baker.charAt(0) != "k"
-	&& baker.length != 36)
+    if ((baker.charAt(0) != "t" && baker.charAt(0) != "K")
+	|| baker.length != 36)
 	return;
-
     // Check to see if the address is a regular account. If it is, show the page for
     // that account's delegate
     if (!(await isBaker(baker))) {
-	updateBakerInfo(await lastDelegateFor(baker))
+	updateBakerInfo(await lastDelegateFor(baker), baker)
 	return;
     }
-    
+    // If delegator is set, autofill the field, else clear it
+    if (delegator) {
+	document.getElementById("delegator").value = delegator
+    } else {
+	document.getElementById("delegator").value = ""
+    }
+
     delegateAddress = baker
     updatePayoutInfo(baker)
 
