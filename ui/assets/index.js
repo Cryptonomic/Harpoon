@@ -59,6 +59,9 @@ async function calculateRewardsForDelegate() {
 	rewards[i]["rewards"] = Object.values(calcRewards[i]).reduce(((acc, curr) => acc + curr), 0)
     }
     
+    // Slice the rewards to only have the rows in which data was available for
+    rewards = rewards.slice(0, calcRewards.length)
+
     // Get the delegations rights for the last 10 cycles
     const delegations = await getBakerInfo("delegate_history", ["cycle", "baker"],
 					   [{"field":"delegator", "op":"eq", "value":[delegator]},
