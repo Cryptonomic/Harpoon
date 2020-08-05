@@ -55,10 +55,10 @@ async function calculateRewardsForDelegate() {
     calcRewards = await getBakerRewards(delegateAddress, lastFullCycle-9, lastFullCycle)
 
     // Sum all of the fields in each payout scheme returned by getBakerRewards
-    for (let i = 0; i < rewards.length; i++) {
+    for (let i = 0; i < calcRewards.length; i++) {
 	rewards[i]["rewards"] = Object.values(calcRewards[i]).reduce(((acc, curr) => acc + curr), 0)
     }
-
+    
     // Get the delegations rights for the last 10 cycles
     const delegations = await getBakerInfo("delegate_history", ["cycle", "baker"],
 					   [{"field":"delegator", "op":"eq", "value":[delegator]},
