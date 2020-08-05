@@ -285,9 +285,15 @@ async function updateBakerInfo(baker, delegator=null) {
     	});  
 
     // Set the baker grade for baker
-    getBakerInfo("baker_performance", ["baker", "grade"], [{"field":"cycle", "op":"eq", "value":[lastFullCycle]}])
+    getBakerInfo("baker_performance", ["baker", "grade", "cycle"],
+		 [{"field":"cycle", "op":"lt", "value":[lastFullCycle+1]}],
+		 {"field":"cycle", "dir":"desc"})
     	.then(d => {
-	    let values = d.map(item => item.grade).sort((a, b) => a - b)
+	    // filter for the most recent cycle's data
+	    const cycle = d[0]["cycle"]
+	    let values = d.filter(item => item.cycle == cycle)
+		.map(item => item.grade)
+		.sort((a, b) => a - b)
 	    const fivePercent = Math.round(values.length * 0.05);
 	    values = values.slice(fivePercent, values.length-fivePercent);
 	    const standardDeviation = getSD(values);
