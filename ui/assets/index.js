@@ -55,9 +55,12 @@ async function calculateRewardsForDelegate() {
     calcRewards = await getBakerRewards(delegateAddress, lastFullCycle-9, lastFullCycle)
 
     // Sum all of the fields in each payout scheme returned by getBakerRewards
-    for (let i = 0; i < rewards.length; i++) {
+    for (let i = 0; i < calcRewards.length; i++) {
 	rewards[i]["rewards"] = Object.values(calcRewards[i]).reduce(((acc, curr) => acc + curr), 0)
     }
+    
+    // Slice the rewards to only have the rows in which data was available for
+    rewards = rewards.slice(0, calcRewards.length)
 
     // Get the delegations rights for the last 10 cycles
     const delegations = await getBakerInfo("delegate_history", ["cycle", "baker"],
@@ -195,7 +198,7 @@ let getSD = function (data) {
  * Updates all of the panels except for "Network Info" on the page
  * @params {string} baker - the baker to display all of the information for
  */ 
-async function updateBakerInfo(baker) {
+async function updateBakerInfo(baker, delegator=null) {
     const head = await getBlock("head");
     const timeNow = head.timestamp;
     const lastFullCycle = head.meta_cycle - 1;
@@ -209,17 +212,18 @@ async function updateBakerInfo(baker) {
     let getAddressFromName = name => bakerRegistry.find(baker => baker.name.toLowerCase() == name.toLowerCase()) || {"address": name}
     baker = getAddressFromName(baker).address
 
-    if (baker.charAt(0) != "t" && baker.charAt(0) != "k"
-	&& baker.length != 36)
+    if ((baker.charAt(0) != "t" && baker.charAt(0) != "K")
+	|| baker.length != 36)
 	return;
-
     // Check to see if the address is a regular account. If it is, show the page for
     // that account's delegate
     if (!(await isBaker(baker))) {
-	updateBakerInfo(await lastDelegateFor(baker))
+	updateBakerInfo(await lastDelegateFor(baker), baker)
 	return;
     }
-    
+    // If delegator is set, autofill the field, else clear it
+    document.getElementById("delegator").value = delegator ? delegator : ""
+
     delegateAddress = baker
     updatePayoutInfo(baker)
 
@@ -277,9 +281,15 @@ async function updateBakerInfo(baker) {
     	});  
 
     // Set the baker grade for baker
-    getBakerInfo("baker_performance", ["baker", "grade"], [{"field":"cycle", "op":"eq", "value":[lastFullCycle]}])
+    getBakerInfo("baker_performance", ["baker", "grade", "cycle"],
+		 [{"field":"cycle", "op":"lt", "value":[lastFullCycle+1]}],
+		 {"field":"cycle", "dir":"desc"})
     	.then(d => {
-	    let values = d.map(item => item.grade).sort((a, b) => a - b)
+	    // filter for the most recent cycle's data
+	    const cycle = d[0]["cycle"]
+	    let values = d.filter(item => item.cycle == cycle)
+		.map(item => item.grade)
+		.sort((a, b) => a - b)
 	    const fivePercent = Math.round(values.length * 0.05);
 	    values = values.slice(fivePercent, values.length-fivePercent);
 	    const standardDeviation = getSD(values);
