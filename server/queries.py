@@ -273,16 +273,28 @@ def endorsements_made_between(baker, start_cycle, end_cycle, priority="high"):
         endorsements_made_in_levels_with_priority(baker, start_cycle,
                                                   end_cycle, priority), baker)
 
+# TODO: Replace commitments_made_between with the following definition when
+#         Conseil gets updated
+#
+# def commitments_made_between(baker, start_cycle, end_cycle):
+#     """Returns a list of levels where a seed nonce commitment was made"""
+
+#     return blocks.query(blocks.level) \
+#                  .filter(blocks.baker == baker,
+#                          blocks.meta_cycle.between(start_cycle, end_cycle),
+#                          blocks.expected_commitment == "true",
+#                          blocks.nonce_hash.isnot(None)) \
+#                  .vector()
 
 def commitments_made_between(baker, start_cycle, end_cycle):
-    """Returns a list of levels where a seed nonce commitement was made"""
+    """Returns a list of levels where a seed nonce commitment was made"""
+    baked_levels = blocks.query(blocks.level) \
+                         .filter(blocks.baker == baker,
+                                 blocks.meta_cycle.between(start_cycle,
+                                                           end_cycle)) \
+                         .vector()
 
-    return blocks.query(blocks.level) \
-                 .filter(blocks.baker == baker,
-                         blocks.meta_cycle.between(start_cycle, end_cycle),
-                         blocks.expected_commitment == "true",
-                         blocks.nonce_hash.isnot(None)) \
-                 .vector()
+    return [level for level in baked_levels if level % 32 == 0]
 
 
 def all_bakers():
