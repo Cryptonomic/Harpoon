@@ -85,11 +85,11 @@ async function calculateRewardsForDelegate() {
   const inProgressMsg = "Rewards payouts are still in progress for this cycle";
   tableHeader("rewards_table_header", rewardField, [
     false,
-    true,
-    true,
     false,
     false,
-    true,
+    false,
+    false,
+    false,
   ]);
   // Query snapshot_info for the proper staking balances
   let rewards = await getBakerInfo(
@@ -118,6 +118,9 @@ async function calculateRewardsForDelegate() {
       0
     );
   }
+
+  // Slice the rewards to only have the rows in which data was available for
+  rewards = rewards.slice(0, calcRewards.length)
 
   // Get the delegations rights for the last 10 cycles
   const delegations = await getBakerInfo(
@@ -202,7 +205,7 @@ async function calculateRewardsForDelegate() {
   ];
 
   const colorMappings = {
-    rewards: TEAL,
+    delegator_rewards: TEAL,
     delegator_rewards_received: TEAL,
   };
 
@@ -251,6 +254,7 @@ function updateCountdown(timestamp, baker) {
   timeLeft = timeLeft % millisOneMinute;
   const seconds = Math.floor(timeLeft / millisOneSecond);
 
+  // modified
   set("baker_next_bake", `${UTCToDateTime(timestamp)}`);
   clock = setTimeout(updateCountdown, 1000, timestamp, baker);
 }
@@ -305,7 +309,7 @@ let getSD = function (data) {
  * @params {string} baker - the baker to display all of the information for
  */
 
-async function updateBakerInfo(baker) {
+async function updateBakerInfo(baker, delegator=null) {
   const head = await getBlock("head");
   const timeNow = head.timestamp;
   const lastFullCycle = head.meta_cycle - 1;
@@ -324,7 +328,19 @@ async function updateBakerInfo(baker) {
       (baker) => baker.name.toLowerCase() == name.toLowerCase()
     ) || { address: name };
   baker = getAddressFromName(baker).address;
-  if (baker.charAt(0) != "t") return;
+
+  if ((baker.charAt(0) != "t" && baker.charAt(0) != "K") || baker.length != 36)	return;
+
+  // Check to see if the address is a regular account. If it is, show the page for
+  // that account's delegate
+  if (!(await isBaker(baker))) {
+    updateBakerInfo(await lastDelegateFor(baker), baker)
+    return;
+  }
+
+  // If delegator is set, autofill the field, else clear it
+  document.getElementById("delegator").value = delegator ? delegator : ""
+
   delegateAddress = baker;
   updatePayoutInfo(baker);
 
@@ -413,7 +429,7 @@ async function updateBakerInfo(baker) {
   tableHeader(
     "rewards_table_header",
     rewardField,
-    [false, true, true, false, false, true],
+    [false, false, false, false, false, false],
     [false, false, true, true, true, true]
   );
 
@@ -468,10 +484,14 @@ async function updateBakerInfo(baker) {
   // Set the baker grade for baker
   getBakerInfo(
     "baker_performance",
-    ["baker", "grade"],
-    [{ field: "cycle", op: "eq", value: [lastFullCycle] }]
+    ["baker", "grade", "cycle"],
+    [{"field":"cycle", "op":"lt", "value":[lastFullCycle+1]}],
+		 {"field":"cycle", "dir":"desc"}
   ).then((d) => {
-    let values = d.map((item) => item.grade).sort((a, b) => a - b);
+    const cycle = d[0]["cycle"]
+	  let values = d.filter(item => item.cycle == cycle)
+		.map(item => item.grade)
+		.sort((a, b) => a - b)
     const fivePercent = Math.round(values.length * 0.05);
     values = values.slice(fivePercent, values.length - fivePercent);
     const standardDeviation = getSD(values);
@@ -524,14 +544,15 @@ async function updateBakerInfo(baker) {
     } else topHundred.find((d) => d.pkh == baker)["default"] = "true";
 
     // Create the stacked bar graph
-    stackedBarGraph(
-      `staking_balances_chart`,
-      topHundred,
-      { x: "staking_balance", y: "name" },
-      10,
-      "anchor_balances",
-      (d) => updateBakerInfo(d.pkh)
-    );
+    // stackedBarGraph(
+    //   `staking_balances_chart`,
+    //   topHundred,
+    //   { x: "staking_balance", y: "name" },
+    //   10,
+    //   "anchor_balances",
+    //   (d) => updateBakerInfo(d.pkh)
+    // );
+    stackedBarGraph(`staking_balances_chart`, topHundred, {x:"staking_balance", y:"name"}, 8, d => updateBakerInfo(d.pkh));
   });
 
   // Populate the "Bakers by Blocks Baked" stacked bar chart
@@ -643,6 +664,7 @@ async function updateBakerInfo(baker) {
  * Updates the Network Info" on the page
  */
 
+ // should be modified
 async function updateNetworkInfo() {
   const response = await httpGet(
     "https://min-api.cryptocompare.com/data/price?fsym=XTZ&tsyms=USD"
@@ -685,7 +707,7 @@ function initialize() {
   tableHeader(
     "rewards_table_header",
     rewardField,
-    [false, true, true, false, false, true],
+    [],
     [false, false, true, true, true, true]
   );
   getBlock("head").then((head) => updateBakerInfo(head.baker));

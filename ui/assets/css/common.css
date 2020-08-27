@@ -94,3 +94,16 @@ p {
 .absolute {
   position: absolute;
 }
+
+.baker-img {
+  margin-right: 3px;
+}
+.time-img {
+  width: 25px;
+}
+
+.level-img {
+  width: 21px;
+  margin-left: 3px;
+  margin-right: 5px;
+}

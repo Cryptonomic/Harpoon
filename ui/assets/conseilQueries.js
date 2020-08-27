@@ -316,7 +316,7 @@ async function getBakerRewards(baker, start_cycle, end_cycle) {
 
     const accusationInfo = await getAccusationInfo(baker, start_cycle, end_cycle)
     const rewards = []
-    for (let i = 0; i <= end_cycle - start_cycle; i++) { 
+    for (let i = 0; i < rewardsInfo.length; i++) { 
 	const bakerStats = rewardsInfo[i]
 	const accusationStats = accusationInfo[i]
     	const rewardStruct = structs[i].value
@@ -335,9 +335,8 @@ async function getBakerRewards(baker, start_cycle, end_cycle) {
 		accusationStats.double_baking_lost_fees + accusationStats.double_endorsement_lost_fees,
     	    revelationRewards: (rewardStruct & 128) > 0 ?
     		(bakerStats.num_revelations_in_baked + bakerStats.num_revelations_in_stolen) * REWARD_PER_REVELATION : 0,
-    	    revelationLostRewards: !((rewardStruct & 256) > 0) ?
-		bakerStats.endorsements_in_not_revealed * REWARD_PER_REVELATION : 0,
-  	    revelationLostFees: !((rewardStruct & 512) > 0) ? convertFromUtezToTez(bakerStats.fees_in_not_revealed) : 0,
+    	    revelationLostRewards: (!((rewardStruct & 256) > 0) ? 0 : -1) * bakerStats.endorsements_in_not_revealed * REWARD_PER_REVELATION,
+  	    revelationLostFees: (!((rewardStruct & 512) > 0) ? 0 : -1) * convertFromUtezToTez(bakerStats.fees_in_not_revealed),
     	    missedBlocks: !((rewardStruct & 1024) > 0) ? bakerStats.num_endorsements_in_missed * BAKING_REWARD_PER_ENDORSEMENT[0] : 0,
     	    stolenBlocks: (rewardStruct & 2048) > 0 ? bakerStats.num_endorsements_in_stolen * BAKING_REWARD_PER_ENDORSEMENT[1] +
     		convertFromUtezToTez(bakerStats.fees_in_stolen) : 0,
