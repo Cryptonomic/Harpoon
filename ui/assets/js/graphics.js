@@ -396,10 +396,11 @@ function chainmap(
     .scaleQuantize()
     .domain([0, d3.max(blocksArr.map((d) => d.mapVal)) - 1])
     .range(mapColor);
+ 
   const y = d3
     .scaleLinear()
     .domain([0, d3.max(blocksArr.map((d) => d.mapVal)) + 0.01])
-    .range([5, toGraph.innerHeight]);
+    .range([3, toGraph.innerHeight - 8]);
 
   const xAxis = d3
     .axisBottom(
@@ -423,7 +424,7 @@ function chainmap(
       .enter()
       .append("rect")
       .attr("class", "databar")
-      .attr("y", (d) => graph.innerHeight - y(d.mapVal) - 5)
+      .attr("y", (d) => graph.innerHeight - y(d.mapVal) - 8 )
       .attr("x", (d, i) => i * blockWidth)
       .attr("width", blockWidth - blockPadding)
       .attr("height", (d) => y(d.mapVal))
@@ -433,18 +434,31 @@ function chainmap(
         d.mapVal == 0 || color(d.mapVal) == "white" ? "#707070" : "white"
       );
 
+      let outRect = g
+      .append("rect")
+      .style("stroke-width", 2)
+      .style("stroke", "#00BFFF")
+      .attr("width",  blockWidth - blockPadding-1)
+      .attr("fill", "none");
+
     g.selectAll(".databar").on("mouseover", function (d) {
+      let rect = d3.select(this);
+      outRect
+        .attr("x", rect._groups[0][0].x.baseVal.value + 1)
+        .attr("y", graph.innerHeight - y(d.mapVal) - 8)
+        .attr("height", y(d.mapVal));
       document.getElementById(
         tooltipID
       ).innerHTML = `${d.mapVal}${tooltipLabel}: ${d.data}`;
+    }).on("mouseout", function (d) {
+      let rect = d3.select(this);
+      outRect.attr("x", rect._groups[0][0].x.baseVal.value);
     });
 
     if (axis) {
       g.append("g")
         .call(xAxis)
-        .attr("transform", `translate(0, ${graph.innerHeight})`)
-        .select(".domain")
-        .remove();
+        .attr("transform", `translate(0, ${graph.innerHeight})`);
       g.append("text")
         .attr("y", graph.innerHeight - axisLabelOffset)
         .attr(
@@ -707,7 +721,7 @@ function linegraph(id, data, values, yExtent, time = true, area = false) {
           var s = self.text().split(" ");
           self.text("");
           self.append("tspan").attr("x", 0).attr("dy", ".8em").text(s[0]);
-          self.append("tspan").attr("x", 0).attr("dy", ".8em").text(s[1]);
+          self.append("tspan").attr("x", 0).attr("dy", "1.1em").text(s[1]);
         });
       });
   };

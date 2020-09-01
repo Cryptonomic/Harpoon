@@ -552,7 +552,7 @@ async function updateBakerInfo(baker, delegator=null) {
     //   "anchor_balances",
     //   (d) => updateBakerInfo(d.pkh)
     // );
-    stackedBarGraph(`staking_balances_chart`, topHundred, {x:"staking_balance", y:"name"}, 8, d => updateBakerInfo(d.pkh));
+    stackedBarGraph(`staking_balances_chart`, topHundred, {x:"staking_balance", y:"name"}, 10, d => updateBakerInfo(d.pkh));
   });
 
   // Populate the "Bakers by Blocks Baked" stacked bar chart

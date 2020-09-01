@@ -15,7 +15,13 @@ button {
 p {
   margin: 0;
 }
-
+.axis {
+  font-size: 10px;
+  line-height: 12px;
+}
+tspan {
+  line-height: 15px;
+}
 /* Text styles */
 
 .extra-large {
@@ -96,7 +102,7 @@ p {
 }
 
 .baker-img {
-  margin-right: 3px;
+  margin-right: 8px;
 }
 .time-img {
   width: 25px;
@@ -105,5 +111,5 @@ p {
 .level-img {
   width: 21px;
   margin-left: 3px;
-  margin-right: 5px;
+  margin-right: 10px;
 }

@@ -400,19 +400,28 @@ svg {
   display: flex;
   align-items: center;
   width: 887px;
-  padding: 0 16px;
+  padding: 0 32px 0 15px;
   justify-content: space-between;
 }
 
 .table-header > p:first-of-type {
-  max-width: 50px;
+  max-width: 60px;
+}
+
+#rewards_table_header >p:last-of-type {
+  
+}
+
+#performance_table_header >p:last-of-type{
+  position: relative;
+  right: 14px;
 }
 
 .table-header > p {
-  flex: 1;
   text-align: center;
-  padding: 0 6px;
+  padding: 0 4px;
   white-space: nowrap;
+  width: 156px;
 }
 
 .info-cell::after {
