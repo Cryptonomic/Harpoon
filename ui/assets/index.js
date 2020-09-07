@@ -111,7 +111,7 @@ async function calculateRewardsForDelegate() {
 		       "actual_fee"]
 
     const colorMappings = {"delegator_rewards": TEAL,
-			   "delegator_rewards_received": TEAL}
+			   "rewards": TEAL}
 
     heatTable("rewards_table", rewards.reverse(), heatTableFields, colorMappings,
 	      [["delegator_rewards", "delegator_rewards_received"], ["advertised_fee", "actual_fee", "inverse"]],
