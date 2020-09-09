@@ -186,7 +186,7 @@ function heatTable(id, data, values, colorMappings, comparisons=[], notices=[]) 
 		.style("fill", (row, rowInd) => {
 		    let color = "black";
 		    comparisons.forEach(compareCol => {
-			if (d ==  compareCol[1] &&
+			if (column ==  compareCol[1] &&
 			    !notices.map(d => d.identifier).includes(row[compareCol[0]]) &&
 			    rowInd != 0) {
 			    positive = "blue"
