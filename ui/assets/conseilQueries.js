@@ -445,3 +445,13 @@ async function getAccusationInfo(baker, start_cycle, end_cycle) {
     return accusationInfo
 }
 
+function makeLink(lastFullCycle) {
+    let query = conseiljs.ConseilQueryBuilder.blankQuery();
+    query = conseiljs.ConseilQueryBuilder.addFields(query, 'baker', 'hash');
+    query = conseiljs.ConseilQueryBuilder.addPredicate(query, 'meta_cycle', conseiljs.ConseilOperator.EQ, [lastFullCycle]);
+    query = conseiljs.ConseilQueryBuilder.addAggregationFunction(query, 'hash', 'count');
+    query = conseiljs.ConseilQueryBuilder.addOrdering(query, 'count_hash', conseiljs.ConseilSortDirection.DESC);
+    const link = `https://arronax.io/tezos/${network}/blocks/query/${btoa(JSON.stringify(query))}`
+    return link
+  }
+

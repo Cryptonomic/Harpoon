@@ -15,18 +15,24 @@
 
     <!-- Header section start -->
     <div class="header-container">
-      <div class="logo-box flex-row">
-        <img src="./assets/images/logo_.png" alt="logo" width="250px" class="logo" />
-        <p class="large-middle subtitle-text">Baker Performance Stats</p>
-      </div>
-      <div class="header-box flex-row">
-        <div class="search-bar">
-          <input class="search" type="text" id="baker" onkeydown="return searchBaker(event)"
-            placeholder="Search by baker address/name"></input>
-          <i class="fa fa-search"></i>
+      <div class="logo-box"> 
+        <div class="logo-top-container">
+          <p class="main-title">HARPOON</p>
+          <p class="logo-sub-title">Baker Performance Stats</p>
         </div>
-        <p class="large-middle header-title">Tezos Mainnet</p>
+        <div class="logo-bottom-container">
+          <p class="logo-bottom-content">an Open Source Project by</p>
+          <img src="./assets/images/logo.svg" alt="logo" class="logo" />
+        </div>
       </div>
+
+      <div class="search-bar">
+        <input class="search" type="text" id="baker" onkeydown="return searchBaker(event)"
+          placeholder="Search by baker address/name"></input>
+        <i class="fa fa-search"></i>
+      </div>
+      <p class="tezos-title">Tezos Mainnet</p>
+
     </div>
     <!-- Header section end -->
 
@@ -155,8 +161,10 @@
                 <div class="flex-row">
                   <p class="middle-middle weight-500 subtitle-text">Bakers by staking balances</p>
                   <div class="flex-row links">
-                    <a class="info-text middle-small" href="javascript: void(0)">View Query in Arronax </a>
-                    <a class="info-text middle-small" href="javascript: void(0)">View Graph in Periscope</a>
+                    <a class="info-text middle-small" href="javascript: void(0)" onclick="gotoArronax1()">View Query in Arronax </a>
+                    <a class="info-text middle-small tooltip" href="javascript: void(0)">View Graph in Periscope
+                      <span class="tooltiptext">Coming soon</span>
+                    </a>
                   </div>
                 </div>
                 <svg id="staking_balances_chart" width="800" height="93"> </svg>
@@ -166,8 +174,10 @@
                 <div class="flex-row">
                   <p class="middle-middle weight-500 subtitle-text">Bakers by blocks baked in the last cycle</p>
                   <div class="flex-row links">
-                    <a class="info-text middle-small" href="javascript: void(0)">View Query in Arronax </a>
-                    <a class="info-text middle-small" href="javascript: void(0)">View Graph in Periscope</a>
+                    <a class="info-text middle-small" href="javascript: void(0)" onclick="gotoArronax2()">View Query in Arronax </a>
+                    <a class="info-text middle-small tooltip" href="javascript: void(0)">View Graph in Periscope
+                      <span class="tooltiptext">Coming soon</span>
+                    </a>
                   </div>
                 </div>
                 <svg id="num_blocks_baked_chart" width="800" height="93"> </svg>
@@ -244,10 +254,10 @@
           </div>
         </div>
         <div class="reward-calc flex-column">
-          <p class="middle-middle subtitle-text weight-500">Type in Information to Calculate Rewards Chart</p>
+          <p class="middle-middle subtitle-text weight-500">Enter information to calculate rewards</p>
           <div class="reward-calc-inputs flex-row">
-            <input type="text" id="delegator" placeholder="Delegator" value=""> </input>
-            <input type="text" id="payout" placeholder="Payout" value=""> </input>
+            <input type="text" id="delegator" placeholder="Delegator Address" value=""> </input>
+            <input type="text" id="payout" placeholder="Payout Address" value=""> </input>
             <input type="text" id="fee" placeholder="Fee" value=""> </input>
             <input type="text" id="payout_delay" placeholder="Payout Delay" value=""> </input>
             <button id="calculate_rewards_button" class="reward-calc-btn middle-middle weight-500 title-text" onclick="calculateRewardsForDelegate()">

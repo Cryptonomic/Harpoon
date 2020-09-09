@@ -729,3 +729,16 @@ const searchBaker = (e) => {
   updateBakerInfo(document.getElementById("baker").value);
   document.getElementById("baker").value = "";
 };
+const link1 = `https://arronax.io/tezos/mainnet/bakers/query/eyJmaWVsZHMiOlsicGtoIiwiYmFsYW5jZSIsImRlbGVnYXRlZF9iYWxhbmNlIiwic3Rha2luZ19iYWxhbmNlIiwiY3ljbGUiXSwicHJlZGljYXRlcyI6W3siZmllbGQiOiJkZWFjdGl2YXRlZCIsIm9wZXJhdGlvbiI6ImVxIiwic2V0IjpbImZhbHNlIl0sImludmVyc2UiOmZhbHNlfSx7ImZpZWxkIjoicm9sbHMiLCJvcGVyYXRpb24iOiJndCIsInNldCI6WzBdLCJpbnZlcnNlIjpmYWxzZX1dLCJvcmRlckJ5IjpbeyJmaWVsZCI6InN0YWtpbmdfYmFsYW5jZSIsImRpcmVjdGlvbiI6ImRlc2MifV0sImFnZ3JlZ2F0aW9uIjpbXSwibGltaXQiOjEwMDB9`;
+
+const gotoArronax1 = () => {
+  window.open(link1);
+}
+
+async function gotoArronax2() {
+  const head = await getBlock("head");
+  const lastFullCycle = head.meta_cycle - 1;
+  const link2 = makeLink(lastFullCycle);
+  window.open(link2);
+
+}
