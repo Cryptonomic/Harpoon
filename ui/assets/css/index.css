@@ -528,6 +528,7 @@ svg {
   padding-left: 8px;
   font-size: 16px;
   line-height: 19px;
+  outline: none;
 }
 
 .reward-calc-btn {
