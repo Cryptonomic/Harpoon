@@ -206,7 +206,7 @@ async function calculateRewardsForDelegate() {
 
   const colorMappings = {
     delegator_rewards: TEAL,
-    delegator_rewards_received: TEAL,
+    rewards: TEAL,
   };
 
   heatTable(

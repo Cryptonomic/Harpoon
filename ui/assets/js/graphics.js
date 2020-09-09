@@ -272,7 +272,7 @@ function heatTable(
             : "black";
           comparisons.forEach((compareCol) => {
             if (
-              d == compareCol[1] &&
+              column == compareCol[1] &&
               !notices.map((d) => d.identifier).includes(row[compareCol[0]]) &&
               rowInd != 0
             ) {
