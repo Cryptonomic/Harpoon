@@ -6,6 +6,7 @@ const millisThirtyDays = millisOneDay * 30;
 
 var clock;
 var delegateAddress;
+var bakerRegistry;
 
 const performanceField = [
   "Cycle",
@@ -318,9 +319,9 @@ async function updateBakerInfo(baker, delegator=null) {
   let numBlocksBakedLastCycle = 0;
 
   // Use Baking Bad to convert address into a name if it exists
-  let bakerRegistry = JSON.parse(
-    await httpGet(`https://api.baking-bad.org/v2/bakers`)
-  );
+  // let bakerRegistry = JSON.parse(
+  //   await httpGet(`https://api.baking-bad.org/v2/bakers`)
+  // );
   let searchRegistry = (pkh) =>
     bakerRegistry.find((baker) => baker.address == pkh) || { name: pkh };
   let getAddressFromName = (name) =>
@@ -544,15 +545,15 @@ async function updateBakerInfo(baker, delegator=null) {
     } else topHundred.find((d) => d.pkh == baker)["default"] = "true";
 
     // Create the stacked bar graph
-    // stackedBarGraph(
-    //   `staking_balances_chart`,
-    //   topHundred,
-    //   { x: "staking_balance", y: "name" },
-    //   10,
-    //   "anchor_balances",
-    //   (d) => updateBakerInfo(d.pkh)
-    // );
-    stackedBarGraph(`staking_balances_chart`, topHundred, {x:"staking_balance", y:"name"}, 10, d => updateBakerInfo(d.pkh));
+    stackedBarGraph(
+      `staking_balances_chart`,
+      topHundred,
+      { x: "staking_balance", y: "name" },
+      10,
+      "anchor_balances",
+      (d) => updateBakerInfo(d.pkh)
+    );
+    // stackedBarGraph(`staking_balances_chart`, topHundred, {x:"staking_balance", y:"name"}, 10, d => updateBakerInfo(d.pkh));
   });
 
   // Populate the "Bakers by Blocks Baked" stacked bar chart
@@ -701,7 +702,10 @@ const tableHeader = (id, tableField, info = [], disable = []) => {
   document.getElementById(id).innerHTML = headerList;
 };
 
-function initialize() {
+async function initialize() {
+  bakerRegistry = JSON.parse(
+    await httpGet(`https://api.baking-bad.org/v2/bakers`)
+  );
   updateNetworkInfo();
   tableHeader("performance_table_header", performanceField);
   tableHeader(
@@ -724,11 +728,136 @@ const copyToClipBoard = (copyPanel) => {
   document.body.removeChild(el);
 };
 
-const searchBaker = (e) => {
-  if (e.keyCode != 13) return;
-  updateBakerInfo(document.getElementById("baker").value);
-  document.getElementById("baker").value = "";
+const debounce = (func, wait, immediate)=> {
+  let timeout;
+
+  return function executedFunction() {
+    let context = this;
+    let args = arguments;
+        
+    const later = function() {
+      timeout = null;
+      if (!immediate) func.apply(context, args);
+    };
+
+    const callNow = immediate && !timeout;
+    
+    clearTimeout(timeout);
+
+    timeout = setTimeout(later, wait);
+    
+    if (callNow) func.apply(context, args);
+  };
 };
+
+function autocomplete(inp) {
+  /*the autocomplete function takes two arguments,
+  the text field element and an array of possible autocompleted values:*/
+  let currentFocus;
+  const getAccountsFromServer = async (val) => {
+    const arr = bakerRegistry.filter((item) => item.address.toLowerCase().startsWith(val.toLowerCase()))
+    currentFocus = -1;
+      /*create a DIV element that will contain the items (values):*/
+      const a = document.createElement("DIV");
+      a.setAttribute("id", "autocomplete-list");
+      a.setAttribute("class", "autocomplete-items");
+      /*append the DIV element as a child of the autocomplete container:*/
+      const parentInput = document.getElementById("search-container");
+      parentInput.appendChild(a);
+      /*for each item in the array...*/
+      for (let i = 0; i < arr.length; i++) {
+        /*check if the item starts with the same letters as the text field value:*/
+        if (arr[i].address.substr(0, val.length).toUpperCase() == val.toUpperCase()) {
+          /*create a DIV element for each matching element:*/
+          const b = document.createElement("DIV");
+          /*make the matching letters bold:*/
+          b.innerHTML = "<strong>" + arr[i].address.substr(0, val.length) + "</strong>";
+          b.innerHTML += arr[i].address.substr(val.length);
+          /*insert a input field that will hold the current array item's value:*/
+          b.innerHTML += "<input type='hidden' value='" + arr[i].address + "'>";
+          /*execute a function when someone clicks on the item value (DIV element):*/
+          b.addEventListener("click", (e) => {
+              /*insert the value for the autocomplete text field:*/
+              inp.value = arr[i].address;
+              updateBakerInfo(arr[i].address)
+              /*close the list of autocompleted values,
+              (or any other open lists of autocompleted values:*/
+              closeAllLists();
+          });
+          a.appendChild(b);
+        }
+      }
+  };
+  const autocompleteSearchDebounce = debounce(getAccountsFromServer, 300);
+  /*execute a function when someone writes in the text field:*/
+  inp.addEventListener("input", (e) => {
+      let val = document.getElementById("baker").value;
+      /*close any already open lists of autocompleted values*/
+      closeAllLists();
+      const isCheck = val.toLowerCase().startsWith('tz1');
+      if (!val || val.length < 5 || !isCheck) { return false;}
+      autocompleteSearchDebounce(val);
+  });
+  /*execute a function presses a key on the keyboard:*/
+  inp.addEventListener("keydown", function(e) {
+    let x = document.getElementById("autocomplete-list");
+    if (x) x = x.getElementsByTagName("div");
+    if (e.keyCode == 40) {
+      /*If the arrow DOWN key is pressed,
+      increase the currentFocus variable:*/
+      currentFocus++;
+      /*and and make the current item more visible:*/
+      addActive(x);
+    } else if (e.keyCode == 38) { //up
+      /*If the arrow UP key is pressed,
+      decrease the currentFocus variable:*/
+      currentFocus--;
+      /*and and make the current item more visible:*/
+      addActive(x);
+    } else if (e.keyCode == 13) {
+      /*If the ENTER key is pressed, prevent the form from being submitted,*/
+      e.preventDefault();
+      if (currentFocus > -1) {
+        /*and simulate a click on the "active" item:*/
+        if (x) x[currentFocus].click();
+      }
+    }
+  });
+  function addActive(x) {
+    /*a function to classify an item as "active":*/
+    if (!x) return false;
+    /*start by removing the "active" class on all items:*/
+    removeActive(x);
+    if (currentFocus >= x.length) currentFocus = 0;
+    if (currentFocus < 0) currentFocus = (x.length - 1);
+    /*add class "autocomplete-active":*/
+    x[currentFocus].classList.add("autocomplete-active");
+  }
+  function removeActive(x) {
+    /*a function to remove the "active" class from all autocomplete items:*/
+    for (let i = 0; i < x.length; i++) {
+      x[i].classList.remove("autocomplete-active");
+    }
+  }
+  function closeAllLists(elmnt) {
+    /*close all autocomplete lists in the document,
+    except the one passed as an argument:*/
+    const x = document.getElementsByClassName("autocomplete-items");
+    for (let i = 0; i < x.length; i++) {
+      if (elmnt != x[i] && elmnt != inp) {
+        x[i].parentNode.removeChild(x[i]);
+      }
+    }
+  }
+
+  
+  /*execute a function when someone clicks in the document:*/
+  document.addEventListener("click", function (e) {
+      closeAllLists(e.target);
+  });
+}
+
+autocomplete(document.getElementById("baker"));
 const link1 = `https://arronax.io/tezos/mainnet/bakers/query/eyJmaWVsZHMiOlsicGtoIiwiYmFsYW5jZSIsImRlbGVnYXRlZF9iYWxhbmNlIiwic3Rha2luZ19iYWxhbmNlIiwiY3ljbGUiXSwicHJlZGljYXRlcyI6W3siZmllbGQiOiJkZWFjdGl2YXRlZCIsIm9wZXJhdGlvbiI6ImVxIiwic2V0IjpbImZhbHNlIl0sImludmVyc2UiOmZhbHNlfSx7ImZpZWxkIjoicm9sbHMiLCJvcGVyYXRpb24iOiJndCIsInNldCI6WzBdLCJpbnZlcnNlIjpmYWxzZX1dLCJvcmRlckJ5IjpbeyJmaWVsZCI6InN0YWtpbmdfYmFsYW5jZSIsImRpcmVjdGlvbiI6ImRlc2MifV0sImFnZ3JlZ2F0aW9uIjpbXSwibGltaXQiOjEwMDB9`;
 
 const gotoArronax1 = () => {
@@ -740,5 +869,14 @@ async function gotoArronax2() {
   const lastFullCycle = head.meta_cycle - 1;
   const link2 = makeLink(lastFullCycle);
   window.open(link2);
+}
 
+const periLink1 = 'https://periscope.arronax.io/bakers?q=topStakers';
+const periLink2 = 'https://periscope.arronax.io/bakers?q=topBlockers';
+const gotoPeri1 = () => {
+  window.open(periLink1);
+}
+
+const gotoPeri2 = () => {
+  window.open(periLink2);
 }

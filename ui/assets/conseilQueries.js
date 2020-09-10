@@ -453,5 +453,9 @@ function makeLink(lastFullCycle) {
     query = conseiljs.ConseilQueryBuilder.addOrdering(query, 'count_hash', conseiljs.ConseilSortDirection.DESC);
     const link = `https://arronax.io/tezos/${network}/blocks/query/${btoa(JSON.stringify(query))}`
     return link
-  }
+}
+
+function getAccounts(prefix) {
+    return conseiljs.ConseilMetadataClient.getAttributeValuesForPrefix(conseilServer, platform, network, 'accounts', 'account_id', prefix);
+}
 
