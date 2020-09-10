@@ -1,6 +1,8 @@
 import time
 import sys
 import requests
+import json
+import traceback
 from microseil import get_session, func
 import queries as tezos
 
@@ -60,5 +62,10 @@ def populate_from_cycle(table):
                     cycle += 1
                 except requests.exceptions.ReadTimeout:
                     print("Request timeout on cycle %s. Retrying..." % cycle)
-
+                except json.decoder.JSONDecodeError:
+                    print("Unexpected data received on cycle %s. Retrying..." % cycle)
+                except Exception as e:
+                    print("Encountered error on cycle %s:" % cycle)
+                    traceback.print_exc()
+                    print("Retrying...")
     return inner
