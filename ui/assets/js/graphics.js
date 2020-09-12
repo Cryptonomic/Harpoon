@@ -179,7 +179,6 @@ function heatTable(
   data,
   values,
   colorMappings,
-  cellWidth = 92,
   comparisons = [],
   notices = []
 ) {
@@ -265,11 +264,7 @@ function heatTable(
             rowInd * (rowHeight + rowPadding) + (rowHeight + rowPadding) / 2
         )
         .style("fill", (row, rowInd) => {
-          let color = scales[column]
-            ? scales[column](data[rowInd][column]) == 0.8
-              ? "white"
-              : "black"
-            : "black";
+          let color = "black";
           comparisons.forEach((compareCol) => {
             if (
               column == compareCol[1] &&
@@ -319,24 +314,8 @@ function heatTable(
                       (values.length - 1)
               )
               .attr("height", rowHeight + rowPadding)
-              .style(
-                "fill",
-                colorMappings[column]
-                  ? colorMappings[column][
-                      Math.floor(scales[column](data[rowInd][column]) * 10 - 1)
-                    ]
-                    ? colorMappings[column][
-                        Math.floor(
-                          scales[column](data[rowInd][column]) * 10 - 1
-                        )
-                      ]
-                    : "white"
-                  : "white"
-              )
-              .style(
-                "fill-opacity",
-                scales[column] ? scales[column](data[rowInd][column]) : 0
-              );
+              .style("fill", colorMappings[column] ? colorMappings[column] : "white")
+			        .style("opacity", scales[column] ? scales[column](data[rowInd][column]) : 0)
           }
         });
     });

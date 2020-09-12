@@ -206,8 +206,8 @@ async function calculateRewardsForDelegate() {
   ];
 
   const colorMappings = {
-    delegator_rewards: TEAL,
-    rewards: TEAL,
+    delegator_rewards: TEAL[7],
+    rewards: TEAL[7],
   };
 
   heatTable(
@@ -404,11 +404,11 @@ async function updateBakerInfo(baker, delegator=null) {
     );
     d.push(columnTitles);
     const colorMappings = {
-      num_baked: TEAL,
-      num_missed: BRICK_RED,
-      num_stolen: DARK_BLUE,
-      endorsements: TEAL,
-      missed_endorsements: BRICK_RED,
+      num_baked: TEAL[7],
+      num_missed: BRICK_RED[7],
+      num_stolen: DARK_BLUE[7],
+      endorsements: TEAL[7],
+      missed_endorsements: BRICK_RED[7],
     };
 
     heatTable(
@@ -478,7 +478,7 @@ async function updateBakerInfo(baker, delegator=null) {
     });
 
     heatTable("rewards_table", d.reverse(), heatTableFields, {
-      rewards: TEAL,
+      rewards: TEAL[7],
     });
   });
 
