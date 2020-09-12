@@ -680,9 +680,10 @@ function linegraph(id, data, values, yExtent, time = true, area = false) {
       .domain(yExtent)
       .range([graph.innerHeight, 0])
       .nice();
+    const xAxisBefore = time ? 
+    d3.axisBottom(x).tickFormat(d3.timeFormat("%a %d")).ticks(d3.timeDay.filter(d=>d3.timeDay.count(0, d) % 2 === 0)) : d3.axisBottom(x)
 
-    const xAxis = d3
-      .axisBottom(x)
+    const xAxis = xAxisBefore
       .tickSize(xTickSize)
       .tickPadding(xTickPadding);
 
