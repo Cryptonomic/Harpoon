@@ -113,7 +113,7 @@ async function calculateRewardsForDelegate() {
   );
 
   // Sum all of the fields in each payout scheme returned by getBakerRewards
-  for (let i = 0; i < rewards.length; i++) {
+  for (let i = 0; i < calcRewards.length; i++) {
     rewards[i]["rewards"] = Object.values(calcRewards[i]).reduce(
       (acc, curr) => acc + curr,
       0
