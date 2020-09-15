@@ -335,7 +335,7 @@ async function updateBakerInfo(baker, delegator=null) {
     ) || { address: '' };
 
   const isBakerAddress = await isBaker(baker).catch(() => false);
-  if(!baker.toLowerCase().startsWith('tz1') && !baker.toLowerCase().startsWith('kt')) {
+  if(!baker.toLowerCase().startsWith('tz') && !baker.toLowerCase().startsWith('kt')) {
     baker = getAddressFromName(baker).address;
   } else if(!isBakerAddress && !delegator) {
     updateBakerInfo(await lastDelegateFor(baker), baker)
@@ -816,7 +816,7 @@ function autocomplete(inp) {
       let val = document.getElementById("baker").value;
       /*close any already open lists of autocompleted values*/
       closeAllLists();
-      const isCheck = val.toLowerCase().startsWith('tz1');
+      const isCheck = val.toLowerCase().startsWith('tz');
       if(!val || val.length < 3 || val.length < 5 && isCheck) {
         return false;
       }
