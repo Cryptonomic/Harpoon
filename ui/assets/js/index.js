@@ -140,17 +140,22 @@ async function calculateRewardsForDelegate() {
   );
   const delegation_cycles = delegations ? delegations.map((d) => d.cycle) : [];
 
+  const ifFeesDeducted = await getIfFeesDeducted(delegateAddress,
+						 (lastFullCycle - 9) + payoutDelay,
+						 lastFullCycle + payoutDelay)
   // Populate rewards with additional fields which are needed in the table
   for (d of rewards) {
     let delegateBalance = await getBalanceAtLevel(
       delegator,
       d.snapshot_block_level - 1
     );
-    let rewardsReceived = await tezTransferedBetween(
+    const deductFees = ifFeesDeducted.find(entry => entry.cycle == d.cycle + payoutDelay).value
+    let paymentSent = await tezTransferedBetween(
       payout,
       delegator,
       d.cycle + payoutDelay
     );
+    const rewardsReceived = paymentSent.sum_amount + (deductFees ? paymentSent.sum_fee : 0)
     d["advertised_fee"] = parseFloat((fee * 100).toFixed(2));
 
     // if the delegator has rewards rights in the cycle, make the necessary calculations
