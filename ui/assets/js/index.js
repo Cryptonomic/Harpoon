@@ -305,6 +305,11 @@ let getSD = function (data) {
   );
 };
 
+const onSearch = () => {
+  const val = document.getElementById("baker").value;
+  updateBakerInfo(val);
+}
+
 /**
  * Updates all of the panels except for "Network Info" on the page
  * @params {string} baker - the baker to display all of the information for
@@ -327,17 +332,24 @@ async function updateBakerInfo(baker, delegator=null) {
   let getAddressFromName = (name) =>
     bakerRegistry.find(
       (baker) => baker.name.toLowerCase() == name.toLowerCase()
-    ) || { address: name };
-  baker = getAddressFromName(baker).address;
+    ) || { address: '' };
 
-  if ((baker.charAt(0) != "t" && baker.charAt(0) != "K") || baker.length != 36)	return;
+  const isBakerAddress = await isBaker(baker).catch(() => false);
+  if(!baker.toLowerCase().startsWith('tz1') && !baker.toLowerCase().startsWith('kt')) {
+    baker = getAddressFromName(baker).address;
+  } else if(!isBakerAddress && !delegator) {
+    updateBakerInfo(await lastDelegateFor(baker), baker)
+    return;
+  } else if(!isBakerAddress && !!delegator) {
+    return;
+  }
+
+  if( baker.length !== 36 ) return;
+
+  // if ((baker.charAt(0) != "t" && baker.charAt(0) != "K") || baker.length != 36)	return;
 
   // Check to see if the address is a regular account. If it is, show the page for
   // that account's delegate
-  if (!(await isBaker(baker))) {
-    updateBakerInfo(await lastDelegateFor(baker), baker)
-    return;
-  }
 
   // If delegator is set, autofill the field, else clear it
   document.getElementById("delegator").value = delegator ? delegator : ""
@@ -754,8 +766,11 @@ function autocomplete(inp) {
   /*the autocomplete function takes two arguments,
   the text field element and an array of possible autocompleted values:*/
   let currentFocus;
-  const getAccountsFromServer = async (val) => {
-    const arr = bakerRegistry.filter((item) => item.address.toLowerCase().startsWith(val.toLowerCase()))
+  const getAccountsFromServer = async (val, isName) => {
+    const arr = bakerRegistry.filter((item) => {
+      return item.address.toLowerCase().startsWith(val) || item.name.toLowerCase().includes(val)
+    })
+    // const arr = await getAccounts(val).catch(() => []);
     currentFocus = -1;
       /*create a DIV element that will contain the items (values):*/
       const a = document.createElement("DIV");
@@ -767,12 +782,18 @@ function autocomplete(inp) {
       /*for each item in the array...*/
       for (let i = 0; i < arr.length; i++) {
         /*check if the item starts with the same letters as the text field value:*/
-        if (arr[i].address.substr(0, val.length).toUpperCase() == val.toUpperCase()) {
+        // if (arr[i].address.substr(0, val.length).toUpperCase() == val.toUpperCase()) {
           /*create a DIV element for each matching element:*/
           const b = document.createElement("DIV");
           /*make the matching letters bold:*/
-          b.innerHTML = "<strong>" + arr[i].address.substr(0, val.length) + "</strong>";
-          b.innerHTML += arr[i].address.substr(val.length);
+          if(!isName) {
+            b.innerHTML = "<strong>" + arr[i].address.substr(0, val.length) + "</strong>";
+            b.innerHTML += `${arr[i].address.substr(val.length)} (${arr[i].name})`;
+          } else {
+            b.innerHTML = "<strong>" + arr[i].name.substr(0, val.length) + "</strong>";
+            b.innerHTML += `${arr[i].name.substr(val.length)} (${arr[i].address})`;
+          }
+         
           /*insert a input field that will hold the current array item's value:*/
           b.innerHTML += "<input type='hidden' value='" + arr[i].address + "'>";
           /*execute a function when someone clicks on the item value (DIV element):*/
@@ -783,9 +804,10 @@ function autocomplete(inp) {
               /*close the list of autocompleted values,
               (or any other open lists of autocompleted values:*/
               closeAllLists();
+              currentFocus = -1;
           });
           a.appendChild(b);
-        }
+        // }
       }
   };
   const autocompleteSearchDebounce = debounce(getAccountsFromServer, 300);
@@ -795,8 +817,10 @@ function autocomplete(inp) {
       /*close any already open lists of autocompleted values*/
       closeAllLists();
       const isCheck = val.toLowerCase().startsWith('tz1');
-      if (!val || val.length < 5 || !isCheck) { return false;}
-      autocompleteSearchDebounce(val);
+      if(!val || val.length < 3 || val.length < 5 && isCheck) {
+        return false;
+      }
+      autocompleteSearchDebounce(val.toLowerCase(), !isCheck);
   });
   /*execute a function presses a key on the keyboard:*/
   inp.addEventListener("keydown", function(e) {
@@ -820,6 +844,9 @@ function autocomplete(inp) {
       if (currentFocus > -1) {
         /*and simulate a click on the "active" item:*/
         if (x) x[currentFocus].click();
+      } else {
+        let val = document.getElementById("baker").value;
+        updateBakerInfo(val);
       }
     }
   });
