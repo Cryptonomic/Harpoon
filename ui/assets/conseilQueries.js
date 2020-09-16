@@ -1,5 +1,5 @@
 function convertFromUtezToTez(amountInUtez) {
-    const tezAmount = amountInUtez / 1000000
+    const tezAmount = parseFloat((amountInUtez / 1000000).toFixed(6))
     return tezAmount
 }
 

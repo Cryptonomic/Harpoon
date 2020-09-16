@@ -105,41 +105,58 @@ let areaGenerator = (x, y, outline) =>
  * @param {number} gwidth = width of g element
  * @param {number} gheight = height of g element
  */
-let tooltip = (g, width, height, padding, gwidth, gheight) => {
-  let tt = g
-    .append("rect")
-    .attr("class", "tooltip")
-    .attr("width", width)
-    .attr("height", height)
-    .style("fill", "#b3b3b3");
-  let tooltipText = g
-    .append("text")
-    .attr("class", "tooltip")
-    .attr("transform", "translate(0, 15)");
-  tt.setText = (text) => tooltipText.text(text);
-  tt.fitSizeToText = () => tt.attr("width", tooltipText.node().getBBox().width);
-  g.selectAll(".tooltip").style("opacity", 0);
-  g.on("mouseover", (d) =>
-    g.selectAll(".tooltip").transition().duration(50).style("opacity", 1)
-  )
-    .on("mousemove", function (d) {
-      let ttwidth = tt.attr("width");
-      let ttheight = tt.attr("height");
-      let xOffset =
-        d3.mouse(this)[0] > gwidth - ttwidth - padding
-          ? -padding - ttwidth
-          : padding;
-      let yOffset = d3.mouse(this)[1] > gheight - ttheight ? -ttheight : 0;
+// let tooltip = (g, width, height, padding, gwidth, gheight) => {
+//   let tt = g
+//     .append("rect")
+//     .attr("class", "tooltip")
+//     .attr("width", width)
+//     .attr("height", height)
+//     .style("fill", "#b3b3b3");
+//   let tooltipText = g
+//     .append("text")
+//     .attr("class", "tooltip")
+//     .attr("transform", "translate(50, 50)");
+//     // .attr("transform", "translate(0, 15)");
+//   tt.setText = (text) => tooltipText.text(text);
+//   tt.fitSizeToText = () => tt.attr("width", tooltipText.node().getBBox().width);
+//   g.selectAll(".tooltip").style("opacity", 0);
+//   g.on("mouseover", (d) =>
+//     g.selectAll(".tooltip").transition().duration(30).style("opacity", 1)
+//   )
+//     .on("mousemove", function (d) {
+//       let ttwidth = tt.attr("width");
+//       let ttheight = tt.attr("height");
+//       let xOffset =
+//         d3.mouse(this)[0] > gwidth - ttwidth - padding
+//           ? -padding - ttwidth
+//           : padding;
+//       let yOffset = d3.mouse(this)[1] > gheight - ttheight ? -ttheight : 0;
 
-      g.selectAll(".tooltip")
-        .attr("x", d3.mouse(this)[0] + xOffset)
-        .attr("y", d3.mouse(this)[1] + yOffset);
-    })
-    .on("mouseout", (d) =>
-      g.selectAll(".tooltip").transition().duration(200).style("opacity", 0)
-    );
+//       g.selectAll(".tooltip")
+//         .attr("x", d3.mouse(this)[0] + xOffset)
+//         .attr("y", d3.mouse(this)[1] + yOffset);
+//     })
+//     .on("mouseout", (d) =>
+//       g.selectAll(".tooltip").transition().duration(200).style("opacity", 0)
+//     );
 
-  return tt;
+//   return tt;
+// };
+
+let tooltip = (g, text) => {
+  g.on("mousemove", function (d) {
+    let tooltip = document.getElementById("tooltip");
+    tooltip.innerHTML = text;
+    tooltip.style.display = "block";
+    tooltip.style.left = d3.event.pageX + 10 + 'px';
+    tooltip.style.top = d3.event.pageY + 10 + 'px';
+  })
+  .on("mouseout", (d) => {
+    const tooltip = document.getElementById("tooltip");
+    tooltip.style.display = "none";
+  });
+
+  return g;
 };
 
 /**
@@ -234,16 +251,18 @@ function heatTable(
             .map((note) => note.identifier)
             .findIndex((elem) => elem == data[column]);
           if (noticeInd != -1) {
-            tt = tooltip(
-              d3.select(nodes[nodeInd]),
-              5,
-              tooltipHeight,
-              tooltipPadding,
-              graph.innerWidth,
-              rowHeight
-            );
-            tt.setText(notices[noticeInd].message);
-            tt.fitSizeToText();
+            // tt = tooltip(
+            //   d3.select(nodes[nodeInd]),
+            //   5,
+            //   tooltipHeight,
+            //   tooltipPadding,
+            //   graph.innerWidth,
+            //   rowHeight
+            // );
+            // tt.setText(notices[noticeInd].message);
+            // tt.fitSizeToText();
+
+            tt = tooltip(d3.select(nodes[nodeInd]), notices[noticeInd].message);
           }
         })
         .append("text")

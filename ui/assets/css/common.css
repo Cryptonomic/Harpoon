@@ -114,12 +114,12 @@ tspan {
   margin-right: 10px;
 }
 
-.tooltip {
+.main-tooltip {
   position: relative;
   display: inline-block;
 }
 
-.tooltip .tooltiptext {
+.main-tooltip .tooltiptext {
   visibility: hidden;
   width: 120px;
   background-color: #555;
@@ -136,7 +136,7 @@ tspan {
   transition: opacity 0.3s;
 }
 
-.tooltip .tooltiptext::after {
+.main-tooltip .tooltiptext::after {
   content: "";
   position: absolute;
   top: 100%;
@@ -147,7 +147,7 @@ tspan {
   border-color: #555 transparent transparent transparent;
 }
 
-.tooltip:hover .tooltiptext {
+.main-tooltip:hover .tooltiptext {
   visibility: visible;
   opacity: 1;
 }
@@ -179,4 +179,12 @@ tspan {
 /*when navigating through the items using the arrow keys:*/
 .autocomplete-active {
   background-color: #e9e9e9 !important;
+}
+
+
+#tooltip {
+  background: #b3b3b3;
+  border-radius: 5px;
+  padding: 5px 10px;
+  max-width: 200px;
 }

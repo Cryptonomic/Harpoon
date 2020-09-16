@@ -105,6 +105,9 @@ async function calculateRewardsForDelegate() {
       { field: "baker", op: "eq", value: [delegateAddress] },
     ]
   );
+
+  // rewards.forEach((r) => (r.rewards = parseFloat(r.rewards.toFixed(6))));
+
   // Attain the rewards actually paid out using the payout structs
   calcRewards = await getBakerRewards(
     delegateAddress,
@@ -115,13 +118,13 @@ async function calculateRewardsForDelegate() {
   // Sum all of the fields in each payout scheme returned by getBakerRewards
   for (let i = 0; i < calcRewards.length; i++) {
     rewards[i]["rewards"] = Object.values(calcRewards[i]).reduce(
-      (acc, curr) => acc + curr,
+      (acc, curr) => parseFloat((acc + curr).toFixed(6)),
       0
     );
   }
 
   // Slice the rewards to only have the rows in which data was available for
-  rewards = rewards.slice(0, calcRewards.length)
+  rewards = rewards.slice(0, calcRewards.length);
 
   // Get the delegations rights for the last 10 cycles
   const delegations = await getBakerInfo(
