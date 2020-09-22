@@ -915,3 +915,7 @@ const gotoPeri1 = () => {
 const gotoPeri2 = () => {
   window.open(periLink2);
 }
+
+const gotoCryptonomic = () => {
+  window.open('https://cryptonomic.tech/')
+}
