@@ -1,5 +1,5 @@
 function convertFromUtezToTez(amountInUtez) {
-    const tezAmount = amountInUtez / 1000000
+    const tezAmount = parseFloat((amountInUtez / 1000000).toFixed(6))
     return tezAmount
 }
 
@@ -60,15 +60,16 @@ async function getTezInCirculation() {
 
 async function tezTransferedBetween(from, to, cycle) {
     let query = conseiljs.ConseilQueryBuilder.blankQuery();
-    query = conseiljs.ConseilQueryBuilder.addFields(query, 'amount');
+    query = conseiljs.ConseilQueryBuilder.addFields(query, 'amount', 'fee');
     query = conseiljs.ConseilQueryBuilder.addPredicate(query, 'cycle', conseiljs.ConseilOperator.EQ, [cycle], false);
     query = conseiljs.ConseilQueryBuilder.addPredicate(query, 'source', conseiljs.ConseilOperator.EQ, [from], false);
     query = conseiljs.ConseilQueryBuilder.addPredicate(query, 'destination', conseiljs.ConseilOperator.EQ, [to], false);
     query = conseiljs.ConseilQueryBuilder.addPredicate(query, 'kind', conseiljs.ConseilOperator.EQ, ["transaction"], false);
     query = conseiljs.ConseilQueryBuilder.addPredicate(query, 'status', conseiljs.ConseilOperator.EQ, ["applied"], false);
     query = conseiljs.ConseilQueryBuilder.addAggregationFunction(query, 'amount', 'sum');	 
+    query = conseiljs.ConseilQueryBuilder.addAggregationFunction(query, 'fee', 'sum');	 
     const result = await conseiljs.ConseilDataClient.executeEntityQuery(conseilServer, platform, network, 'operations', query);
-    return result[0] ? result[0].sum_amount : 0
+    return result[0] ? result[0] : {sum_amount: 0, sum_fee: 0}
 }
 
 async function getRollsStaked(baker="none") {
@@ -268,6 +269,37 @@ async function getDelegatedBalance(baker) {
 }
 
 /**
+ * This information is sourced from Baking Bad. For more information on the baker config, visit
+ * https://baking-bad.org/docs/api#get-bakers
+ * @returns an array of json objects in the form of {"cycle": int, "value": boolean} where "value"
+ * specifies if the baker pays for the transaction on payouts or not. true = fee is deducted from rewards,
+ * false = baker pays
+ */
+async function getIfFeesDeducted(baker, start_cycle, end_cycle) {
+    const response = await httpGet(`https://api.baking-bad.org/v2/bakers/${baker}?configs=true`)
+    const defaultDeducted = false;
+    let results = []
+
+    // If baker is not in the Baking Bad registry, use default value of false
+    if (response=="") {
+	for (let i = start_cycle; i <= end_cycle; i++) 
+	    results.push({"cycle":i, "value":defaultDeducted})
+	return results
+    }
+    const responseDeductions = JSON.parse(response).config.payoutFee
+    let i = end_cycle
+    responseDeductions.forEach(entry => {
+	for (;i >= start_cycle; i--) {
+	    if (entry.cycle <= i) {
+		results.push({"cycle":i, "value":entry.value})
+	    }
+	    else return;
+	}
+    });
+    return results;
+}
+
+/**
  * A reward stuct is a 13 bit integer which contains information regarding the payout stucture of a baker.
  * This information is sourced from Baking Bad. For more information on the reward struct, visit
  * https://baking-bad.org/docs/api#get-bakers
@@ -347,7 +379,6 @@ async function getBakerRewards(baker, start_cycle, end_cycle) {
     	}
     	rewards.push(extRewardStruct)
     }
-    console.log(Object.values(rewards[0]).reduce(((acc, curr) => acc + curr), 0))
     return rewards
 }
 
@@ -443,5 +474,19 @@ async function getAccusationInfo(baker, start_cycle, end_cycle) {
     }
 
     return accusationInfo
+}
+
+function makeLink(lastFullCycle) {
+    let query = conseiljs.ConseilQueryBuilder.blankQuery();
+    query = conseiljs.ConseilQueryBuilder.addFields(query, 'baker', 'hash');
+    query = conseiljs.ConseilQueryBuilder.addPredicate(query, 'meta_cycle', conseiljs.ConseilOperator.EQ, [lastFullCycle]);
+    query = conseiljs.ConseilQueryBuilder.addAggregationFunction(query, 'hash', 'count');
+    query = conseiljs.ConseilQueryBuilder.addOrdering(query, 'count_hash', conseiljs.ConseilSortDirection.DESC);
+    const link = `https://arronax.io/tezos/${network}/blocks/query/${btoa(JSON.stringify(query))}`
+    return link
+}
+
+function getAccounts(prefix) {
+    return conseiljs.ConseilMetadataClient.getAttributeValuesForPrefix(conseilServer, platform, network, 'accounts', 'account_id', prefix);
 }
 

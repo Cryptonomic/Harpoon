@@ -1,139 +1,305 @@
 <html>
-    <head>
-	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    </head>
 
-    <body onload="initialize()">
-	<h1 style="text-align: left; display:inline-block"> Harpoon </h1>
-	<p style="float:right">
-	    Baker: <input type="text" id="baker"> </input>
-	    <button onclick="updateBakerInfo(document.getElementById(&#39;baker&#39;).value)"> Search </button>
-	    <br>
-	</p>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" />
+  <link href="http://fonts.googleapis.com/css?family=Roboto:400,300,500" rel="stylesheet" type="text/css">
+  <link rel="stylesheet" type="text/css" href="./assets/css/variables.css" media="screen" />
+  <link rel="stylesheet" type="text/css" href="./assets/css/common.css" media="screen" />
+  <link rel="stylesheet" type="text/css" href="./assets/css/index.css" media="screen" />
+  <link rel="icon" href="./assets/images/favicon.ico" />
+</head>
 
+<!-- Matomo -->
+<script type="text/javascript">
+ var _paq = window._paq = window._paq || [];
+ /* tracker methods like "setCustomDimension" should be called before "trackPageView" */
+ _paq.push(['trackPageView']);
+ _paq.push(['enableLinkTracking']);
+ (function() {
+     var u="https://matomo.cryptonomic-infra.tech/";
+     _paq.push(['setTrackerUrl', u+'matomo.php']);
+     _paq.push(['setSiteId', '5']);
+     var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0];
+     g.type='text/javascript'; g.async=true; g.src=u+'matomo.js'; s.parentNode.insertBefore(g,s);
+ })();
+</script>
+<!-- End Matomo Code -->
 
+<body onload="initialize()">
+  <div class="container">
 
-	<table border="1" style="width:100%">
-	    <tr>
-		<td rowspan="2">
-		    <h3 style="float:left" id="baker_name"> </h3> <h3 style="float:right" id="baker_grade"> --- </h3> <hr style="clear:both">
-		    <p id="baker_last_bake">Time since last bake: </p>
-		    <p id="baker_last_bake_level">Level of last bake: </p>
-		    <p id="baker_blocks_baked">Lifetime locks baked: </p>
-		    <p id="baker_next_bake">Time until next bake: </p>
-		    <p id="baker_next_bake_level">Level of next bake: </p>
-		    <p id="baker_blocks_baked_last_cycle">Blocks baked in cycle: </p>
-		    <p id="baker_blocks_stolen">Blocks stolen in cycle: </p>
-		    <p id="baker_blocks_missed">Blocks missed in cycle: </p>
-		    <p id="baker_rewards">Rewards made in last cycle: </p>
-		    <p id="baker_amount_staked">Amount staked: </p>
-		    <p id="baker_amount_delegated">Amount delegated: </p>
-		    <p id="baker_num_delegators">Number delegators: </p>
-		    <p id="baker_blocks_per_stake">Blocks baked per XTZ: </p>
-		    <p id="baker_luck">Luck in current cycle: </p>
-		</td>
-		<td>
+    <!-- Header section start -->
+    <div class="header-container">
+      <div class="logo-box"> 
+        <div class="logo-top-container">
+          <p class="main-title">HARPOON</p>
+          <p class="logo-sub-title">Baker Performance Stats</p>
+        </div>
+        <div class="logo-bottom-container">
+          <p class="logo-bottom-content">an Open Source Project by</p>
+          <img onclick="gotoCryptonomic()" src="./assets/images/logo.svg" alt="logo" class="logo" />
+        </div>
+      </div>
 
-		    <p style="margin: 5 0; text-align: center;"> <strong> Baker By Comparison </strong> </p>
-		    <p style="margin: 5 0;"> Bakers by staking balances: </p>
-		    <svg id="staking_balances_chart" width="1000" height="60"> </svg> 
-		    <p style="margin: 5 0;"> Bakers by blocks baked in last cycle: </p>
-		    <svg id="num_blocks_baked_chart" width="1000" height="60"> </svg> 
-		</td>
-	    </tr>
-	    <tr>
-		<td>
-		    <p style="text-align: center;"> <strong> Block Production </strong> </p>
-		    <p> Blocks Baked </p>
-		    <svg id="blocks_baked_chart" width="1000" height="50"> </svg> 
-		    <p> Blocks Stolen </p>
-		    <svg id="blocks_stolen_chart" width="1000" height="50"> </svg> 
-		    <p> Blocks Missed </p>
-		    <svg id="blocks_missed_chart" width="1000" height="100"> </svg> 
+      <div class="search-bar" id="search-container">
+        <input class="search" type="text" id="baker" 
+          placeholder="Search by baker or delegator address/name"></input>
+        <i class="fa fa-search" onclick="onSearch()"></i>
+      </div>
+      <p class="tezos-title">Tezos Mainnet</p>
 
-		</td>
-	    </tr>
-	    <tr>
-		<td colspan="2">
-		    <button onclick="setPanel(&#39;performance&#39;)"> Performance </button>
-		    <button onclick="setPanel(&#39;rewards&#39;)"> Rewards </button>
-		    <div class="panel performance" style="display:block;">
-			<div style="display:inline-block; text-align:center">
-			    <strong> Performance </strong> <br>
-			    <svg id="performance_table" width="900" height="500"> </svg>
-			</div>
-			<div style="display:inline-block; text-align:center">
-			    <strong> Blocks Baker Per Hour </strong> <br>
-			    <svg id="blocks_per_hour_graph" width="490" height="500""> </svg>
-			</div>
-		    </div> 
-		    <div class="panel rewards" style="display:none">
-			<div style="display:inline-block; text-align:center">
-			    <strong> Rewards </strong> <br>
-			    <svg id="rewards_table" width="1000" height="500"> </svg> <br>
-			    <div style="display:inline-block;">
-				<input type="text" id="delegator"> </input> <br>
-				<strong> Delegator </strong> 
-			    </div>
-			    <div style="display:inline-block;">
-				<input type="text" id="payout"> </input> <br>
-				<strong> Payout </strong> 
-			    </div>
-			    <div style="display:inline-block;">
-				<input type="text" id="fee"> </input> <br>
-				<strong> Fee </strong> 
-			    </div>
-			    <div style="display:inline-block;">
-				<input type="text" id="payout_delay"> </input> <br>
-				<strong> Payout Delay </strong> 
-			    </div>
-			    <div style="display:inline-block;">
-				<button id="calculate_rewards_button" onclick="calculateRewardsForDelegate()"> 
-				    Calculate Rewards! 
-				</button> <br> <br>
-			    </div>
-			</div>
-			<div style="display:inline-block; text-align:center">
-			    <strong> Rewards </strong> <br>
-			    <svg id="rewards_chart" width="350" height="500"> </svg>
-			</div>
+    </div>
+    <!-- Header section end -->
 
-		    </div>
+    <!-- Content section start -->
+    <div class="content-container">
+      <div class="content-main flex-column">
+        <!-- Current Cycle and Level -->
 
-		</td>
-	    </tr>
-	</table>
-	
-	<table border="1" style="width: 100%">
-	    <tr> <th colspan="2"> Network Info </th> </tr>
-	    <tr>
-		<td>
-		    <p id="net_market_cap">Market cap: </p>
-		    <p id="net_min_baker_fee">Min baker fee: </p>
-		    <p id="net_max_baker_fee">Max baker fee: </p>
-		    <p id="net_avg_baker_fee">Avg baker fee: </p>
-		</td>
-		<td>
-		    <p id="net_level">Current level: </p>
-		    <p id="net_last_block">Latest block: </p>
-		    <p id="net_last_baker">Last baker: </p>
-		    <p id="net_blocks_last_hour"># Blocks baked in the last hr: </p>
+        <div class="current flex-row">
+          <div class="cycle flex-row">
+            <p class="subtitle-text weight-500" id="current_cycle">Current Cycle: </p>
+          </div>
+          <div class="level flex-row">
+            <p class="subtitle-text weight-500" id="net_level">Current Level:</p>
+          </div>
+        </div>
 
-		</td>
-	    </tr>
-	</table>
-	<p id="time"> </p>
-    </body>
-    
-    <script src="https://d3js.org/d3.v5.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/gh/cryptonomic/conseiljs/dist-web/conseiljs.min.js"
-            integrity="sha384-55ElSck0OR93XvRRLY9kqwLv1ueRL2O04duNhZwdPRAO1qFCqYwqASM7NFphWOhv"
-            crossorigin="anonymous">
-    </script>
+        <!-- Tezos Vote box -->
+        <div class="tezos-vote flex-row">
+          <div class="flex-column tezos">
+            <p class="extra-large title-text" id="baker_name">Tezos Vote</p>
+            <div class="baker-code flex-row">
+              <p class="large-middle copyPanel" id="baker_hash">tz1bHzftcTKZMTZgLLtnrXydCm6UEqf4ivca</p>
+              <img onclick="copyToClipBoard('copyPanel')" src="./assets/images/clone.svg" class="copy-button" />
+            </div>
+          </div>
+          <div class="flex-column">
+            <div class="performance-grade flex-column">
+              <p class="extra-large title-text">Grade</p>
+              <p class="grade" id="baker_grade">B</p>
+            </div>
+            <div class="info flex-row">
+              <img src="./assets/images/info.svg"></img>
+              <div class="info-detail">
+                <p class="middle-small">How is performace grade calculated?</p>
+                <div class="grade-popup absolute">
+                  <p>We developed a formula that allows baker grades to be calculated using the baker's performance in
+                    the last full cycle. This formula rewards bakers for stealing blocks and baking assigned blocks,
+                    then penalizes them for missing blocks.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
 
-    <script src="assets/graphics.js"> </script>
-    <script src="assets/networkConf.js"> </script>
-    <script src="assets/tezosConstants.js"> </script>
-    <script src="assets/index.js"> </script>
-    <script src="assets/conseilQueries.js"> </script>
+        <!-- Top bakers box -->
+        <div class="production-topbaker flex-row">
+          <div class="production-left flex-column">
+            <div class="flex-row">
+              <div class="last-bake first">
+                <p class="large-middle title-text weight-500">Last Bake</p>
+                <div class="last-bake-body flex-column">
+                  <div class="timer-body flex-row">
+                    <img class="baker-img time-img" src="./assets/images/timer.svg" />
+                    <div class="flex-column">
+                      <p class="small subtitle-text weight-500">Time</p>
+                      <p class="small" id="baker_last_bake"></p>
+                    </div>
+                  </div>
+                  <div class="timer-body chart-card flex-row">
+                    <img class="baker-img level-img" src="./assets/images/chart.svg" />
+                    <div class="flex-column">
+                      <p class="small subtitle-text weight-500">Level</p>
+                      <p class="small" id="baker_last_bake_level"></p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="last-bake">
+                <p class="large-middle title-text weight-500">Upcoming Bake</p>
+                <div class="last-bake-body flex-column">
+                  <div class="timer-body flex-row">
+                    <img class="baker-img time-img" src="./assets/images/timer.svg" />
+                    <div class="flex-column">
+                      <p class="small subtitle-text weight-500">Time</p>
+                      <p class="small" id="baker_next_bake"></p>
+                    </div>
+                  </div>
+                  <div class="timer-body chart-card flex-row">
+                    <img class="baker-img level-img" src="./assets/images/chart.svg" />
+                    <div class="flex-column">
+                      <p class="small subtitle-text weight-500">Level</p>
+                      <p class="small" id="baker_next_bake_level"></p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="delegate-box flex-column">
+              <div class="delegate-item">
+                <p class="small delegate-title subtitle-text weight-500">Number of Delegators</p>
+                <p class="small delegate-value" id="baker_num_delegators"></p>
+              </div>
+              <div class="delegate-item">
+                <p class="small delegate-title subtitle-text weight-500">Amount Staked</p>
+                <p class="small delegate-value" id="baker_amount_staked"></p>
+              </div>
+              <div class="delegate-item">
+                <p class="small delegate-title subtitle-text weight-500">Amount Delegated</p>
+                <p class="small delegate-value" id="baker_amount_delegated"></p>
+              </div>
+            </div>
+            <div class="delegate-box flex-column">
+              <div class="delegate-item">
+                <p class="small delegate-title subtitle-text weight-500">Lifetime Blocks Baked </p>
+                <p class="small delegate-value" id="baker_blocks_baked"></p>
+              </div>
+              <div class="delegate-item">
+                <p class="small delegate-title subtitle-text weight-500" id="baker_rewards_title">Rewards in Cycle
+                </p>
+                <p class="small delegate-value" id="baker_rewards"></p>
+              </div>
+              <div class="delegate-item">
+                <p class="small delegate-title subtitle-text weight-500">Blocks per XTZ</p>
+                <p class="small delegate-value" id="baker_blocks_per_stake"></p>
+              </div>
+            </div>
+          </div>
+
+          <div class="top-bakers flex-column">
+            <p class="title-text middle-middle weight-500">Where does this baker rank among top bakers?</p>
+            <div class="column-charts flex-column">
+              <!-- Top 100 Bakers by staking balances -->
+              <div class="column-chart flex-column">
+                <div class="flex-row">
+                  <p class="middle-middle weight-500 subtitle-text">Bakers by staking balances</p>
+                  <div class="flex-row links">
+                    <a class="info-text middle-small" href="javascript: void(0)" onclick="gotoArronax1()">View Query in Arronax </a>
+                    <a class="info-text middle-small" href="javascript: void(0)" onclick="gotoPeri1()">View Graph in Periscope
+                    </a>
+                  </div>
+                </div>
+                <svg id="staking_balances_chart" width="800" height="93"> </svg>
+              </div>
+              <!-- Top 100 Bakers by "blocks baked" -->
+              <div class="column-chart flex-column">
+                <div class="flex-row">
+                  <p class="middle-middle weight-500 subtitle-text">Bakers by blocks baked in the last cycle</p>
+                  <div class="flex-row links">
+                    <a class="info-text middle-small" href="javascript: void(0)" onclick="gotoArronax2()">View Query in Arronax </a>
+                    <a class="info-text middle-small" href="javascript: void(0)" onclick="gotoPeri2()">View Graph in Periscope
+                    </a>
+                  </div>
+                </div>
+                <svg id="num_blocks_baked_chart" width="800" height="93"> </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Baker Production box -->
+        <div class="baker-production flex-row">
+          <div class="production-right flex-column">
+            <p class="large-middle title-text weight-500" id="baker_production">Block Production</p>
+            <div class="blocks-charts flex-column">
+              <div class="blocks-chart flex-row">
+                <p class="middle-middle subtitle-text weight-500">Blocks baked</p>
+                <svg id="blocks_baked_chart" width="1050" height="100"> </svg>
+              </div>
+              <div class="blocks-numbers">
+                <p class="small subtitle-text" id="baker_blocks_baked_last_cycle"></p>
+              </div>
+              <div class="blocks-chart flex-row">
+                <p class="middle-middle subtitle-text weight-500">Blocks stolen</p>
+                <svg id="blocks_stolen_chart" width="1050" height="100"> </svg>
+              </div>
+              <div class="blocks-numbers">
+                <p class="small subtitle-text" id="baker_blocks_stolen"></p>
+              </div>
+              <div class="blocks-chart flex-row">
+                <p class="middle-middle subtitle-text weight-500">Blocks missed</p>
+                <svg id="blocks_missed_chart" width="1050" height="100"> </svg>
+              </div>
+              <div class="blocks-numbers">
+                <p class="small subtitle-text" id="baker_blocks_missed"></p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Performance Reward box -->
+        <div class="performance-reward flex-row">
+          <div class="performance-box flex-column">
+            <div class="tabs flex-row">
+              <p class="large-middle tab-title weight-500 title-text">Performance</p>
+            </div>
+            <div class="panel">
+              <div class="absolute table-header" id="performance_table_header">
+              </div>
+              <svg id="performance_table" width="870" height="390"> </svg>
+            </div>
+          </div>
+          <div class="blocks-hour flex-column">
+            <p class="large-middle title-text weight-500">Blocks per Hour</p>
+            <div class="line-chart">
+              <svg id="blocks_per_hour_graph" width="400" height="323"> </svg>
+            </div>
+          </div>
+        </div>
+        <div class="performance-reward flex-row">
+          <div class="performance-box flex-column">
+            <div class="tabs flex-row">
+              <p class="large-middle tab-title weight-500 title-text">Rewards</p>
+            </div>
+            <div class="panel">
+              <div class="absolute table-header" id="rewards_table_header">
+              </div>
+              <svg id="rewards_table" width="870" height="390"> </svg> <br>
+            </div>
+          </div>
+          <div class="blocks-hour flex-column">
+            <p class="large-middle weight-500 title-text">Rewards per Cycle</p>
+            <div class="line-chart">
+              <svg id="rewards_chart" width="400" height="323"> </svg>
+            </div>
+          </div>
+        </div>
+        <div class="reward-calc flex-column">
+          <p class="middle-middle subtitle-text weight-500">Enter information to calculate rewards</p>
+          <div class="reward-calc-inputs flex-row">
+            <input type="text" id="delegator" placeholder="Delegator Address" value=""> </input>
+            <input type="text" id="payout" placeholder="Payout Address" value=""> </input>
+            <input type="text" id="fee" placeholder="Fee" value=""> </input>
+            <input type="text" id="payout_delay" placeholder="Payout Delay" value=""> </input>
+            <button id="calculate_rewards_button" class="reward-calc-btn middle-middle weight-500 title-text" onclick="calculateRewardsForDelegate()">
+              Calculate
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Content section end -->
+
+    <!-- Footer section start -->
+    <div class="footer-container">
+      <!-- <p class="middle-small"> A product by Cryptonomic</p> -->
+    </div>
+    <!-- Footer section end -->
+
+  </div>
+  <div id="tooltip" display="none" style="position: absolute; display: none;"></div>
+</body>
+
+<script src="https://d3js.org/d3.v5.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/cryptonomic/conseiljs/dist-web/conseiljs.min.js"></script>
+<script src="assets/js/graphics.js"></script>
+<script src="assets/networkConf.js"></script>
+<script src="assets/tezosConstants.js"></script>
+<script src="assets/js/index.js"></script>
+<script src="assets/conseilQueries.js"></script>
+
 </html>
