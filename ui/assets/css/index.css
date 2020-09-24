@@ -234,6 +234,9 @@ svg {
   z-index: 1;
 }
 
+.grade-popup a {
+    text-decoration: none;
+}
 /* Top bakers Styles */
 .production-topbaker {
   margin: 32px 7px 0 18px;
