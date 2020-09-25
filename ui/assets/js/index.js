@@ -349,10 +349,14 @@ async function updateBakerInfo(baker, delegator=null) {
     updateBakerInfo(await lastDelegateFor(baker), baker)
     return;
   } else if(!isBakerAddress && !!delegator) {
+    updateBakerInfo((await getBlock("head")).baker)
     return;
   }
 
-  if( baker.length !== 36 ) return;
+  if( baker.length !== 36 ) {
+    updateBakerInfo((await getBlock("head")).baker)
+    return;
+  }
 
   // if ((baker.charAt(0) != "t" && baker.charAt(0) != "K") || baker.length != 36)	return;
 
@@ -734,7 +738,12 @@ async function initialize() {
     [],
     [false, false, true, true, true, true]
   );
-  getBlock("head").then((head) => updateBakerInfo(head.baker));
+
+  const path = window.location.pathname.split('/');
+  if (path[path.length-1] != "")
+    updateBakerInfo(path[path.length-1]);
+  else
+    getBlock("head").then((head) => updateBakerInfo(head.baker));
   setTimeout(updateNetworkInfo, 60000);
 }
 
