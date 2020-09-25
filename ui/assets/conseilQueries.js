@@ -394,7 +394,7 @@ async function lastDelegateFor(pkh) {
     query = conseiljs.ConseilQueryBuilder.addFields(query, 'delegate_value');
     query = conseiljs.ConseilQueryBuilder.addPredicate(query, 'account_id', conseiljs.ConseilOperator.EQ, [pkh], false);
     const result = await conseiljs.ConseilDataClient.executeEntityQuery(conseilServer, platform, network, 'accounts', query);
-    return result[0].delegate_value
+    return result[0] ? result[0].delegate_value : ""
 }
 
 /**

@@ -22,6 +22,10 @@ class Harpoon(object):
     def index(self):
         return open("../ui/index.html")
 
+    def default(self, *args, **kwargs):
+        return open("../ui/index.html")
+    default.exposed = True
+
 
 @cherrypy.expose
 class HarpoonWebService(object):
