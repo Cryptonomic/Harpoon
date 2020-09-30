@@ -57,6 +57,7 @@
   font-size: 12px;
   color: #242F57;
   margin-left: 58px;
+  cursor: pointer;
 }
 
 .logo {
@@ -559,8 +560,31 @@ svg {
   height: 65px;
   display: flex;
   align-items: center;
-  justify-content: center;
   background-color: var(--color-white);
+  padding-left: calc(50% - 640px);
+}
+
+.footer-des {
+  font-size: 14px;
+  color: #828282;
+}
+.social-img {
+  margin-left: 12px;
+  cursor: pointer;
+}
+.twitter-img {
+  margin-left: 40px;
+}
+
+.footer-data {
+  font-size: 14px;
+  color: #828282;
+  margin-left: 166px;
+}
+
+.footer-bakingbad {
+  text-decoration: underline;
+  cursor: pointer;
 }
 
 @media (max-width: 1365.98px) {
