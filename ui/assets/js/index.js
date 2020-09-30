@@ -1,4 +1,4 @@
-const millisOneDay = 86400000;
+2const millisOneDay = 86400000;
 const millisOneHour = millisOneDay / 24;
 const millisOneMinute = millisOneHour / 60;
 const millisOneSecond = millisOneMinute / 60;
@@ -25,12 +25,6 @@ const rewardField = [
   "Advertised Fee",
   "Fee Taken",
 ];
-
-// function changeURL(baker) {
-//     var path = 
-//     console.log(path)
-//     // return  theURL.replace(/, '/baker');
-//}
 
 function UTCToDateTime(timestamp) {
   const dateNow = new Date(timestamp);
