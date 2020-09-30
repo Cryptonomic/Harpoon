@@ -1,4 +1,4 @@
-2const millisOneDay = 86400000;
+const millisOneDay = 86400000;
 const millisOneHour = millisOneDay / 24;
 const millisOneMinute = millisOneHour / 60;
 const millisOneSecond = millisOneMinute / 60;
