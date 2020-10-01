@@ -8,8 +8,6 @@ var clock;
 var delegateAddress;
 var bakerRegistry;
 
-
-
 const performanceField = [
   "Cycle",
   "Blocks Baked",
