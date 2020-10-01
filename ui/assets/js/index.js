@@ -70,6 +70,32 @@ async function updatePayoutInfo(baker) {
   }
 }
 
+function analyzeRewards(rewards) {
+    const allZeroWarn = "This data might be inaccurate. Please verify that the <strong> “Delegator Address” </strong> and <strong> “Baker Payout Address” </strong> is correct."
+    const dataNotAlignedWarn = "This data might be inaccurate. Please verify that the data for <strong> “Fee” </strong> and <strong> “Payout Deplay” </strong> is accurate."
+    const warning = document.getElementById("calc-warning");
+    const noRewards = entry => (entry.delegator_rewards_received == 0 ||
+				entry.delegator_rewards_received == "*"); 
+    const wrongRewards = entry => (entry.delegator_rewards_received != entry.delegator_rewards);
+    console.log("in analyze")
+    if (rewards.every(noRewards)) {
+	console.log("no rewards")
+	console.log(rewards.every(noRewards))
+	warning.innerHTML = allZeroWarn;
+	warning.style.display = "flex-row";
+    }
+    else if (rewards.every((entry) => noRewards(entry) || wrongRewards(entry))) {
+	console.log("wrong rewards")
+	console.log(rewards.every((entry) => noRewards(entry) || wrongRewards(entry)))
+	warning.innerHTML = dataNotAlignedWarn;
+	warning.style.display = "flex-row";
+    } else {
+	console.log("none")
+	warning.style.display = "none";
+    }
+
+}
+
 /**
  * This function is called on the onClick of the "Calculate Rewards!" button. It brings together, parses and
  * displays the data for the last 10 cycles onto a heatTable.
@@ -194,7 +220,9 @@ async function calculateRewardsForDelegate() {
       d["actual_fee"] = "*";
     }
   }
-
+    
+  // check to see if the rewards seem very off. If they do, make a warning appear.  
+  analyzeRewards(rewards);
   // The first object in the array is used for the titles of columns. Since rewards array is reversed later
   // the last item becomes the first
   rewards.push({
@@ -351,10 +379,10 @@ async function updateBakerInfo(baker, delegator=null) {
   } else if(!isBakerAddress && !delegator) {
     updateBakerInfo(await lastDelegateFor(baker), baker)
     return;
-  } else if(!isBakerAddress && !!delegator) {
-    updateBakerInfo((await getBlock("head")).baker)
-    return;
-  }
+  } // else if(!isBakerAddress && !!delegator) {
+  //   updateBakerInfo((await getBlock("head")).baker)
+  //   return;
+  // }
   if( baker.length !== 36 ) {
     updateBakerInfo((await getBlock("head")).baker)
     return;
