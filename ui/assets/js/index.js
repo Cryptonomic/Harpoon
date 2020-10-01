@@ -346,7 +346,6 @@ async function updateBakerInfo(baker, delegator=null) {
     ) || { address: '' };
 
   const isBakerAddress = await isBaker(baker).catch(() => false);
-
   if(!baker.toLowerCase().startsWith('tz') && !baker.toLowerCase().startsWith('kt')) {
     baker = getAddressFromName(baker).address;
   } else if(!isBakerAddress && !delegator) {
