@@ -438,7 +438,6 @@ svg {
 }
 
 .table-header {
-  top: 30px;
   display: flex;
   align-items: center;
   width: 887px;
@@ -455,8 +454,7 @@ svg {
 }
 
 #performance_table_header >p:last-of-type{
-  position: relative;
-  right: 14px;
+  white-space: normal;
 }
 
 .table-header > p {
@@ -519,13 +517,29 @@ svg {
 }
 
 .reward-calc-inputs {
-  max-width: 900px;
-  justify-content: space-between;
-  margin-top: 10px;
+  margin-top: 13px;
+  display: flex;
 }
 
-.reward-calc-inputs > input {
-  width: 165px;
+.delegator-address {
+  width: 220px !important;
+}
+.payout-address {
+  width: 220px !important;
+}
+.input-container {
+  width: 140px;
+  margin-right: 20px;
+}
+
+.input-container > label {
+  font-size: 16px;
+  line-height: 24px;
+  color: #828282;
+}
+
+.reward-calc-inputs input {
+  width: 100%;
   height: 33px;
   border-radius: 5px;
   border: none;
@@ -543,7 +557,10 @@ svg {
   outline: none;
   border: none;
   width: 160px;
+  height: 48px;
   color: #FFFFFF;
+  position: relative;
+  top: 9px;
 }
 
 .reward-calc-btn:hover {
