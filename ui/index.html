@@ -282,14 +282,16 @@
               <input type="text" id="payout" placeholder="" value=""> </input>
             </div>
 
-            <div class="input-container">
+            <div class="input-container unit-container">
               <label for="fee">Fee</label> 
               <input type="text" id="fee" placeholder="" value=""> </input>
+              <span class="unit-item">%</span>
             </div>
 
-            <div class="input-container">
+            <div class="input-container unit-container">
               <label for="payout_delay">Payout Delay</label>
               <input type="text" id="payout_delay" placeholder="" value=""> </input>
+              <span class="unit-item">Cycles</span>
             </div>
             <button id="calculate_rewards_button" class="reward-calc-btn middle-middle weight-500 title-text" onclick="calculateRewardsForDelegate()">
               Calculate

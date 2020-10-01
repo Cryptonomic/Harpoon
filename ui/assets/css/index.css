@@ -527,9 +527,22 @@ svg {
 .payout-address {
   width: 220px !important;
 }
+
+.unit-container input {
+  padding-right: 50px;
+}
 .input-container {
   width: 140px;
   margin-right: 20px;
+  position: relative;
+}
+
+.input-container .unit-item {
+  position: absolute;
+  right: 12px;
+  font-size: 12px;
+  color: #4f4f4f;
+  top: 33px;
 }
 
 .input-container > label {
