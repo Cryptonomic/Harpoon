@@ -8,6 +8,8 @@ var clock;
 var delegateAddress;
 var bakerRegistry;
 
+
+
 const performanceField = [
   "Cycle",
   "Blocks Baked",
@@ -65,6 +67,9 @@ async function updatePayoutInfo(baker) {
       };
   document.getElementById("fee").value = bakerInfo.fee;
   document.getElementById("payout_delay").value = bakerInfo.payoutDelay;
+  if(bakerInfo.fee && bakerInfo.payoutDelay && payout_response) {
+    calculateRewardsForDelegate();
+  }
 }
 
 /**
@@ -343,22 +348,22 @@ async function updateBakerInfo(baker, delegator=null) {
     ) || { address: '' };
 
   const isBakerAddress = await isBaker(baker).catch(() => false);
+
   if(!baker.toLowerCase().startsWith('tz') && !baker.toLowerCase().startsWith('kt')) {
     baker = getAddressFromName(baker).address;
   } else if(!isBakerAddress && !delegator) {
     updateBakerInfo(await lastDelegateFor(baker), baker)
     return;
-  } // else if(!isBakerAddress && !!delegator) {
-  //   updateBakerInfo((await getBlock("head")).baker)
-  //   return;
-  // }
-    
+  } else if(!isBakerAddress && !!delegator) {
+    updateBakerInfo((await getBlock("head")).baker)
+    return;
+  }
   if( baker.length !== 36 ) {
     updateBakerInfo((await getBlock("head")).baker)
     return;
   }
-  history.pushState(null, '', `/${baker}`);    
-   
+  history.pushState(null, '', `/${baker}`);
+
   // if ((baker.charAt(0) != "t" && baker.charAt(0) != "K") || baker.length != 36)	return;
 
   // Check to see if the address is a regular account. If it is, show the page for
