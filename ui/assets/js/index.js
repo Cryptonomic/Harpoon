@@ -348,16 +348,17 @@ async function updateBakerInfo(baker, delegator=null) {
   } else if(!isBakerAddress && !delegator) {
     updateBakerInfo(await lastDelegateFor(baker), baker)
     return;
-  } else if(!isBakerAddress && !!delegator) {
-    updateBakerInfo((await getBlock("head")).baker)
-    return;
-  }
-
+  } // else if(!isBakerAddress && !!delegator) {
+  //   updateBakerInfo((await getBlock("head")).baker)
+  //   return;
+  // }
+    
   if( baker.length !== 36 ) {
     updateBakerInfo((await getBlock("head")).baker)
     return;
   }
-
+  history.pushState(null, '', `/${baker}`);    
+   
   // if ((baker.charAt(0) != "t" && baker.charAt(0) != "K") || baker.length != 36)	return;
 
   // Check to see if the address is a regular account. If it is, show the page for
