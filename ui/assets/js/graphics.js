@@ -195,6 +195,7 @@ function heatTable(
   id,
   data,
   values,
+  units,
   colorMappings,
   comparisons = [],
   notices = []
@@ -266,7 +267,18 @@ function heatTable(
           }
         })
         .append("text")
-        .text((d, i) => (i === 0 ? "" : d[column]))
+        .text((d, i) => {
+          if (i === 0) {
+            return ''
+          }
+          if (d[column] !== 0 && !d[column] || d[column] === '*' || d[column] === '-') {
+            return d[column];
+          }
+          if (!!units[columnInd]) {
+            return `${d[column]} ${units[columnInd]}`
+          }
+          return d[column];
+        })
         .attr(
           "x",
           columnInd == 0

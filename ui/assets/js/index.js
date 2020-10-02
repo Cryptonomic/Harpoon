@@ -243,6 +243,7 @@ async function calculateRewardsForDelegate() {
     "advertised_fee",
     "actual_fee",
   ];
+  const units = ['', 'ꜩ', 'ꜩ', 'ꜩ', '%', '%'];
 
   const colorMappings = {
     delegator_rewards: TEAL[7],
@@ -253,6 +254,7 @@ async function calculateRewardsForDelegate() {
     "rewards_table",
     rewards.reverse(),
     heatTableFields,
+    units,
     colorMappings,
     [
       ["delegator_rewards", "delegator_rewards_received"],
@@ -477,6 +479,7 @@ async function updateBakerInfo(baker, delegator=null) {
         "endorsements",
         "missed_endorsements",
       ],
+      [],
       colorMappings
     );
   });
@@ -531,8 +534,9 @@ async function updateBakerInfo(baker, delegator=null) {
       staking_balance: "Advertised Fee",
       delegated_balance: "Actual Fee Taken",
     });
+    const units = ['', 'ꜩ', 'ꜩ', 'ꜩ', '%', '%'];
 
-    heatTable("rewards_table", d.reverse(), heatTableFields, {
+    heatTable("rewards_table", d.reverse(), heatTableFields, units, {
       rewards: TEAL[7],
     });
   });
@@ -958,4 +962,8 @@ const gotoPeri2 = () => {
 
 const gotoCryptonomic = () => {
   window.open('https://cryptonomic.tech/')
+}
+
+const openLink = (link) => {
+  window.open(link);
 }
