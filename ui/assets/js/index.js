@@ -70,6 +70,12 @@ async function updatePayoutInfo(baker) {
   }
 }
 
+function clearWarnings() {
+    const warning = document.getElementById("calc-warning");
+    warning.style.dispay = "none";
+    warning.innerHTML = "";
+}
+
 function analyzeRewards(rewards) {
     const allZeroWarn = "This data might be inaccurate. Please verify that the <strong> “Delegator Address” </strong> and <strong> “Baker Payout Address” </strong> is correct."
     const dataNotAlignedWarn = "This data might be inaccurate. Please verify that the data for <strong> “Fee” </strong> and <strong> “Payout Deplay” </strong> is accurate."
@@ -77,23 +83,16 @@ function analyzeRewards(rewards) {
     const noRewards = entry => (entry.delegator_rewards_received == 0 ||
 				entry.delegator_rewards_received == "*"); 
     const wrongRewards = entry => (entry.delegator_rewards_received != entry.delegator_rewards);
-    console.log("in analyze")
     if (rewards.every(noRewards)) {
-	console.log("no rewards")
-	console.log(rewards.every(noRewards))
 	warning.innerHTML = allZeroWarn;
-	warning.style.display = "flex-row";
+	warning.style.display = "block";
     }
     else if (rewards.every((entry) => noRewards(entry) || wrongRewards(entry))) {
-	console.log("wrong rewards")
-	console.log(rewards.every((entry) => noRewards(entry) || wrongRewards(entry)))
 	warning.innerHTML = dataNotAlignedWarn;
-	warning.style.display = "flex-row";
+	warning.style.display = "block";
     } else {
-	console.log("none")
-	warning.style.display = "none";
+    	warning.style.display = "none";
     }
-
 }
 
 /**
@@ -363,7 +362,7 @@ async function updateBakerInfo(baker, delegator=null) {
   let stakingBalance = 0;
   let numBlocksBaked = 0;
   let numBlocksBakedLastCycle = 0;
-
+  clearWarnings();
   // Use Baking Bad to convert address into a name if it exists
   // let bakerRegistry = JSON.parse(
   //   await httpGet(`https://api.baking-bad.org/v2/bakers`)
