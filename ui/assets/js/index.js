@@ -63,7 +63,7 @@ async function updatePayoutInfo(baker) {
         fee: 0,
         payoutDelay: 0,
       };
-  document.getElementById("fee").value = bakerInfo.fee;
+  document.getElementById("fee").value = bakerInfo.fee * 100;
   document.getElementById("payout_delay").value = bakerInfo.payoutDelay;
   if(bakerInfo.fee && bakerInfo.payoutDelay && payout_response) {
     calculateRewardsForDelegate();
@@ -105,7 +105,7 @@ async function calculateRewardsForDelegate() {
   const lastFullCycle = head.meta_cycle - 1;
 
   const delegator = document.getElementById("delegator").value;
-  const fee = document.getElementById("fee").value;
+  const fee = (document.getElementById("fee").value)/100;
   const payoutDelay = parseInt(document.getElementById("payout_delay").value);
   const payout = document.getElementById("payout").value;
 
