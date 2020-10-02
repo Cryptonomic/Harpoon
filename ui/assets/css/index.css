@@ -617,6 +617,11 @@ svg {
   cursor: pointer;
 }
 
+.warning {
+  margin: 20px 0px;
+  color: var(--color-warning);   
+}
+
 @media (max-width: 1365.98px) {
   .content-main {
     min-width: 950px;
