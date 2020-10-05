@@ -449,10 +449,6 @@ svg {
   max-width: 60px;
 }
 
-#rewards_table_header >p:last-of-type {
-  
-}
-
 #performance_table_header >p:last-of-type{
   white-space: normal;
 }
@@ -619,7 +615,31 @@ svg {
 
 .warning {
   margin: 20px 0px;
-  color: var(--color-warning);   
+  color: var(--color-warning);
+}
+.focus circle {
+  fill: steelblue;
+}
+
+.line-tooltip {
+  fill: #313C4E;
+  /* stroke: #000; */
+}
+
+.line-tooltip-tri {
+  fill: #313C4E;
+}
+
+.tooltip-date, .tooltip-likes {
+  font-size: 8px;
+  text-align: center;
+  fill: white;
+}
+
+.overlay {
+  fill: none;
+  pointer-events: all;
+  z-index: 100;
 }
 
 @media (max-width: 1365.98px) {
