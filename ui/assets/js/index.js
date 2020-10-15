@@ -65,34 +65,40 @@ async function updatePayoutInfo(baker) {
       };
   document.getElementById("fee").value = bakerInfo.fee * 100;
   document.getElementById("payout_delay").value = bakerInfo.payoutDelay;
-  if(bakerInfo.fee && bakerInfo.payoutDelay && payout_response) {
+  delegator = document.getElementById("delegator").value;
+  if (bakerInfo.fee && bakerInfo.payoutDelay && payout_response && delegator) {
     calculateRewardsForDelegate();
   }
 }
 
 function clearWarnings() {
-    const warning = document.getElementById("calc-warning");
-    warning.style.dispay = "none";
-    warning.innerHTML = "";
+  const warning = document.getElementById("calc-warning");
+  warning.style.dispay = "none";
+  warning.innerHTML = "";
 }
 
 function analyzeRewards(rewards) {
-    const allZeroWarn = "This data might be inaccurate. Please verify that the <strong> “Delegator Address” </strong> and <strong> “Baker Payout Address” </strong> is correct."
-    const dataNotAlignedWarn = "This data might be inaccurate. Please verify that the data for <strong> “Fee” </strong> and <strong> “Payout Deplay” </strong> is accurate."
-    const warning = document.getElementById("calc-warning");
-    const noRewards = entry => (entry.delegator_rewards_received == 0 ||
-				entry.delegator_rewards_received == "*"); 
-    const wrongRewards = entry => (entry.delegator_rewards_received != entry.delegator_rewards);
-    if (rewards.every(noRewards)) {
-	warning.innerHTML = allZeroWarn;
-	warning.style.display = "block";
-    }
-    else if (rewards.every((entry) => noRewards(entry) || wrongRewards(entry))) {
-	warning.innerHTML = dataNotAlignedWarn;
-	warning.style.display = "block";
-    } else {
-    	warning.style.display = "none";
-    }
+  const allZeroWarn =
+    "This data might be inaccurate. Please verify that the <strong> “Delegator Address” </strong> and <strong> “Baker Payout Address” </strong> is correct.";
+  const dataNotAlignedWarn =
+    "This data might be inaccurate. Please verify that the data for <strong> “Fee” </strong> and <strong> “Payout Deplay” </strong> is accurate.";
+  const warning = document.getElementById("calc-warning");
+  const noRewards = (entry) =>
+    entry.delegator_rewards_received == 0 ||
+    entry.delegator_rewards_received == "*";
+  const wrongRewards = (entry) =>
+    entry.delegator_rewards_received != entry.delegator_rewards;
+  if (rewards.every(noRewards)) {
+    warning.innerHTML = allZeroWarn;
+    warning.style.display = "block";
+  } else if (
+    rewards.every((entry) => noRewards(entry) || wrongRewards(entry))
+  ) {
+    warning.innerHTML = dataNotAlignedWarn;
+    warning.style.display = "block";
+  } else {
+    warning.style.display = "none";
+  }
 }
 
 /**
@@ -105,7 +111,7 @@ async function calculateRewardsForDelegate() {
   const lastFullCycle = head.meta_cycle - 1;
 
   const delegator = document.getElementById("delegator").value;
-  const fee = (document.getElementById("fee").value)/100;
+  const fee = document.getElementById("fee").value / 100;
   const payoutDelay = parseInt(document.getElementById("payout_delay").value);
   const payout = document.getElementById("payout").value;
 
@@ -171,22 +177,27 @@ async function calculateRewardsForDelegate() {
   );
   const delegation_cycles = delegations ? delegations.map((d) => d.cycle) : [];
 
-  const ifFeesDeducted = await getIfFeesDeducted(delegateAddress,
-						 (lastFullCycle - 9) + payoutDelay,
-						 lastFullCycle + payoutDelay)
+  const ifFeesDeducted = await getIfFeesDeducted(
+    delegateAddress,
+    lastFullCycle - 9 + payoutDelay,
+    lastFullCycle + payoutDelay
+  );
   // Populate rewards with additional fields which are needed in the table
   for (d of rewards) {
     let delegateBalance = await getBalanceAtLevel(
       delegator,
       d.snapshot_block_level - 1
     );
-    const deductFees = ifFeesDeducted.find(entry => entry.cycle == d.cycle + payoutDelay).value
+    const deductFees = ifFeesDeducted.find(
+      (entry) => entry.cycle == d.cycle + payoutDelay
+    ).value;
     let paymentSent = await tezTransferedBetween(
       payout,
       delegator,
       d.cycle + payoutDelay
     );
-    const rewardsReceived = paymentSent.sum_amount + (deductFees ? paymentSent.sum_fee : 0)
+    const rewardsReceived =
+      paymentSent.sum_amount + (deductFees ? paymentSent.sum_fee : 0);
     d["advertised_fee"] = parseFloat((fee * 100).toFixed(2));
 
     // if the delegator has rewards rights in the cycle, make the necessary calculations
@@ -219,8 +230,8 @@ async function calculateRewardsForDelegate() {
       d["actual_fee"] = "*";
     }
   }
-    
-  // check to see if the rewards seem very off. If they do, make a warning appear.  
+
+  // check to see if the rewards seem very off. If they do, make a warning appear.
   analyzeRewards(rewards);
   // The first object in the array is used for the titles of columns. Since rewards array is reversed later
   // the last item becomes the first
@@ -242,7 +253,7 @@ async function calculateRewardsForDelegate() {
     "advertised_fee",
     "actual_fee",
   ];
-  const units = ['', 'ꜩ', 'ꜩ', 'ꜩ', '%', '%'];
+  const units = ["", "ꜩ", "ꜩ", "ꜩ", "%", "%"];
 
   const colorMappings = {
     delegator_rewards: TEAL[7],
@@ -348,14 +359,14 @@ let getSD = function (data) {
 const onSearch = () => {
   const val = document.getElementById("baker").value;
   updateBakerInfo(val);
-}
+};
 
 /**
  * Updates all of the panels except for "Network Info" on the page
  * @params {string} baker - the baker to display all of the information for
  */
 
-async function updateBakerInfo(baker, delegator=null) {
+async function updateBakerInfo(baker, delegator = null) {
   const head = await getBlock("head");
   const timeNow = head.timestamp;
   const lastFullCycle = head.meta_cycle - 1;
@@ -372,23 +383,26 @@ async function updateBakerInfo(baker, delegator=null) {
   let getAddressFromName = (name) =>
     bakerRegistry.find(
       (baker) => baker.name.toLowerCase() == name.toLowerCase()
-    ) || { address: '' };
+    ) || { address: "" };
 
   const isBakerAddress = await isBaker(baker).catch(() => false);
-  if(!baker.toLowerCase().startsWith('tz') && !baker.toLowerCase().startsWith('kt')) {
+  if (
+    !baker.toLowerCase().startsWith("tz") &&
+    !baker.toLowerCase().startsWith("kt")
+  ) {
     baker = getAddressFromName(baker).address;
-  } else if(!isBakerAddress && !delegator) {
-    updateBakerInfo(await lastDelegateFor(baker), baker)
+  } else if (!isBakerAddress && !delegator) {
+    updateBakerInfo(await lastDelegateFor(baker), baker);
     return;
   } // else if(!isBakerAddress && !!delegator) {
   //   updateBakerInfo((await getBlock("head")).baker)
   //   return;
   // }
-  if( baker.length !== 36 ) {
-    updateBakerInfo((await getBlock("head")).baker)
+  if (baker.length !== 36) {
+    updateBakerInfo((await getBlock("head")).baker);
     return;
   }
-  history.pushState(null, '', `/${baker}`);
+  history.pushState(null, "", `/${baker}`);
 
   // if ((baker.charAt(0) != "t" && baker.charAt(0) != "K") || baker.length != 36)	return;
 
@@ -396,7 +410,7 @@ async function updateBakerInfo(baker, delegator=null) {
   // that account's delegate
 
   // If delegator is set, autofill the field, else clear it
-  document.getElementById("delegator").value = delegator ? delegator : ""
+  document.getElementById("delegator").value = delegator ? delegator : "";
 
   delegateAddress = baker;
   updatePayoutInfo(baker);
@@ -533,7 +547,7 @@ async function updateBakerInfo(baker, delegator=null) {
       staking_balance: "Advertised Fee",
       delegated_balance: "Actual Fee Taken",
     });
-    const units = ['', 'ꜩ', 'ꜩ', 'ꜩ', '%', '%'];
+    const units = ["", "ꜩ", "ꜩ", "ꜩ", "%", "%"];
 
     heatTable("rewards_table", d.reverse(), heatTableFields, units, {
       rewards: TEAL[7],
@@ -544,13 +558,14 @@ async function updateBakerInfo(baker, delegator=null) {
   getBakerInfo(
     "baker_performance",
     ["baker", "grade", "cycle"],
-    [{"field":"cycle", "op":"lt", "value":[lastFullCycle+1]}],
-		 {"field":"cycle", "dir":"desc"}
+    [{ field: "cycle", op: "lt", value: [lastFullCycle + 1] }],
+    { field: "cycle", dir: "desc" }
   ).then((d) => {
-    const cycle = d[0]["cycle"]
-	  let values = d.filter(item => item.cycle == cycle)
-		.map(item => item.grade)
-		.sort((a, b) => a - b)
+    const cycle = d[0]["cycle"];
+    let values = d
+      .filter((item) => item.cycle == cycle)
+      .map((item) => item.grade)
+      .sort((a, b) => a - b);
     const fivePercent = Math.round(values.length * 0.05);
     values = values.slice(fivePercent, values.length - fivePercent);
     const standardDeviation = getSD(values);
@@ -723,7 +738,7 @@ async function updateBakerInfo(baker, delegator=null) {
  * Updates the Network Info" on the page
  */
 
- // should be modified
+// should be modified
 async function updateNetworkInfo() {
   const response = await httpGet(
     "https://min-api.cryptocompare.com/data/price?fsym=XTZ&tsyms=USD"
@@ -773,11 +788,9 @@ async function initialize() {
     [false, false, true, true, true, true]
   );
 
-  const path = window.location.pathname.split('/');
-  if (path[path.length-1] != "")
-    updateBakerInfo(path[path.length-1]);
-  else
-    getBlock("head").then((head) => updateBakerInfo(head.baker));
+  const path = window.location.pathname.split("/");
+  if (path[path.length - 1] != "") updateBakerInfo(path[path.length - 1]);
+  else getBlock("head").then((head) => updateBakerInfo(head.baker));
   setTimeout(updateNetworkInfo, 60000);
 }
 
@@ -791,24 +804,24 @@ const copyToClipBoard = (copyPanel) => {
   document.body.removeChild(el);
 };
 
-const debounce = (func, wait, immediate)=> {
+const debounce = (func, wait, immediate) => {
   let timeout;
 
   return function executedFunction() {
     let context = this;
     let args = arguments;
-        
-    const later = function() {
+
+    const later = function () {
       timeout = null;
       if (!immediate) func.apply(context, args);
     };
 
     const callNow = immediate && !timeout;
-    
+
     clearTimeout(timeout);
 
     timeout = setTimeout(later, wait);
-    
+
     if (callNow) func.apply(context, args);
   };
 };
@@ -819,62 +832,67 @@ function autocomplete(inp) {
   let currentFocus;
   const getAccountsFromServer = async (val, isName) => {
     const arr = bakerRegistry.filter((item) => {
-      return item.address.toLowerCase().startsWith(val) || item.name.toLowerCase().includes(val)
-    })
+      return (
+        item.address.toLowerCase().startsWith(val) ||
+        item.name.toLowerCase().includes(val)
+      );
+    });
     // const arr = await getAccounts(val).catch(() => []);
     currentFocus = -1;
-      /*create a DIV element that will contain the items (values):*/
-      const a = document.createElement("DIV");
-      a.setAttribute("id", "autocomplete-list");
-      a.setAttribute("class", "autocomplete-items");
-      /*append the DIV element as a child of the autocomplete container:*/
-      const parentInput = document.getElementById("search-container");
-      parentInput.appendChild(a);
-      /*for each item in the array...*/
-      for (let i = 0; i < arr.length; i++) {
-        /*check if the item starts with the same letters as the text field value:*/
-        // if (arr[i].address.substr(0, val.length).toUpperCase() == val.toUpperCase()) {
-          /*create a DIV element for each matching element:*/
-          const b = document.createElement("DIV");
-          /*make the matching letters bold:*/
-          if(!isName) {
-            b.innerHTML = "<strong>" + arr[i].address.substr(0, val.length) + "</strong>";
-            b.innerHTML += `${arr[i].address.substr(val.length)} (${arr[i].name})`;
-          } else {
-            b.innerHTML = "<strong>" + arr[i].name.substr(0, val.length) + "</strong>";
-            b.innerHTML += `${arr[i].name.substr(val.length)} (${arr[i].address})`;
-          }
-         
-          /*insert a input field that will hold the current array item's value:*/
-          b.innerHTML += "<input type='hidden' value='" + arr[i].address + "'>";
-          /*execute a function when someone clicks on the item value (DIV element):*/
-          b.addEventListener("click", (e) => {
-              /*insert the value for the autocomplete text field:*/
-              inp.value = arr[i].address;
-              updateBakerInfo(arr[i].address)
-              /*close the list of autocompleted values,
-              (or any other open lists of autocompleted values:*/
-              closeAllLists();
-              currentFocus = -1;
-          });
-          a.appendChild(b);
-        // }
+    /*create a DIV element that will contain the items (values):*/
+    const a = document.createElement("DIV");
+    a.setAttribute("id", "autocomplete-list");
+    a.setAttribute("class", "autocomplete-items");
+    /*append the DIV element as a child of the autocomplete container:*/
+    const parentInput = document.getElementById("search-container");
+    parentInput.appendChild(a);
+    /*for each item in the array...*/
+    for (let i = 0; i < arr.length; i++) {
+      /*check if the item starts with the same letters as the text field value:*/
+      // if (arr[i].address.substr(0, val.length).toUpperCase() == val.toUpperCase()) {
+      /*create a DIV element for each matching element:*/
+      const b = document.createElement("DIV");
+      /*make the matching letters bold:*/
+      if (!isName) {
+        b.innerHTML =
+          "<strong>" + arr[i].address.substr(0, val.length) + "</strong>";
+        b.innerHTML += `${arr[i].address.substr(val.length)} (${arr[i].name})`;
+      } else {
+        b.innerHTML =
+          "<strong>" + arr[i].name.substr(0, val.length) + "</strong>";
+        b.innerHTML += `${arr[i].name.substr(val.length)} (${arr[i].address})`;
       }
+
+      /*insert a input field that will hold the current array item's value:*/
+      b.innerHTML += "<input type='hidden' value='" + arr[i].address + "'>";
+      /*execute a function when someone clicks on the item value (DIV element):*/
+      b.addEventListener("click", (e) => {
+        /*insert the value for the autocomplete text field:*/
+        inp.value = arr[i].address;
+        updateBakerInfo(arr[i].address);
+        /*close the list of autocompleted values,
+              (or any other open lists of autocompleted values:*/
+        closeAllLists();
+        currentFocus = -1;
+      });
+      a.appendChild(b);
+      // }
+    }
   };
   const autocompleteSearchDebounce = debounce(getAccountsFromServer, 300);
   /*execute a function when someone writes in the text field:*/
   inp.addEventListener("input", (e) => {
-      let val = document.getElementById("baker").value;
-      /*close any already open lists of autocompleted values*/
-      closeAllLists();
-      const isCheck = val.toLowerCase().startsWith('tz');
-      if(!val || val.length < 3 || val.length < 5 && isCheck) {
-        return false;
-      }
-      autocompleteSearchDebounce(val.toLowerCase(), !isCheck);
+    let val = document.getElementById("baker").value;
+    /*close any already open lists of autocompleted values*/
+    closeAllLists();
+    const isCheck = val.toLowerCase().startsWith("tz");
+    if (!val || val.length < 3 || (val.length < 5 && isCheck)) {
+      return false;
+    }
+    autocompleteSearchDebounce(val.toLowerCase(), !isCheck);
   });
   /*execute a function presses a key on the keyboard:*/
-  inp.addEventListener("keydown", function(e) {
+  inp.addEventListener("keydown", function (e) {
     let x = document.getElementById("autocomplete-list");
     if (x) x = x.getElementsByTagName("div");
     if (e.keyCode == 40) {
@@ -883,7 +901,8 @@ function autocomplete(inp) {
       currentFocus++;
       /*and and make the current item more visible:*/
       addActive(x);
-    } else if (e.keyCode == 38) { //up
+    } else if (e.keyCode == 38) {
+      //up
       /*If the arrow UP key is pressed,
       decrease the currentFocus variable:*/
       currentFocus--;
@@ -907,7 +926,7 @@ function autocomplete(inp) {
     /*start by removing the "active" class on all items:*/
     removeActive(x);
     if (currentFocus >= x.length) currentFocus = 0;
-    if (currentFocus < 0) currentFocus = (x.length - 1);
+    if (currentFocus < 0) currentFocus = x.length - 1;
     /*add class "autocomplete-active":*/
     x[currentFocus].classList.add("autocomplete-active");
   }
@@ -928,10 +947,9 @@ function autocomplete(inp) {
     }
   }
 
-  
   /*execute a function when someone clicks in the document:*/
   document.addEventListener("click", function (e) {
-      closeAllLists(e.target);
+    closeAllLists(e.target);
   });
 }
 
@@ -940,7 +958,7 @@ const link1 = `https://arronax.io/tezos/mainnet/bakers/query/eyJmaWVsZHMiOlsicGt
 
 const gotoArronax1 = () => {
   window.open(link1);
-}
+};
 
 async function gotoArronax2() {
   const head = await getBlock("head");
@@ -949,20 +967,20 @@ async function gotoArronax2() {
   window.open(link2);
 }
 
-const periLink1 = 'https://periscope.arronax.io/bakers?q=topStakers';
-const periLink2 = 'https://periscope.arronax.io/bakers?q=topBlockers';
+const periLink1 = "https://periscope.arronax.io/bakers?q=topStakers";
+const periLink2 = "https://periscope.arronax.io/bakers?q=topBlockers";
 const gotoPeri1 = () => {
   window.open(periLink1);
-}
+};
 
 const gotoPeri2 = () => {
   window.open(periLink2);
-}
+};
 
 const gotoCryptonomic = () => {
-  window.open('https://cryptonomic.tech/')
-}
+  window.open("https://cryptonomic.tech/");
+};
 
 const openLink = (link) => {
   window.open(link);
-}
+};

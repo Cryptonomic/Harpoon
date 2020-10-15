@@ -155,7 +155,7 @@ async function lastBlockBakedBy(baker) {
 
 async function nextBake(baker) {
     let query = conseiljs.ConseilQueryBuilder.blankQuery();
-    query = conseiljs.ConseilQueryBuilder.addFields(query, 'delegate', 'estimated_time', 'level', 'priority');
+    query = conseiljs.ConseilQueryBuilder.addFields(query, 'delegate', 'estimated_time', 'block_level', 'priority');
     query = conseiljs.ConseilQueryBuilder.addPredicate(query, 'delegate', conseiljs.ConseilOperator.EQ, [baker], false);
     query = conseiljs.ConseilQueryBuilder.addPredicate(query, 'priority', conseiljs.ConseilOperator.EQ, [0], false);
     query = conseiljs.ConseilQueryBuilder.addPredicate(query, 'estimated_time', conseiljs.ConseilOperator.AFTER, [Date.now()], false);
@@ -235,14 +235,14 @@ async function blocksBakedPerHour(baker, timestamps) {
 
 async function bakingSlotLevelsInCycle(baker, cycle) {
     let query = conseiljs.ConseilQueryBuilder.blankQuery();
-    query = conseiljs.ConseilQueryBuilder.addFields(query, 'level')
+    query = conseiljs.ConseilQueryBuilder.addFields(query, 'block_level')
     query = conseiljs.ConseilQueryBuilder.addPredicate(query, 'delegate', conseiljs.ConseilOperator.EQ, [baker], false)
     query = conseiljs.ConseilQueryBuilder.addPredicate(query, 'cycle', conseiljs.ConseilOperator.EQ, [cycle], false);
     query = conseiljs.ConseilQueryBuilder.addPredicate(query, 'priority', conseiljs.ConseilOperator.EQ, ["0"], false);
     query = conseiljs.ConseilQueryBuilder.setLimit(query, 4096)
     const result = await conseiljs.ConseilDataClient.executeEntityQuery(conseilServer, platform, network, 'baking_rights', query);
     let ret = []
-    for (let entry of result) ret.push(entry.level);
+    for (let entry of result) ret.push(entry.block_level);
     return ret
 }
 

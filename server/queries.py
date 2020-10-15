@@ -92,12 +92,12 @@ def current_level():
 
 
 def assigned_blocks_between(baker, start_cycle, end_cycle):
-    rights = baking_rights.query(baking_rights.level) \
+    rights = baking_rights.query(baking_rights.block_level) \
                           .filter(baking_rights.delegate == baker,
                                   baking_rights.priority == 0,
                                   baking_rights.cycle.between(start_cycle,
                                                               end_cycle)) \
-                          .order_by(baking_rights.level.asc()) \
+                          .order_by(baking_rights.block_level.asc()) \
                           .limit(MAX_LIMIT) \
                           .vector()
     return rights
@@ -165,7 +165,8 @@ def endorsements_made_in_levels_with_priority(baker, start_cycle, end_cycle,
     """Returns a list of levels which baker has endorsed where the block was
     priority 0 (high) or a priority greater than 1 (low)"""
 
-    block_levels = blocks_with_priority_between(start_cycle, end_cycle, priority)
+    block_levels = blocks_with_priority_between(
+        start_cycle, end_cycle, priority)
     endorsements = endorsements_made_in_levels_between(baker, start_cycle,
                                                        end_cycle)
     return [level for level in endorsements if level+1 in block_levels]
@@ -185,11 +186,11 @@ def endorsements_missed_between(baker, start_cycle, end_cycle):
         return 0
     endorsements = operations.query(operations.number_of_slots,
                                     operations.number_of_slots.sum()) \
-                             .filter(operations.kind == "endorsement",
-                                     operations.delegate == baker,
-                                     operations.cycle.between(start_cycle,
-                                                              end_cycle)) \
-                             .scalar()
+        .filter(operations.kind == "endorsement",
+                operations.delegate == baker,
+                operations.cycle.between(start_cycle,
+                                         end_cycle)) \
+        .scalar()
     if endorsements is None:
         return int(rights)
     return int(rights) - int(endorsements)
@@ -228,8 +229,8 @@ def sum_fees_for_blocks(block_levels):
         return 0
     fees = operations.query(operations.fee,
                             operations.fee.sum()) \
-                     .filter(operations.block_level.in_(*block_levels)) \
-                     .scalar()
+        .filter(operations.block_level.in_(*block_levels)) \
+        .scalar()
     if fees is None:
         return 0
     return int(fees)
@@ -239,9 +240,9 @@ def sum_fees_for_blocks(block_levels):
 def sum_revelations_in(block_levels):
     if len(block_levels) == 0:
         return 0
-    
+
     return int(operations.query(operations.operation_group_hash,
-                                operations.operation_group_hash.count()) 
+                                operations.operation_group_hash.count())
                .filter(operations.block_level.in_(*block_levels),
                        operations.kind == "seed_nonce_revelation")
                .scalar())
@@ -285,6 +286,7 @@ def endorsements_made_between(baker, start_cycle, end_cycle, priority="high"):
 #                          blocks.expected_commitment == "true",
 #                          blocks.nonce_hash.isnot(None)) \
 #                  .vector()
+
 
 def commitments_made_between(baker, start_cycle, end_cycle):
     """Returns a list of levels where a seed nonce commitment was made"""
@@ -338,20 +340,20 @@ def baker_info_at_level(baker, level):
 def operations_in(block_level):
     """Returns a dictionary containing the operation data in the block at
     block level. 
-    
+
     The rpc endpoint is used instead of conseil because double 
     baking/endorsing data is not available at the time of this writing.
     """
 
     r = requests.get(("%s/chains/main/blocks/%d/operations" %
-                     (BASE_URL, block_level)))
-    
+                      (BASE_URL, block_level)))
+
     return json.loads(r.text)
 
-            
+
 def accusations_between(start_cycle, end_cycle, accusation_type):
     """Returns a list of levels where accusations were made
-    
+
     Args:
         start_cycle (int): Lower bound of range to search in
         end_cycle (int): Upper bound of range to search in
@@ -359,8 +361,8 @@ def accusations_between(start_cycle, end_cycle, accusation_type):
             "baking" for double baking accusations and "endorsement" for 
             double endorsement accusations
     """
-    type_to_field = {"baking":"double_baking_evidence",
-                     "endorsement":"double_endorsement_evidence"}
+    type_to_field = {"baking": "double_baking_evidence",
+                     "endorsement": "double_endorsement_evidence"}
 
     accusations = operations.query(operations.block_level) \
                             .filter(operations.cycle.between(start_cycle, end_cycle),
@@ -368,7 +370,7 @@ def accusations_between(start_cycle, end_cycle, accusation_type):
                             .vector()
 
     return accusations
-    
+
 
 def evidence_in(operations, evidence_type):
     """Parses a dictionary containing chain operations and extracts double
@@ -381,9 +383,9 @@ def evidence_in(operations, evidence_type):
             endorsement
     """
 
-    type_to_field = {"baking":"double_baking_evidence",
-                     "endorsement":"double_endorsement_evidence"}
-    
+    type_to_field = {"baking": "double_baking_evidence",
+                     "endorsement": "double_endorsement_evidence"}
+
     evidence = []
     for operation_group in operations:
         for operation in operation_group:
@@ -392,7 +394,7 @@ def evidence_in(operations, evidence_type):
                     evidence.append(content)
     return evidence
 
-    
+
 def snapshot_index(cycle):
     """Returns the level of the snapshot for a given cycle"""
 
