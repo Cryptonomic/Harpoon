@@ -63,8 +63,36 @@ async function updatePayoutInfo(baker) {
         fee: 0,
         payoutDelay: 0,
       };
-  document.getElementById("fee").value = bakerInfo.fee;
+  document.getElementById("fee").value = bakerInfo.fee * 100;
   document.getElementById("payout_delay").value = bakerInfo.payoutDelay;
+  if(bakerInfo.fee && bakerInfo.payoutDelay && payout_response) {
+    calculateRewardsForDelegate();
+  }
+}
+
+function clearWarnings() {
+    const warning = document.getElementById("calc-warning");
+    warning.style.dispay = "none";
+    warning.innerHTML = "";
+}
+
+function analyzeRewards(rewards) {
+    const allZeroWarn = "This data might be inaccurate. Please verify that the <strong> “Delegator Address” </strong> and <strong> “Baker Payout Address” </strong> is correct."
+    const dataNotAlignedWarn = "This data might be inaccurate. Please verify that the data for <strong> “Fee” </strong> and <strong> “Payout Deplay” </strong> is accurate."
+    const warning = document.getElementById("calc-warning");
+    const noRewards = entry => (entry.delegator_rewards_received == 0 ||
+				entry.delegator_rewards_received == "*"); 
+    const wrongRewards = entry => (entry.delegator_rewards_received != entry.delegator_rewards);
+    if (rewards.every(noRewards)) {
+	warning.innerHTML = allZeroWarn;
+	warning.style.display = "block";
+    }
+    else if (rewards.every((entry) => noRewards(entry) || wrongRewards(entry))) {
+	warning.innerHTML = dataNotAlignedWarn;
+	warning.style.display = "block";
+    } else {
+    	warning.style.display = "none";
+    }
 }
 
 /**
@@ -77,7 +105,7 @@ async function calculateRewardsForDelegate() {
   const lastFullCycle = head.meta_cycle - 1;
 
   const delegator = document.getElementById("delegator").value;
-  const fee = document.getElementById("fee").value;
+  const fee = (document.getElementById("fee").value)/100;
   const payoutDelay = parseInt(document.getElementById("payout_delay").value);
   const payout = document.getElementById("payout").value;
 
@@ -191,7 +219,9 @@ async function calculateRewardsForDelegate() {
       d["actual_fee"] = "*";
     }
   }
-
+    
+  // check to see if the rewards seem very off. If they do, make a warning appear.  
+  analyzeRewards(rewards);
   // The first object in the array is used for the titles of columns. Since rewards array is reversed later
   // the last item becomes the first
   rewards.push({
@@ -212,6 +242,7 @@ async function calculateRewardsForDelegate() {
     "advertised_fee",
     "actual_fee",
   ];
+  const units = ['', 'ꜩ', 'ꜩ', 'ꜩ', '%', '%'];
 
   const colorMappings = {
     delegator_rewards: TEAL[7],
@@ -222,6 +253,7 @@ async function calculateRewardsForDelegate() {
     "rewards_table",
     rewards.reverse(),
     heatTableFields,
+    units,
     colorMappings,
     [
       ["delegator_rewards", "delegator_rewards_received"],
@@ -330,7 +362,7 @@ async function updateBakerInfo(baker, delegator=null) {
   let stakingBalance = 0;
   let numBlocksBaked = 0;
   let numBlocksBakedLastCycle = 0;
-
+  clearWarnings();
   // Use Baking Bad to convert address into a name if it exists
   // let bakerRegistry = JSON.parse(
   //   await httpGet(`https://api.baking-bad.org/v2/bakers`)
@@ -352,13 +384,12 @@ async function updateBakerInfo(baker, delegator=null) {
   //   updateBakerInfo((await getBlock("head")).baker)
   //   return;
   // }
-    
   if( baker.length !== 36 ) {
     updateBakerInfo((await getBlock("head")).baker)
     return;
   }
-  history.pushState(null, '', `/${baker}`);    
-   
+  history.pushState(null, '', `/${baker}`);
+
   // if ((baker.charAt(0) != "t" && baker.charAt(0) != "K") || baker.length != 36)	return;
 
   // Check to see if the address is a regular account. If it is, show the page for
@@ -447,6 +478,7 @@ async function updateBakerInfo(baker, delegator=null) {
         "endorsements",
         "missed_endorsements",
       ],
+      [],
       colorMappings
     );
   });
@@ -501,8 +533,9 @@ async function updateBakerInfo(baker, delegator=null) {
       staking_balance: "Advertised Fee",
       delegated_balance: "Actual Fee Taken",
     });
+    const units = ['', 'ꜩ', 'ꜩ', 'ꜩ', '%', '%'];
 
-    heatTable("rewards_table", d.reverse(), heatTableFields, {
+    heatTable("rewards_table", d.reverse(), heatTableFields, units, {
       rewards: TEAL[7],
     });
   });
@@ -928,4 +961,8 @@ const gotoPeri2 = () => {
 
 const gotoCryptonomic = () => {
   window.open('https://cryptonomic.tech/')
+}
+
+const openLink = (link) => {
+  window.open(link);
 }

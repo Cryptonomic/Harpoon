@@ -38,7 +38,7 @@
           <p class="logo-sub-title">Baker Performance Stats</p>
         </div>
         <div class="logo-bottom-container">
-          <p class="logo-bottom-content">an Open Source Project by</p>
+          <p class="logo-bottom-content" onclick="openLink('https://github.com/Cryptonomic/Harpoon')">an Open Source Project by</p>
           <img onclick="gotoCryptonomic()" src="./assets/images/logo.svg" alt="logo" class="logo" />
         </div>
       </div>
@@ -271,15 +271,33 @@
         </div>
         <div class="reward-calc flex-column">
           <p class="middle-middle subtitle-text weight-500">Enter information to calculate rewards</p>
-          <div class="reward-calc-inputs flex-row">
-            <input type="text" id="delegator" placeholder="Delegator Address" value=""> </input>
-            <input type="text" id="payout" placeholder="Payout Address" value=""> </input>
-            <input type="text" id="fee" placeholder="Fee" value=""> </input>
-            <input type="text" id="payout_delay" placeholder="Payout Delay" value=""> </input>
+          <div class="reward-calc-inputs">
+            <div class="input-container delegator-address">
+              <label for="delegator">Delegator Address</label>
+              <input type="text" id="delegator" placeholder="" value=""> </input>
+            </div>
+
+            <div class="input-container payout-address">
+              <label for="payout">Baker Payout Address</label>
+              <input type="text" id="payout" placeholder="" value=""> </input>
+            </div>
+
+            <div class="input-container unit-container">
+              <label for="fee">Fee</label> 
+              <input type="text" id="fee" placeholder="" value=""> </input>
+              <span class="unit-item">%</span>
+            </div>
+
+            <div class="input-container unit-container">
+              <label for="payout_delay">Payout Delay</label>
+              <input type="text" id="payout_delay" placeholder="" value=""> </input>
+              <span class="unit-item">Cycles</span>
+            </div>
             <button id="calculate_rewards_button" class="reward-calc-btn middle-middle weight-500 title-text" onclick="calculateRewardsForDelegate()">
               Calculate
             </button>
           </div>
+	  <p class="warning" id="calc-warning" style="display: none;"></p>
         </div>
       </div>
     </div>
@@ -287,7 +305,12 @@
 
     <!-- Footer section start -->
     <div class="footer-container">
-      <!-- <p class="middle-small"> A product by Cryptonomic</p> -->
+      <p class="footer-des">© 2020 Cryptonomic Inc</p>
+      <img class="social-img twitter-img" src="./assets/images/twitter.svg" onclick="openLink('https://twitter.com/CryptonomicTech')" />
+      <img class="social-img github-img" src="./assets/images/github.svg" onclick="openLink('https://github.com/Cryptonomic')"/>
+      <img class="social-img riot-img" src="./assets/images/riot.svg" onclick="openLink('https://matrix.to/#/!heGqMNcsOSHGPxrMJs:cryptonomic.tech')"/>
+      <img class="social-img medium-img" src="./assets/images/medium.svg" onclick="openLink('https://medium.com/the-cryptonomic-aperiodical')"/>
+      <p class="footer-data">Data for baker names, payout delays and fees from <span class="footer-bakingbad" onclick="openLink('https://baking-bad.org/')">BakingBad</span></p>
     </div>
     <!-- Footer section end -->
 

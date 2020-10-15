@@ -195,6 +195,7 @@ function heatTable(
   id,
   data,
   values,
+  units,
   colorMappings,
   comparisons = [],
   notices = []
@@ -266,7 +267,18 @@ function heatTable(
           }
         })
         .append("text")
-        .text((d, i) => (i === 0 ? "" : d[column]))
+        .text((d, i) => {
+          if (i === 0) {
+            return ''
+          }
+          if (d[column] !== 0 && !d[column] || d[column] === '*' || d[column] === '-') {
+            return d[column];
+          }
+          if (!!units[columnInd]) {
+            return `${d[column]} ${units[columnInd]}`
+          }
+          return d[column];
+        })
         .attr(
           "x",
           columnInd == 0
@@ -657,6 +669,8 @@ function stackedBarGraph(
 function linegraph(id, data, values, yExtent, time = true, area = false) {
   let xScale = time ? d3.scaleTime() : d3.scaleLinear();
   let grapher = area ? areaGenerator : lineGenerator;
+  const dateFormatter = d3.timeFormat("%Y %m/%d %H:%M");
+  
   const xTickSize = 5;
   const xTickPadding = 5;
   const yTickSize = 5;
@@ -669,6 +683,10 @@ function linegraph(id, data, values, yExtent, time = true, area = false) {
     bottom: 30,
   });
   const render = (graph) => {
+    const interp = d3.interpolateBasis(graph.data.map(function(p) {
+      return p[values.y];
+    }));
+    const xmax = d3.max(graph.data, function(d) {return d[values.x] })
     const x = xScale
       .domain(d3.extent(graph.data, graph.xValue))
       .range([0, graph.innerWidth]);
@@ -685,11 +703,11 @@ function linegraph(id, data, values, yExtent, time = true, area = false) {
       .tickSize(xTickSize)
       .tickPadding(xTickPadding);
 
-    const yAxis = d3
+    const yAxisBefore = d3
       .axisLeft(y)
       .tickSize(yTickSize)
-      .tickPadding(yTickPadding)
-      .tickFormat(d3.format(".2s"));
+      .tickPadding(yTickPadding);
+    let yAxis = time ? yAxisBefore : yAxisBefore.tickFormat(d3.format(".2s"));
 
     const g = graph.svg
       .append("g")
@@ -697,6 +715,7 @@ function linegraph(id, data, values, yExtent, time = true, area = false) {
         "transform",
         `translate(${graph.margin.left}, ${graph.margin.top})`
       );
+      
 
     let line = g.append("path");
     line
@@ -709,6 +728,36 @@ function linegraph(id, data, values, yExtent, time = true, area = false) {
       .attr("stroke-linejoin", "round");
 
     g.append("g").call(yAxis);
+
+    const focus = g.append("g")
+      .attr("class", "focus")
+      .style("display", "none");
+    focus.append("circle")
+      .attr("r", 4);
+
+      focus.append("rect")
+        .attr("class", "line-tooltip")
+        .attr("width", 68)
+        .attr("height", 29)
+        .attr("x", -34)
+        .attr("y", -40)
+        .attr("rx", 4)
+        .attr("ry", 4);
+      focus.append("polygon")
+        .attr("class", "line-tooltip-tri")
+        .attr("points", "-5.5,-12 5.5,-12 0,-5");
+
+      focus.append("text")
+        .attr("class", "tooltip-date")
+        .attr("text-anchor", 'middle')
+        .attr("x", -0)
+        .attr("y", -17);
+
+      focus.append("text")
+        .attr("class", "tooltip-likes")
+        .attr("text-anchor", 'middle')
+        .attr("x", -0)
+        .attr("y", -26);
 
     g.append("g")
       .call(xAxis)
@@ -723,6 +772,28 @@ function linegraph(id, data, values, yExtent, time = true, area = false) {
           self.append("tspan").attr("x", 0).attr("dy", "1.1em").text(s[1]);
         });
       });
+
+      g.append("rect")
+        .attr("class", "overlay")
+        .attr("width", graph.innerWidth - 20)
+        .attr("height", graph.innerHeight)
+        .on("mouseover", function() { focus.style("display", null); })
+        .on("mouseout", function() { focus.style("display", "none"); })
+        .on("mousemove", mousemove);
+
+      function mousemove() {
+        const x0 = d3.mouse(this)[0];
+        const y0 = interp(x0 / x(xmax));
+        focus.attr("transform", "translate(" + x0 + "," + y(y0) + ")");
+        if(time) {
+          focus.select(".tooltip-likes").text(`${Math.round(y0)} Blocks`);
+          focus.select(".tooltip-date").text(dateFormatter(Math.round(x.invert(x0))));
+        } else {
+          focus.select(".tooltip-date").text(`Cycle ${Math.round(x.invert(x0))}`);
+          focus.select(".tooltip-likes").text(`${Math.round(y0)} ꜩ`);
+        }
+        
+      }
   };
   render(toGraph);
 }
