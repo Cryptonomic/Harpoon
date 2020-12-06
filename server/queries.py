@@ -427,3 +427,4 @@ def snapshot_index_to_block(index, cycle):
 
     return (cycle - PRESERVED_CYCLES - PENDING_CYCLES) * CYCLE_SIZE + \
         (index + 1) * SNAPSHOT_BLOCKS
+# print(assigned_blocks_between("tz1P2Po7YM526ughEsRbY4oR9zaUPDZjxFrb", 270, 270))
