@@ -37,6 +37,21 @@ SNAPSHOT_BLOCKS = 256
 # Arbitrary large value for conseilpy queries
 MAX_LIMIT = 100000000
 
+# TODO: decorate all queries with this
+def log_errors(f):
+    """Decorator to ease the debugging process while in production function
+    that prints the parameters causing erros that may occur while making
+    queries.
+    """
+    
+    def inner(*args, **kwargs):
+        try:
+           return f(*args, **kwargs)
+        except Exception as e:
+            print("%s failed with parameters: (%s)" % (f.__name__, args))
+            raise e
+    return inner
+
 
 def partition_query(partition_size=50):
     """Decorator function for conseil queries which use the IN clause
@@ -196,7 +211,8 @@ def endorsements_missed_between(baker, start_cycle, end_cycle):
     return int(rights) - int(endorsements)
 
 
-@partition_query(5000)
+@partition_query(200)
+@log_errors
 def sum_endorsements_made_in(block_levels, baker):
     """Returns the number of endorsements made by baker in block_levels"""
 
