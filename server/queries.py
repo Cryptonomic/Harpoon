@@ -176,10 +176,10 @@ def endorsements_missed_between(baker, start_cycle, end_cycle):
     start_level = cycle_to_level(start_cycle)
     end_level = cycle_to_level(end_cycle+1) - 1
     rights = endorsing_rights \
-        .query(endorsing_rights.level,
-               endorsing_rights.level.count()) \
+        .query(endorsing_rights.block_level,
+               endorsing_rights.block_level.count()) \
         .filter(endorsing_rights.delegate == baker,
-                endorsing_rights.level.between(start_level, end_level)) \
+                endorsing_rights.block_level.between(start_level, end_level)) \
         .scalar()
 
     if rights is None:
