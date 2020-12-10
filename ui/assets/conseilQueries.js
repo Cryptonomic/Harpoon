@@ -977,3 +977,111 @@ function getAccounts(prefix) {
     prefix
   );
 }
+
+let getMean = function (data) {
+  return (
+    data.reduce(function (a, b) {
+      return Number(a) + Number(b);
+    }, "") / data.length
+  );
+};
+
+let getSD = function (data) {
+  let m = getMean(data);
+  return Math.sqrt(
+    data.reduce(function (sq, n) {
+      return sq + Math.pow(n - m, 2);
+    }, 0) /
+      (data.length - 1)
+  );
+};
+
+function zscoreToGrade(zscore) {
+  if (zscore < -0.25) return "A";
+  else if (zscore < 0.26) return "B+";
+  else if (zscore < 0.54) return "B";
+  else if (zscore < 0.85) return "C";
+  else if (zscore < 1.65) return "D";
+  else return "F";
+}
+
+function calculateGrades(pkh, stats, pos, neg) {
+  sumSuccessful = 0;
+  sumMissed = 0;
+  data = {};
+  for (entry of stats) {
+    if (data[entry.baker]) {
+      data[entry.baker].successful.push(entry[pos]);
+      data[entry.baker].missed.push(entry[neg]);
+    } else {
+      data[entry.baker] = { successful: [entry[pos]], missed: [entry[neg]] };
+    }
+    sumSuccessful += entry[pos];
+    sumMissed += entry[neg];
+  }
+  num_valid = 0;
+  mu = sumMissed / (sumSuccessful + sumMissed);
+  baker = data[pkh];
+
+  n = baker.successful.length;
+  ratios = [];
+  for (k = 0; k < n; k++) {
+    numSuccessful = baker.successful[k];
+    numMissed = baker.missed[k];
+    total = numSuccessful + numMissed;
+    if (total != 0) ratios.push(numMissed / total);
+  }
+  if (ratios.length >= 30) {
+    xbar = getMean(ratios);
+    n = ratios.length;
+    sigma = getSD(ratios);
+    if (sigma == 0) sigma = 0.000000000000000001;
+    t = (xbar - mu) / (sigma / Math.pow(n, 0.5));
+    return zscoreToGrade(t);
+  } else return "-";
+}
+
+async function getBakerGrade(baker, cycle) {
+  fields = [
+    "baker",
+    "cycle",
+    "num_baked",
+    "num_missed",
+    "high_priority_endorsements",
+    "missed_endorsements",
+  ];
+  predicates = [{ field: "cycle", op: "between", value: [271, 300] }];
+  stats = await getBakerInfo("baker_performance", fields, predicates);
+  endorsingGrade = calculateGrades(
+    baker,
+    stats,
+    "high_priority_endorsements",
+    "missed_endorsements"
+  );
+  bakingGrade = calculateGrades(baker, stats, "num_baked", "num_missed");
+
+  letterGradeToInt = {
+    A: 1,
+    B: 2,
+    "B+": 3,
+    C: 4,
+    D: 5,
+    F: 6,
+  };
+
+  intToLetterGrade = ["", "A", "B", "B+", "C", "D", "F"];
+  console.log(endorsingGrade);
+  console.log(bakingGrade);
+
+  if (bakingGrade == "-")
+    if (endorsingGrade == "-") return "*";
+    else return endorsingGrade;
+  else {
+    bakingInt = letterGradeToInt[bakingGrade];
+    endorsingInt = letterGradeToInt[endorsingGrade];
+    avgGrade = Math.round((bakingInt + endorsingInt) / 2);
+    console.log(avgGrade);
+    console.log(intToLetterGrade[avgGrade]);
+    return intToLetterGrade[avgGrade];
+  }
+}

@@ -338,24 +338,6 @@ function set(id, value) {
   document.getElementById(id).innerHTML = value;
 }
 
-let getMean = function (data) {
-  return (
-    data.reduce(function (a, b) {
-      return Number(a) + Number(b);
-    }, "") / data.length
-  );
-};
-
-let getSD = function (data) {
-  let m = getMean(data);
-  return Math.sqrt(
-    data.reduce(function (sq, n) {
-      return sq + Math.pow(n - m, 2);
-    }, 0) /
-      (data.length - 1)
-  );
-};
-
 const onSearch = () => {
   const val = document.getElementById("baker").value;
   updateBakerInfo(val);
@@ -555,34 +537,7 @@ async function updateBakerInfo(baker, delegator = null) {
   });
 
   // Set the baker grade for baker
-  getBakerInfo(
-    "baker_performance",
-    ["baker", "grade", "cycle"],
-    [{ field: "cycle", op: "lt", value: [lastFullCycle + 1] }],
-    { field: "cycle", dir: "desc" }
-  ).then((d) => {
-    const cycle = d[0]["cycle"];
-    let values = d
-      .filter((item) => item.cycle == cycle)
-      .map((item) => item.grade)
-      .sort((a, b) => a - b);
-    const fivePercent = Math.round(values.length * 0.05);
-    values = values.slice(fivePercent, values.length - fivePercent);
-    const standardDeviation = getSD(values);
-    const avg = getMean(values);
-    const bakerGrade = (d.find((entry) => entry.baker == baker) || { grade: 0 })
-      .grade;
-    const numDeviations = (bakerGrade - avg) / standardDeviation;
-    let letterGrade = "F";
-    if (numDeviations > 2) letterGrade = "A+";
-    else if (numDeviations > 1) letterGrade = "A";
-    else if (numDeviations > 0.5) letterGrade = "B+";
-    else if (numDeviations > 0) letterGrade = "B";
-    else if (numDeviations > -1) letterGrade = "C";
-    else if (numDeviations > -1.5) letterGrade = "D";
-    else letterGrade = "F";
-    set("baker_grade", `${letterGrade}`);
-  });
+  getBakerGrade(baker, lastFullCycle).then((d) => set("baker_grade", d));
 
   // Set last baked fields
   lastBlockBakedBy(baker).then((d) => {
