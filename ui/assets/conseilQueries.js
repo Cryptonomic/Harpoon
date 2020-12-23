@@ -1005,10 +1005,27 @@ function zscoreToGrade(zscore) {
   else return "F";
 }
 
+/**
+ * Function to calculate the grade of a baker based off a desired field
+ *
+ * @params {string} pkh - public key of baker to get grades for
+ * @params {Array}  stats - baker performance dataset to use in grading
+ *    containing info of all bakers (one entry per baker per cycle)
+ * @params {string} pos - positive attribute of grade. Must be a field in one of
+ *    the entries in stats usually either "num_baked" or
+ *    "high_priority_endorsements"
+ * @params {string} neg - negative attribute of grade. Must be a field in one of
+ *    the entries in stats usually either "num_missed" or "endorsements_missed"
+ * @returns {Array} [grade: string, number of data points used: number]
+ */
 function calculateGrades(pkh, stats, pos, neg) {
   sumSuccessful = 0;
   sumMissed = 0;
   data = {};
+
+  // For baker in the dataset, create a dictionary accumulating the number of
+  // positive/negative points per cycle. Keep track of a global sum as well
+
   for (entry of stats) {
     if (data[entry.baker]) {
       data[entry.baker].successful.push(entry[pos]);
@@ -1019,9 +1036,16 @@ function calculateGrades(pkh, stats, pos, neg) {
     sumSuccessful += entry[pos];
     sumMissed += entry[neg];
   }
+
   num_valid = 0;
-  mu = sumMissed / (sumSuccessful + sumMissed);
   baker = data[pkh];
+
+  // Calculate the average of the population
+
+  mu = sumMissed / (sumSuccessful + sumMissed);
+
+  // Look through the array of data points for a particular baker. Calculate the
+  // negative/sum ratio and throw out cycles where there was no baker activity
 
   n = baker.successful.length;
   ratios = [];
@@ -1031,16 +1055,34 @@ function calculateGrades(pkh, stats, pos, neg) {
     total = numSuccessful + numMissed;
     if (total != 0) ratios.push(numMissed / total);
   }
-  if (ratios.length >= 30) {
+
+  // Calculate the sample mean, xbar, and sample variance, S, for the baker. Do
+  // this if the baker has at least 2 periods worth of data (16 cycles)
+
+  if (ratios.length >= 16) {
     xbar = getMean(ratios);
-    n = ratios.length;
-    sigma = getSD(ratios);
-    if (sigma == 0) sigma = 0.000000000000000001;
-    t = (xbar - mu) / (sigma / Math.pow(n, 0.5));
-    return zscoreToGrade(t);
-  } else return "-";
+
+    // If the baker doesn't have at least 30 data points, we extrapolate to 30
+    // points in order to apply the CLT and avoid using a t-distribution
+
+    n = ratios.length < 30 ? 30 : ratios.length;
+    S = getSD(ratios);
+    if (S == 0) S = 0.000000000000000001;
+
+    // calculate the t-value
+
+    t = (xbar - mu) / (S / Math.pow(n, 0.5));
+    return [zscoreToGrade(t), ratios.length];
+  } else return ["-", ratios.length];
 }
 
+/**
+ * Function to return the grade of a baker
+ *
+ * @params {string} baker - public key of baker to get grades for
+ * @params {number} cycle - cycle to get the grade for
+ * @returns {string} letter grade of the baker
+ */
 async function getBakerGrade(baker, cycle) {
   fields = [
     "baker",
@@ -1050,15 +1092,34 @@ async function getBakerGrade(baker, cycle) {
     "high_priority_endorsements",
     "missed_endorsements",
   ];
-  predicates = [{ field: "cycle", op: "between", value: [271, 300] }];
+  numCyclesBack = 64; // look up to two periods back for data
+
+  // Get all of the baker performance data for calculation
+
+  predicates = [
+    {
+      field: "cycle",
+      op: "between",
+      value: [cycle - numCyclesBack + 1, cycle],
+    },
+  ];
   stats = await getBakerInfo("baker_performance", fields, predicates);
-  endorsingGrade = calculateGrades(
+
+  // Calculate endorsing and baking grade seperately
+
+  [endorsingGrade, endorsingLength] = calculateGrades(
     baker,
     stats,
     "high_priority_endorsements",
     "missed_endorsements"
   );
-  bakingGrade = calculateGrades(baker, stats, "num_baked", "num_missed");
+
+  [bakingGrade, bakingLength] = calculateGrades(
+    baker,
+    stats,
+    "num_baked",
+    "num_missed"
+  );
 
   letterGradeToInt = {
     A: 1,
@@ -1070,18 +1131,23 @@ async function getBakerGrade(baker, cycle) {
   };
 
   intToLetterGrade = ["", "A", "B", "B+", "C", "D", "F"];
-  console.log(endorsingGrade);
-  console.log(bakingGrade);
+
+  // Return a pending grade if the baker lacked enough history, just the
+  // endorsing grade if the baker lacked enough baking history, the average of
+  // the baking and endorsing grade, or an extrapolated grade (denoted with an
+  // asterisk)
 
   if (bakingGrade == "-")
-    if (endorsingGrade == "-") return "*";
+    if (endorsingGrade == "-") return "Pending";
     else return endorsingGrade;
   else {
     bakingInt = letterGradeToInt[bakingGrade];
     endorsingInt = letterGradeToInt[endorsingGrade];
     avgGrade = Math.round((bakingInt + endorsingInt) / 2);
-    console.log(avgGrade);
-    console.log(intToLetterGrade[avgGrade]);
-    return intToLetterGrade[avgGrade];
+
+    return (
+      intToLetterGrade[avgGrade] +
+      (bakingLength < 32 || endorsingLength < 32 ? "*" : "")
+    );
   }
 }
