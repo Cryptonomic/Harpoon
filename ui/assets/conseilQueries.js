@@ -1132,10 +1132,10 @@ async function getBakerGrade(baker, cycle) {
 
   intToLetterGrade = ["", "A", "B", "B+", "C", "D", "F"];
 
-  // Return a pending grade if the baker lacked enough history, just the
-  // endorsing grade if the baker lacked enough baking history, the average of
-  // the baking and endorsing grade, or an extrapolated grade (denoted with an
-  // asterisk)
+  // Return a pending grade if the baker lacked in overall data, just the
+  // endorsing grade if the baker lacked baking history, an extrapolated grade
+  // (denoted with an asterisk) if the baker had some baking/endorsing history,
+  // or the average of the baking and endorsing grade if there was ample data.
 
   if (bakingGrade == "-")
     if (endorsingGrade == "-") return "Pending";
