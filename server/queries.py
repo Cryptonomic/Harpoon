@@ -323,13 +323,18 @@ def all_bakers():
 
 def active_bakers_between(start_cycle, end_cycle):
     """Returns all bakers who've baked a block in [start_cycle, end_cycle]"""
-
-    baker_list = all_bakers()
     active = list(set(blocks.query(blocks.baker)
                       .filter(blocks.meta_cycle.between(start_cycle,
                                                         end_cycle))
-                      .vector()))
-    return [baker for baker in baker_list if baker in active]
+                      .vector() +
+                    operations.query(operations.delegate)
+                    .filter(operations.cycle.between(start_cycle, 
+                                                        end_cycle),
+                            operations.kind == "endorsement")
+                    .vector())
+                    )
+
+    return active
 
 
 def transaction_sources_in_cycle(destination, cycle):
@@ -443,4 +448,3 @@ def snapshot_index_to_block(index, cycle):
 
     return (cycle - PRESERVED_CYCLES - PENDING_CYCLES) * CYCLE_SIZE + \
         (index + 1) * SNAPSHOT_BLOCKS
-# print(assigned_blocks_between("tz1P2Po7YM526ughEsRbY4oR9zaUPDZjxFrb", 270, 270))
