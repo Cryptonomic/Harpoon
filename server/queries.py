@@ -211,7 +211,7 @@ def endorsements_missed_between(baker, start_cycle, end_cycle):
     return int(rights) - int(endorsements)
 
 
-@partition_query(200)
+@partition_query()
 @log_errors
 def sum_endorsements_made_in(block_levels, baker):
     """Returns the number of endorsements made by baker in block_levels"""
