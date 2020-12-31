@@ -1,6 +1,6 @@
 # Harpoon
 
-Harpoon is a staking dashboard for the Tezos blockchain built using [ConseilJS](https://github.com/Cryptonomic/ConseilJS). Harpoon collects metrics about each baker on the Tezos network and allows users to search for and evaluate bakers based on these performance stats. The data includes blocks baked, missed, and stolen, stake relative to the rest of the network, as well as a letter grade based on a normalized scoring system. Harpoon also enables baker auditing by showing the rewards won and payed out. [Cryptonomic](https://twitter.com/cryptonomictech) has a public deployment of [Harpoon](https://harpoon.arronax.io/) under the [Arronax](https://harpoon.arronax.io/) umbrella of blockchain analytics products.
+Harpoon is a staking dashboard for the Tezos blockchain built using [ConseilJS](https://github.com/Cryptonomic/ConseilJS). Harpoon collects metrics about each baker on the Tezos network and allows users to search for and evaluate bakers based on these performance stats. The data includes blocks baked, missed, and stolen, stake relative to the rest of the network, as well as a letter grade based on a normalized scoring system. Harpoon also enables baker auditing by showing the rewards won and paid out. [Cryptonomic](https://twitter.com/cryptonomictech) has a public deployment of [Harpoon](https://harpoon.arronax.io/) under the [Arronax](https://harpoon.arronax.io/) umbrella of blockchain analytics products.
 
 ## Requirements
 
@@ -24,14 +24,14 @@ After configuration, Harpoon can be run through [Docker](https://docs.docker.com
 docker-compose up --build
 ```
 
-Doing so will result in an endpoint at http://127.0.0.1:<web_server_port>, where `web_server_port` was the value specified during configuration. A Postgres database is also accessible through the corresponding port specified during configuration a well.
+Doing so will result in an endpoint at `http://127.0.0.1:<web_server_port>`, where `web_server_port` was the value specified during configuration. A Postgres database is also accessible through the corresponding port specified during configuration a well.
 
 On startup, Harpoon will display metrics for the most recent baker. Other bakers can be searched for by baker name or public key hash
 Some features, such as letter grades and rewards will be unable, however, as syncing the Postgres database requires some time to do.
 
 ## How It Works
 
-Much of the functionality of Harpoon is achieved through client-side javascript using [ConsielJS](https://www.npmjs.com/package/conseiljs), such as the stats on the top left panel that provide an outline for the baker's performance in the last cycle. However, for information that is data intensive or not available through [Conseil](https://github.com/Cryptonomic/Conseil), a database is maintained and kept up-to-date with [additional indexing scripts](https://github.com/Cryptonomic/Harpoon/tree/master/server) in Python. The following sections provide an overview for some of the less conventional pieces of information that are collected.
+Much of the functionality of Harpoon is achieved through client-side javascript using [ConseilJS](https://www.npmjs.com/package/conseiljs), such as the stats on the top left panel that provide an outline for the baker's performance in the last cycle. However, for information that is data intensive or not available through [Conseil](https://github.com/Cryptonomic/Conseil), a database is maintained and kept up-to-date with [additional indexing scripts](https://github.com/Cryptonomic/Harpoon/tree/master/server) in Python. The following sections provide an overview for some of the less conventional pieces of information that are collected.
 
 ### Snapshot Data
 
@@ -55,9 +55,7 @@ The snapshot taken at the snapshot block only contains the rolls which each bake
 
 ### Baker Grade Calculation
 
-Baker are scored once at the end of every cycle. The formula used to calculate this score can be interacted with [here](https://www.desmos.com/calculator/p419kfvxpk).
-
-As of now, endorsement data has not been factored into grading.
+Bakers are scored based on their baking and endorsing performance from the last four periods. A baker should have ideally baked/endorsed in at least 30 cycles for a reliable grade. However, they can still be graded if they have baked/endorsed in at least 15 cycles (there will be an asterisk next to their grade if this is the case). Read about how works in more detail [here](https://drive.google.com/file/d/1niqTEY4t_CjrS3WWGYBTeGh3soBS2Qz1/view?usp=sharing).
 
 ### Delegate History
 
