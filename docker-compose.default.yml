@@ -8,7 +8,9 @@ services:
       - POSTGRES_USER=postgres
     ports:
       - "<host_db_port>:5432"
-
+    volumes:
+      - microseil:/var/lib/postgresql/data
+  
   web:
     build: .
     tty: true
@@ -17,5 +19,6 @@ services:
     depends_on:
       - db
     command: "<start_cycle>"
-    volumes:
-      - microseil:/var/lib/postgresql/data
+
+volumes:
+  microseil:

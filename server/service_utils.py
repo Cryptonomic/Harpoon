@@ -61,8 +61,10 @@ def populate_from_cycle(table):
                         print("No data for cycle %s. Skipping..." % cycle)
                     cycle += 1
                 except requests.exceptions.ReadTimeout:
+                    traceback.print_exc()
                     print("Request timeout on cycle %s. Retrying..." % cycle)
                 except json.decoder.JSONDecodeError:
+                    traceback.print_exc()
                     print("Unexpected data received on cycle %s. Retrying..." % cycle)
                 except Exception as e:
                     print("Encountered error on cycle %s:" % cycle)
