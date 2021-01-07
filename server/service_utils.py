@@ -4,13 +4,54 @@ import requests
 import json
 import traceback
 from microseil import get_session, func
+from sqlalchemy.sql import case
 import queries as tezos
 
 
-def populate_from_cycle(table):
+def update_for_key_in_cycle(table, key, to_update):
+    """Decorator which allows a function to selectively update columns in a
+    table
+
+    update_for_key_in_cycles wraps around any function which takes a cycle as a
+    parameter and returns a dictionary where the keys are the same type as db
+    column passed in as the key parameter and the values of the dictionary are
+    the same type as the db column passed in as to_update. In other words, the
+    function being wrapped must have a signature of:
+
+        (cycle: int) => {key.type: to_update.type}
+
+    The decorator returns a new function that takes a cycle as a parameter. The
+    decorator will take care of matching each key to a db row and updating the
+    column to_update with the value of the corresponding dictionary entry. This
+    is optimized to be done in a single update
+    """
+    
+    def inner(f):        
+        def wrapped(cycle): 
+            print("Updating %ss for each %s in cycle %s for %s table..." %(
+                to_update.name, key.name, cycle, table.__tablename__))            
+            data = f(cycle)
+            session = get_session()
+            query = session.query
+            query(table).filter(
+                key.in_(data),
+                table.cycle == cycle
+            ).update({
+                to_update: case(data, value=key)
+            }, synchronize_session=False)
+            
+            session.commit()
+            session.close()
+            print("Done updating %ss in %s for cycle %s" % 
+                (to_update.name, table.__tablename__, cycle))
+        return wrapped
+    return inner
+
+
+def populate_from_cycle(table, after=None):
     """Decorator which automates populating database tables
 
-    populate_from_cycle() wraps around a function which calculates all the
+    populate_from_cycle wraps around a function which calculates all the
     values for a given table for a single cycle. The decorator then calls this
     function sequentially for each cycle, starting from the the specified start
     cycle, and populates the corresponding table. This is done until the cycle
@@ -57,6 +98,8 @@ def populate_from_cycle(table):
                         session.commit()
                         session.close()
                         print("Done")
+                        if (after != None):
+                            after(cycle)
                     else:
                         print("No data for cycle %s. Skipping..." % cycle)
                     cycle += 1

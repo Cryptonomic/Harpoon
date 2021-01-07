@@ -1,11 +1,12 @@
 import math
+import statistics
 import service_utils
 import queries as tezos
-from microseil import BakerPerformance
+from microseil import BakerPerformance, get_session
+from populate_grades import populate_grades
 
 # Size of the range in cycles to use in pulling performance data.
 SAMPLE_RANGE = 0
-
 
 def get_baker_performance(baker, current_cycle):
     """Makes the necessary queries to accumulate baker performance data
@@ -104,13 +105,13 @@ def get_baker_performance(baker, current_cycle):
 
 
 @service_utils.populate_from_cycle(BakerPerformance)
-def populate_baker_performance(cycle):
+def populate_baker_performance(cycle, after=populate_grades):
     """Populates baker_performance table with data for each baker at a given
     cycle"""
 
     print("Acquiring baker performance data for cycle %s..." % cycle)
     start_cycle = cycle - SAMPLE_RANGE
-    bakers = tezos.active_bakers_between(start_cycle, cycle)
+    bakers = tezos.all_bakers()
     data = []
     for baker in bakers:
         data.append(get_baker_performance(baker, cycle))
