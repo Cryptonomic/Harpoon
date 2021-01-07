@@ -48,6 +48,7 @@ def update_for_key_in_cycle(table, key, to_update):
     return inner
 
 
+# TODO: error handling for "after"
 def populate_from_cycle(table, after=None):
     """Decorator which automates populating database tables
 

@@ -106,8 +106,8 @@ def get_baker_performance(baker, current_cycle):
 
 @service_utils.populate_from_cycle(BakerPerformance)
 def populate_baker_performance(cycle, after=populate_grades):
-    """Populates baker_performance table with data for each baker at a given
-    cycle"""
+    """Populates general columns of the baker_performance table, followed by the
+    grades, in each cycle"""
 
     print("Acquiring baker performance data for cycle %s..." % cycle)
     start_cycle = cycle - SAMPLE_RANGE
