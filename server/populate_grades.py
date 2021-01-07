@@ -68,7 +68,8 @@ def calculate_partial_grades(stats, pos, neg):
     return grades
 
 
-def get_grading_stats_for_cycle(cycle):
+# TODO: optimize this
+def get_grading_stats_for_cycle(cycle):    
     session = get_session()
     query = session.query
     response = query(BakerPerformance.baker, BakerPerformance.num_baked, BakerPerformance.num_missed, 

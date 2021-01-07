@@ -1011,8 +1011,9 @@ async function getBakerGrade(baker, cycle) {
     "baker_performance",
     ["grade"],
     [
-      { field: "cycle", op: "eq", value: [cycle] },
+      { field: "cycle", op: "lt", value: [cycle] },
       { field: "baker", op: "eq", value: [baker] },
-    ]
+    ],
+    { field: "cycle", dir: "desc" }
   );
 }
