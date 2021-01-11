@@ -73,7 +73,7 @@ export const getBakerStats = async (baker: string) => {
       "baker_performance",
       ["baker", "grade"],
       [{ field: "baker", op: Operation.Equals, value: [baker] }],
-      { field: "cycle", dir: Direction.Ascending }
+      { field: "cycle", dir: Direction.Descending }
     )
   )[0];
 
@@ -222,10 +222,31 @@ export const delegatorsExpectingRewardsFrom = async (baker, cycle) => {
   );
 };
 
+export const listBakers = async () => {
+  const latestCycle = await getBakerInfo(
+    server,
+    "baker_performance",
+    ["cycle"],
+    [],
+    {
+      field: "cycle",
+      dir: Direction.Descending,
+    }
+  ).then((d) => d[0].cycle);
+
+  return await getBakerInfo(
+    server,
+    "baker_performance",
+    ["baker"],
+    [{ field: "cycle", op: Operation.Equals, value: [latestCycle] }]
+  );
+};
+
 function test() {
   const baker = "tz1Ldzz6k1BHdhuKvAtMRX7h5kJSMHESMHLC";
   const cycle = 300;
 
+  getBakerStats(baker).then((d) => console.log("Stats: ", d));
   bakerGradeInCycle(baker, cycle).then((data) => console.log("Grade:", data));
   bakerPayoutInCycle(baker, cycle).then((data) => console.log("Payout:", data));
   doubleBakingLossesInCycle(baker, cycle).then((data) =>
@@ -247,7 +268,8 @@ function test() {
   endorsementBreakDownInCycle(baker, cycle).then((data) =>
     console.log("Endorsements:", data)
   );
-  getBakerStats(baker).then((d) => console.log("Stats: ", d));
+
+  listBakers().then((d) => console.log("Bakers: ", d));
 }
 
 test();
