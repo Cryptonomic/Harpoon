@@ -6,6 +6,12 @@ enum Operation {
   GreaterThan = "gt",
   Between = "between",
 }
+
+enum Direction {
+  Ascending = "asc",
+  Descending = "desc",
+}
+
 type predicate = {
   field: string;
   op: Operation;
@@ -14,7 +20,7 @@ type predicate = {
 
 type orderby = {
   field: string;
-  dir: Operation;
+  dir: Direction;
 };
 
 const server = "https://harpoon.arronax.io/info";
@@ -27,6 +33,7 @@ const httpPost = async (url: string, payload: any) => {
   const data = await response.json();
   return data;
 };
+
 /**
  * Function used to build and send queries to the postgresql server running on
  * the backend (server host "microseilServer" is defined in networkConstant.js).
@@ -52,6 +59,26 @@ async function getBakerInfo(
   const result = await httpPost(microseilServer, query);
   return result;
 }
+
+export const getBakerStats = async (baker: string) => {
+  const name = (
+    await fetch(`https://api.baking-bad.org/v2/bakers/${baker}`)
+      .then((res) => res.text())
+      .then((text) => JSON.parse(text))
+  ).name;
+
+  const bakerInfo = (
+    await getBakerInfo(
+      server,
+      "baker_performance",
+      ["baker", "grade"],
+      [{ field: "baker", op: Operation.Equals, value: [baker] }],
+      { field: "cycle", dir: Direction.Ascending }
+    )
+  )[0];
+
+  return { ...bakerInfo, name };
+};
 
 // Returns baker's grade in a particular cycles
 export const bakerGradeInCycle = async (baker: string, cycle: number) => {
@@ -220,6 +247,7 @@ function test() {
   endorsementBreakDownInCycle(baker, cycle).then((data) =>
     console.log("Endorsements:", data)
   );
+  getBakerStats(baker).then((d) => console.log("Stats: ", d));
 }
 
 test();
