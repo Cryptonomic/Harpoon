@@ -537,7 +537,7 @@ async function updateBakerInfo(baker, delegator = null) {
   });
 
   // Set the baker grade for baker
-  getBakerGrade(baker, lastFullCycle).then((d) => set("baker_grade", d));
+  getBakerGrade(baker, lastFullCycle).then((d) => set("baker_grade", d[0]));
 
   // Set last baked fields
   lastBlockBakedBy(baker).then((d) => {
