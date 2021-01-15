@@ -4,7 +4,7 @@ Harpoon is a staking dashboard for the Tezos blockchain built using [ConseilJS](
 
 ## Requirements
 
-[Docker](https://docs.docker.com/engine/install/) and [Docker-compose](https://docs.docker.com/compose/install/) are the only two requirements needed to run Harpoon
+[Docker](https://docs.docker.com/engine/install/) and [Docker-compose](https://docs.docker.com/compose/install/) are required to run Harpoon. You will also need access to a tezos node and Conseil server, both of which can be acquired via [Nautilus Cloud](https://nautilus.cloud/)
 
 ## Installing and Running
 
@@ -16,7 +16,22 @@ cd Harpoon
 python3 configure.py
 ```
 
-Doing so will launch a configuration script that will allow the user to enter various config details and automatically creates the necessary config files. It is recommended to specify a sync start cycle that is at least 8 cycles before the current cycle for all of the features to work correctly.
+Doing so will launch a configuration script that will allow the user to enter various config details and automatically creates the necessary config files. Here is a brief description of the various configuration options:
+
+| Options         | Description                                                                            | Example                                       |
+| --------------- | -------------------------------------------------------------------------------------- | --------------------------------------------- |
+| `conseil_host`  | Host server's address running conseil                                                  | `https://conseil-prod.cryptonomic-infra.tech` |
+| `conseil_port`  | Port open for querying conseil on the conseil server                                   | `443`                                         |
+| `api_key`       | Your personal API Key from [Nautilus Cloud](https://nautilus.cloud/)                   | `MYAPIKEY`                                    |
+| `tezos_host`    | Tezos node's address                                                                   | `http://xxx.xxx.xxx.xxx`                      |
+| `tezos_port`    | Port open for RPC requests on the tezos node                                           | `8732`                                        |
+| `host_db_port`  | Port at which the local Postgres database that will be created should be accessible on | `5432`                                        |
+| `db_pass`       | Password to set for user `postgres` on the local Postgres database                     | `password`                                    |
+| `host_web_port` | Port at which Harpoon should be available from.                                        | `8080`                                        |
+| `start_cycle`   | Port at which Harpoon should be available from.                                        | `260`                                         |
+
+\
+It is recommended to specify a sync start cycle that is at least 16 cycles before the current cycle for all of the features to work correctly.
 
 After configuration, Harpoon can be run through [Docker](https://docs.docker.com/engine/install/) using the following commands:
 
@@ -24,14 +39,14 @@ After configuration, Harpoon can be run through [Docker](https://docs.docker.com
 docker-compose up --build
 ```
 
-Doing so will result in an endpoint at `http://127.0.0.1:<web_server_port>`, where `web_server_port` was the value specified during configuration. A Postgres database is also accessible through the corresponding port specified during configuration a well.
+Doing so will result in an endpoint at `http://127.0.0.1:<web_server_port>`. A Postgres database is also accessible on the local machine through the corresponding port specified during configuration a well.
 
-On startup, Harpoon will display metrics for the most recent baker. Other bakers can be searched for by baker name or public key hash
-Some features, such as letter grades and rewards will be unable, however, as syncing the Postgres database requires some time to do.
+On startup, Harpoon will display metrics for the most recent baker. Other bakers can be searched for by baker name or public key hash.
+Some features, such as letter grades and rewards auditing, will be unable initally as the Postgres database syncs.
 
 ## How It Works
 
-Much of the functionality of Harpoon is achieved through client-side javascript using [ConseilJS](https://www.npmjs.com/package/conseiljs), such as the stats on the top left panel that provide an outline for the baker's performance in the last cycle. However, for information that is data intensive or not available through [Conseil](https://github.com/Cryptonomic/Conseil), a database is maintained and kept up-to-date with [additional indexing scripts](https://github.com/Cryptonomic/Harpoon/tree/master/server) in Python. The following sections provide an overview for some of the less conventional pieces of information that are collected.
+Much of the functionality of Harpoon is achieved through client-side javascript using [ConseilJS](https://www.npmjs.com/package/conseiljs), such as the stats on the top left panel that provide an outline for the baker's performance in the last cycle. However, for information that is data intensive or not available through [Conseil](https://github.com/Cryptonomic/Conseil), a database is maintained and kept up-to-date using [additional indexing scripts](https://github.com/Cryptonomic/Harpoon/tree/master/server) in Python. The following sections provide an overview for some of the less conventional pieces of information that are collected.
 
 ### Snapshot Data
 
