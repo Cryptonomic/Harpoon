@@ -11,7 +11,7 @@ TEZOS_CONF = NET_CONF["tezos"]
 
 conseil = Client(ConseilApi(
     api_key=CONSEIL_CONF["api_key"],
-    api_host=CONSEIL_CONF["host"],
+    api_host=CONSEIL_CONF["host"] + ":" + str(CONSEIL_CONF["port"]),
     api_version=CONSEIL_CONF["version"]
 ))
 
@@ -448,3 +448,4 @@ def snapshot_index_to_block(index, cycle):
 
     return (cycle - PRESERVED_CYCLES - PENDING_CYCLES) * CYCLE_SIZE + \
         (index + 1) * SNAPSHOT_BLOCKS
+print(all_bakers())

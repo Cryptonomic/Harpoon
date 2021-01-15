@@ -1007,13 +1007,15 @@ function zscoreToGrade(zscore) {
 
 // Returns baker's grade in a particular cycles
 async function getBakerGrade(baker, cycle) {
-  return await getBakerInfo(
-    "baker_performance",
-    ["grade"],
-    [
-      { field: "cycle", op: "lt", value: [cycle] },
-      { field: "baker", op: "eq", value: [baker] },
-    ],
-    { field: "cycle", dir: "desc" }
-  );
+  return (
+    await getBakerInfo(
+      "baker_performance",
+      ["grade"],
+      [
+        { field: "cycle", op: "lt", value: [cycle] },
+        { field: "baker", op: "eq", value: [baker] },
+      ],
+      { field: "cycle", dir: "desc" }
+    )
+  )[0].grade;
 }
