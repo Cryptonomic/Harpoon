@@ -22,13 +22,13 @@ if __name__ == "__main__":
     start_cycle = input("Sync start cycle: ")
 
     MAPPING = {
-        "db_password": db_pass,
-        "api_key": api_key,
         "conseil_host": conseil_host,
         "conseil_port": conseil_port,
+        "api_key": api_key,
         "tezos_host": tezos_host,
         "tezos_port": tezos_port,
         "host_db_port": host_db_port,
+        "db_password": db_pass,
         "host_web_port": host_web_port,
         "start_cycle": start_cycle
     }
