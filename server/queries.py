@@ -11,7 +11,7 @@ TEZOS_CONF = NET_CONF["tezos"]
 
 conseil = Client(ConseilApi(
     api_key=CONSEIL_CONF["api_key"],
-    api_host=CONSEIL_CONF["host"],
+    api_host=CONSEIL_CONF["host"] + ":" + str(CONSEIL_CONF["port"]),
     api_version=CONSEIL_CONF["version"]
 ))
 

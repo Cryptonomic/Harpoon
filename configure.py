@@ -11,22 +11,24 @@ def fill_template(path, mapping):
 if __name__ == "__main__":
     print("====Harpoon Config====")
 
-    db_pass = input("Database password: ")
-    api_key = input("Conseiljs api key: ")
     conseil_host = input("Conseil host server: ")
+    conseil_port = input("Conseil host port: ")
+    api_key = input("Conseiljs api key: ")
     tezos_host = input("Tezos host server: ")
     tezos_port = input("Tezos host port: ")
     host_db_port = input("Host database port: ")
+    db_pass = input("Database password: ")
     host_web_port = input("Host web server port: ")
     start_cycle = input("Sync start cycle: ")
 
     MAPPING = {
-        "db_password": db_pass,
-        "api_key": api_key,
         "conseil_host": conseil_host,
+        "conseil_port": conseil_port,
+        "api_key": api_key,
         "tezos_host": tezos_host,
         "tezos_port": tezos_port,
         "host_db_port": host_db_port,
+        "db_password": db_pass,
         "host_web_port": host_web_port,
         "start_cycle": start_cycle
     }
