@@ -1,11 +1,12 @@
 :root {
-  --color-background: #F3F7FA;
-  --color-white: #FFFFFF;
+  --color-background: #f3f7fa;
+  --color-white: #ffffff;
   --color-search-icon: #637280;
-  --color-title-text: #4F4F4F;
+  --color-title-text: #4f4f4f;
   --color-grade: #447363;
   --color-sub-title: #828282;
-  --color-info-text: #2D9CDB;
-  --color-tezos-background: #DBEBF0;
-  --color-warning: #F856A3;
+  --color-info-text: #2d9cdb;
+  --color-tezos-background: #dbebf0;
+  --color-warning: #f856a3;
+  --color-warning-default: #000000;
 }

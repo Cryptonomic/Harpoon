@@ -251,17 +251,6 @@ function heatTable(
             .map((note) => note.identifier)
             .findIndex((elem) => elem == data[column]);
           if (noticeInd != -1) {
-            // tt = tooltip(
-            //   d3.select(nodes[nodeInd]),
-            //   5,
-            //   tooltipHeight,
-            //   tooltipPadding,
-            //   graph.innerWidth,
-            //   rowHeight
-            // );
-            // tt.setText(notices[noticeInd].message);
-            // tt.fitSizeToText();
-
             tt = tooltip(d3.select(nodes[nodeInd]), notices[noticeInd].message);
           }
         })
@@ -386,7 +375,7 @@ function chainmap(
     data,
     values,
     axis
-      ? { top: 0, left: 10, right: 0, bottom: 20 }
+      ? { top: 0, left: 10, right: 0, bottom: 30 }
       : { top: 0, left: 10, right: 0, bottom: 0 }
   );
   const blockWidth = 22.5;
@@ -396,7 +385,7 @@ function chainmap(
   const tooltipHeight = 20;
   const tooltipWidth = 20;
   const tooltipPadding = 10;
-  const axisLabelOffset = 15;
+  const axisLabelOffset = 50;
   let blocksArr = [];
 
   for (let i = 0; i < numBlocks; i++) blocksArr.push({ mapVal: 0, data: [] });
@@ -486,7 +475,9 @@ function chainmap(
           "transform",
           `translate(${graph.innerWidth / 2},${graph.innerHeight})`
         )
-        .style("text-anchor", "middle");
+        .style("text-anchor", "middle")
+        .style("font-size", "12px")
+        .text("Cycle Position");
     }
   };
   render(toGraph);

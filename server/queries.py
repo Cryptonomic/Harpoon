@@ -11,7 +11,7 @@ TEZOS_CONF = NET_CONF["tezos"]
 
 conseil = Client(ConseilApi(
     api_key=CONSEIL_CONF["api_key"],
-    api_host=CONSEIL_CONF["host"],
+    api_host=CONSEIL_CONF["host"] + ":" + str(CONSEIL_CONF["port"]),
     api_version=CONSEIL_CONF["version"]
 ))
 
@@ -317,7 +317,6 @@ def commitments_made_between(baker, start_cycle, end_cycle):
 
 def all_bakers():
     return bakers.query(bakers.pkh).order_by(bakers.staking_balance.desc()) \
-                                   .filter(bakers.deactivated == False) \
                                    .limit(1000).vector()
 
 
@@ -326,14 +325,15 @@ def active_bakers_between(start_cycle, end_cycle):
     active = list(set(blocks.query(blocks.baker)
                       .filter(blocks.meta_cycle.between(start_cycle,
                                                         end_cycle))
+                      .limit(MAX_LIMIT)
                       .vector() +
                     operations.query(operations.delegate)
                     .filter(operations.cycle.between(start_cycle, 
                                                         end_cycle),
                             operations.kind == "endorsement")
+                    .limit(MAX_LIMIT)
                     .vector())
                     )
-
     return active
 
 
