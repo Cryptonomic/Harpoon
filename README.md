@@ -26,7 +26,7 @@ Doing so will launch a configuration script that will allow the user to enter va
 | `tezos_host`    | Tezos node's address                                                                   | `http://xxx.xxx.xxx.xxx`                      |
 | `tezos_port`    | Port open for RPC requests on the tezos node                                           | `8732`                                        |
 | `host_db_port`  | Port at which the local Postgres database that will be created should be accessible on | `5432`                                        |
-| `db_pass`       | Password to set for user `postgres` on the local Postgres database                     | `password`                                    |
+| `db_password`   | Password to set for user `postgres` on the local Postgres database                     | `password`                                    |
 | `host_web_port` | Port at which Harpoon should be available from.                                        | `8080`                                        |
 | `start_cycle`   | Port at which Harpoon should be available from.                                        | `260`                                         |
 
