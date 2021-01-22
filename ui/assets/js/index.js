@@ -73,8 +73,10 @@ async function updatePayoutInfo(baker) {
 
 function clearWarnings() {
   const warning = document.getElementById("calc-warning");
-  warning.style.dispay = "none";
-  warning.innerHTML = "";
+  warning.style.display = "block;";
+  warning.className = "warning-default";
+  warning.innerHTML =
+    'Autofilled <strong>Baker Payout Address</strong> is inferred and may be incorrect. Please verify before clicking "Calculate"';
 }
 
 function analyzeRewards(rewards) {
@@ -91,11 +93,13 @@ function analyzeRewards(rewards) {
   if (rewards.every(noRewards)) {
     warning.innerHTML = allZeroWarn;
     warning.style.display = "block";
+    warning.className = "warning";
   } else if (
     rewards.every((entry) => noRewards(entry) || wrongRewards(entry))
   ) {
     warning.innerHTML = dataNotAlignedWarn;
     warning.style.display = "block";
+    warning.className = "warning";
   } else {
     warning.style.display = "none";
   }
@@ -286,7 +290,7 @@ async function calculateRewardsForDelegate() {
 
 function updateCountdown(timestamp, baker) {
   if (timestamp == "none") {
-    set("baker_next_bake", `Some time ...`);
+    set("baker_next_bake", `Not scheduled yet`);
     return;
   }
   let timeLeft = timestamp - Date.now();
@@ -337,24 +341,6 @@ function updateNextBakeStats(baker) {
 function set(id, value) {
   document.getElementById(id).innerHTML = value;
 }
-
-let getMean = function (data) {
-  return (
-    data.reduce(function (a, b) {
-      return Number(a) + Number(b);
-    }, "") / data.length
-  );
-};
-
-let getSD = function (data) {
-  let m = getMean(data);
-  return Math.sqrt(
-    data.reduce(function (sq, n) {
-      return sq + Math.pow(n - m, 2);
-    }, 0) /
-      (data.length - 1)
-  );
-};
 
 const onSearch = () => {
   const val = document.getElementById("baker").value;
@@ -555,34 +541,7 @@ async function updateBakerInfo(baker, delegator = null) {
   });
 
   // Set the baker grade for baker
-  getBakerInfo(
-    "baker_performance",
-    ["baker", "grade", "cycle"],
-    [{ field: "cycle", op: "lt", value: [lastFullCycle + 1] }],
-    { field: "cycle", dir: "desc" }
-  ).then((d) => {
-    const cycle = d[0]["cycle"];
-    let values = d
-      .filter((item) => item.cycle == cycle)
-      .map((item) => item.grade)
-      .sort((a, b) => a - b);
-    const fivePercent = Math.round(values.length * 0.05);
-    values = values.slice(fivePercent, values.length - fivePercent);
-    const standardDeviation = getSD(values);
-    const avg = getMean(values);
-    const bakerGrade = (d.find((entry) => entry.baker == baker) || { grade: 0 })
-      .grade;
-    const numDeviations = (bakerGrade - avg) / standardDeviation;
-    let letterGrade = "F";
-    if (numDeviations > 2) letterGrade = "A+";
-    else if (numDeviations > 1) letterGrade = "A";
-    else if (numDeviations > 0.5) letterGrade = "B+";
-    else if (numDeviations > 0) letterGrade = "B";
-    else if (numDeviations > -1) letterGrade = "C";
-    else if (numDeviations > -1.5) letterGrade = "D";
-    else letterGrade = "F";
-    set("baker_grade", `${letterGrade}`);
-  });
+  getBakerGrade(baker, lastFullCycle).then((d) => set("baker_grade", d));
 
   // Set last baked fields
   lastBlockBakedBy(baker).then((d) => {
@@ -680,8 +639,12 @@ async function updateBakerInfo(baker, delegator = null) {
   // Start the countdown until the next block baked
   nextBake(baker).then((d) => {
     clearTimeout(clock);
-    updateCountdown(d ? d.estimated_time : "none", baker);
-    set("baker_next_bake_level", `${d ? d.level : "Some time ..."}`);
+    set(
+      "baker_next_bake",
+      d ? `${UTCToDateTime(d.estimated_time)}` : "Not scheduled yet"
+    );
+    /* updateCountdown(d ? d.estimated_time : "none", baker); */
+    set("baker_next_bake_level", `${d ? d.block_level : "Not scheduled yet"}`);
   });
 
   // Create the blocks missed chainmap (bar graph)

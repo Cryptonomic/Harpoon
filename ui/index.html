@@ -3,12 +3,14 @@
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Tezos baker performance dashboard. Analyze staking and baking data. Compare baker ratings and maximize your staking rewards.">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" />
   <link href="http://fonts.googleapis.com/css?family=Roboto:400,300,500" rel="stylesheet" type="text/css">
   <link rel="stylesheet" type="text/css" href="./assets/css/variables.css" media="screen" />
   <link rel="stylesheet" type="text/css" href="./assets/css/common.css" media="screen" />
   <link rel="stylesheet" type="text/css" href="./assets/css/index.css" media="screen" />
   <link rel="icon" href="./assets/images/favicon.ico" />
+  <title>Harpoon | tezos baker ratings –– maximize staking rewards</title>
 </head>
 
 <!-- Matomo -->
@@ -85,12 +87,16 @@
               <img src="./assets/images/info.svg"></img>
               <div class="info-detail">
                 <p class="middle-small">How is performace grade calculated?</p>
-                <div class="grade-popup absolute">
-                    <p>We developed a <a href="https://www.desmos.com/calculator/p419kfvxpk" target="_blank"> formula </a>
-			that allows baker grades to be calculated using the baker's performance in
-                    the last full cycle. This formula rewards bakers for stealing blocks and baking assigned blocks,
-                    then penalizes them for missing blocks.</p>
-                </div>
+                <div class="grade-popup absolute">  
+                  <p>We developed a 
+                    <a href="https://drive.google.com/file/d/1kLlu50w3GgX8J3PBAF69qfAoT5BmZ8BA/view?usp=sharing" target="_blank"> grading system </a>
+			              that allows baker grades to be calculated using the baker's performance in
+                    the last four periods. This system grades bakers based off of how well they
+                    are baking/endorsing relative to the rest of the ecoysystem </p>  <br>
+                  <p>An asterisk next to the baker's grade means that the baker did not have enough
+                    baking history for a completely reliable score, but a grade was calculated 
+                    based off of their performance so far.</p> 
+                  </div>
               </div>
             </div>
           </div>
@@ -126,7 +132,7 @@
                   <div class="timer-body flex-row">
                     <img class="baker-img time-img" src="./assets/images/timer.svg" />
                     <div class="flex-column">
-                      <p class="small subtitle-text weight-500">Time</p>
+                      <p class="small subtitle-text weight-500">Estimated Time</p>
                       <p class="small" id="baker_next_bake"></p>
                     </div>
                   </div>
@@ -297,7 +303,7 @@
               Calculate
             </button>
           </div>
-	  <p class="warning" id="calc-warning" style="display: none;"></p>
+	  <p class="warning" id="calc-warning"></p>
         </div>
       </div>
     </div>

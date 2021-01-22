@@ -148,10 +148,9 @@ let tooltip = (g, text) => {
     let tooltip = document.getElementById("tooltip");
     tooltip.innerHTML = text;
     tooltip.style.display = "block";
-    tooltip.style.left = d3.event.pageX + 10 + 'px';
-    tooltip.style.top = d3.event.pageY + 10 + 'px';
-  })
-  .on("mouseout", (d) => {
+    tooltip.style.left = d3.event.pageX + 10 + "px";
+    tooltip.style.top = d3.event.pageY + 10 + "px";
+  }).on("mouseout", (d) => {
     const tooltip = document.getElementById("tooltip");
     tooltip.style.display = "none";
   });
@@ -252,30 +251,23 @@ function heatTable(
             .map((note) => note.identifier)
             .findIndex((elem) => elem == data[column]);
           if (noticeInd != -1) {
-            // tt = tooltip(
-            //   d3.select(nodes[nodeInd]),
-            //   5,
-            //   tooltipHeight,
-            //   tooltipPadding,
-            //   graph.innerWidth,
-            //   rowHeight
-            // );
-            // tt.setText(notices[noticeInd].message);
-            // tt.fitSizeToText();
-
             tt = tooltip(d3.select(nodes[nodeInd]), notices[noticeInd].message);
           }
         })
         .append("text")
         .text((d, i) => {
           if (i === 0) {
-            return ''
+            return "";
           }
-          if (d[column] !== 0 && !d[column] || d[column] === '*' || d[column] === '-') {
+          if (
+            (d[column] !== 0 && !d[column]) ||
+            d[column] === "*" ||
+            d[column] === "-"
+          ) {
             return d[column];
           }
           if (!!units[columnInd]) {
-            return `${d[column]} ${units[columnInd]}`
+            return `${d[column]} ${units[columnInd]}`;
           }
           return d[column];
         })
@@ -345,8 +337,14 @@ function heatTable(
                       (values.length - 1)
               )
               .attr("height", rowHeight + rowPadding)
-              .style("fill", colorMappings[column] ? colorMappings[column] : "white")
-			        .style("opacity", scales[column] ? scales[column](data[rowInd][column]) : 0)
+              .style(
+                "fill",
+                colorMappings[column] ? colorMappings[column] : "white"
+              )
+              .style(
+                "opacity",
+                scales[column] ? scales[column](data[rowInd][column]) : 0
+              );
           }
         });
     });
@@ -377,7 +375,7 @@ function chainmap(
     data,
     values,
     axis
-      ? { top: 0, left: 10, right: 0, bottom: 20 }
+      ? { top: 0, left: 10, right: 0, bottom: 30 }
       : { top: 0, left: 10, right: 0, bottom: 0 }
   );
   const blockWidth = 22.5;
@@ -387,7 +385,7 @@ function chainmap(
   const tooltipHeight = 20;
   const tooltipWidth = 20;
   const tooltipPadding = 10;
-  const axisLabelOffset = 15;
+  const axisLabelOffset = 50;
   let blocksArr = [];
 
   for (let i = 0; i < numBlocks; i++) blocksArr.push({ mapVal: 0, data: [] });
@@ -406,7 +404,7 @@ function chainmap(
     .scaleQuantize()
     .domain([0, d3.max(blocksArr.map((d) => d.mapVal)) - 1])
     .range(mapColor);
- 
+
   const y = d3
     .scaleLinear()
     .domain([0, d3.max(blocksArr.map((d) => d.mapVal)) + 0.01])
@@ -434,7 +432,7 @@ function chainmap(
       .enter()
       .append("rect")
       .attr("class", "databar")
-      .attr("y", (d) => graph.innerHeight - y(d.mapVal) - 8 )
+      .attr("y", (d) => graph.innerHeight - y(d.mapVal) - 8)
       .attr("x", (d, i) => i * blockWidth)
       .attr("width", blockWidth - blockPadding)
       .attr("height", (d) => y(d.mapVal))
@@ -444,26 +442,28 @@ function chainmap(
         d.mapVal == 0 || color(d.mapVal) == "white" ? "#707070" : "white"
       );
 
-      let outRect = g
+    let outRect = g
       .append("rect")
       .style("stroke-width", 2)
       .style("stroke", "#00BFFF")
-      .attr("width",  blockWidth - blockPadding-1)
+      .attr("width", blockWidth - blockPadding - 1)
       .attr("fill", "none");
 
-    g.selectAll(".databar").on("mouseover", function (d) {
-      let rect = d3.select(this);
-      outRect
-        .attr("x", rect._groups[0][0].x.baseVal.value + 1)
-        .attr("y", graph.innerHeight - y(d.mapVal) - 8)
-        .attr("height", y(d.mapVal));
-      document.getElementById(
-        tooltipID
-      ).innerHTML = `${d.mapVal}${tooltipLabel}: ${d.data}`;
-    }).on("mouseout", function (d) {
-      let rect = d3.select(this);
-      outRect.attr("x", rect._groups[0][0].x.baseVal.value);
-    });
+    g.selectAll(".databar")
+      .on("mouseover", function (d) {
+        let rect = d3.select(this);
+        outRect
+          .attr("x", rect._groups[0][0].x.baseVal.value + 1)
+          .attr("y", graph.innerHeight - y(d.mapVal) - 8)
+          .attr("height", y(d.mapVal));
+        document.getElementById(
+          tooltipID
+        ).innerHTML = `${d.mapVal}${tooltipLabel}: ${d.data}`;
+      })
+      .on("mouseout", function (d) {
+        let rect = d3.select(this);
+        outRect.attr("x", rect._groups[0][0].x.baseVal.value);
+      });
 
     if (axis) {
       g.append("g")
@@ -475,7 +475,9 @@ function chainmap(
           "transform",
           `translate(${graph.innerWidth / 2},${graph.innerHeight})`
         )
-        .style("text-anchor", "middle");
+        .style("text-anchor", "middle")
+        .style("font-size", "12px")
+        .text("Cycle Position");
     }
   };
   render(toGraph);
@@ -670,7 +672,7 @@ function linegraph(id, data, values, yExtent, time = true, area = false) {
   let xScale = time ? d3.scaleTime() : d3.scaleLinear();
   let grapher = area ? areaGenerator : lineGenerator;
   const dateFormatter = d3.timeFormat("%Y %m/%d %H:%M");
-  
+
   const xTickSize = 5;
   const xTickPadding = 5;
   const yTickSize = 5;
@@ -683,10 +685,14 @@ function linegraph(id, data, values, yExtent, time = true, area = false) {
     bottom: 30,
   });
   const render = (graph) => {
-    const interp = d3.interpolateBasis(graph.data.map(function(p) {
-      return p[values.y];
-    }));
-    const xmax = d3.max(graph.data, function(d) {return d[values.x] })
+    const interp = d3.interpolateBasis(
+      graph.data.map(function (p) {
+        return p[values.y];
+      })
+    );
+    const xmax = d3.max(graph.data, function (d) {
+      return d[values.x];
+    });
     const x = xScale
       .domain(d3.extent(graph.data, graph.xValue))
       .range([0, graph.innerWidth]);
@@ -696,12 +702,14 @@ function linegraph(id, data, values, yExtent, time = true, area = false) {
       .domain(yExtent)
       .range([graph.innerHeight, 0])
       .nice();
-    const xAxisBefore = time ? 
-    d3.axisBottom(x).tickFormat(d3.timeFormat("%a %d")).ticks(d3.timeDay.filter(d=>d3.timeDay.count(0, d) % 2 === 0)) : d3.axisBottom(x)
+    const xAxisBefore = time
+      ? d3
+          .axisBottom(x)
+          .tickFormat(d3.timeFormat("%a %d"))
+          .ticks(d3.timeDay.filter((d) => d3.timeDay.count(0, d) % 2 === 0))
+      : d3.axisBottom(x);
 
-    const xAxis = xAxisBefore
-      .tickSize(xTickSize)
-      .tickPadding(xTickPadding);
+    const xAxis = xAxisBefore.tickSize(xTickSize).tickPadding(xTickPadding);
 
     const yAxisBefore = d3
       .axisLeft(y)
@@ -715,7 +723,6 @@ function linegraph(id, data, values, yExtent, time = true, area = false) {
         "transform",
         `translate(${graph.margin.left}, ${graph.margin.top})`
       );
-      
 
     let line = g.append("path");
     line
@@ -729,35 +736,36 @@ function linegraph(id, data, values, yExtent, time = true, area = false) {
 
     g.append("g").call(yAxis);
 
-    const focus = g.append("g")
-      .attr("class", "focus")
-      .style("display", "none");
-    focus.append("circle")
-      .attr("r", 4);
+    const focus = g.append("g").attr("class", "focus").style("display", "none");
+    focus.append("circle").attr("r", 4);
 
-      focus.append("rect")
-        .attr("class", "line-tooltip")
-        .attr("width", 68)
-        .attr("height", 29)
-        .attr("x", -34)
-        .attr("y", -40)
-        .attr("rx", 4)
-        .attr("ry", 4);
-      focus.append("polygon")
-        .attr("class", "line-tooltip-tri")
-        .attr("points", "-5.5,-12 5.5,-12 0,-5");
+    focus
+      .append("rect")
+      .attr("class", "line-tooltip")
+      .attr("width", 68)
+      .attr("height", 29)
+      .attr("x", -34)
+      .attr("y", -40)
+      .attr("rx", 4)
+      .attr("ry", 4);
+    focus
+      .append("polygon")
+      .attr("class", "line-tooltip-tri")
+      .attr("points", "-5.5,-12 5.5,-12 0,-5");
 
-      focus.append("text")
-        .attr("class", "tooltip-date")
-        .attr("text-anchor", 'middle')
-        .attr("x", -0)
-        .attr("y", -17);
+    focus
+      .append("text")
+      .attr("class", "tooltip-date")
+      .attr("text-anchor", "middle")
+      .attr("x", -0)
+      .attr("y", -17);
 
-      focus.append("text")
-        .attr("class", "tooltip-likes")
-        .attr("text-anchor", 'middle')
-        .attr("x", -0)
-        .attr("y", -26);
+    focus
+      .append("text")
+      .attr("class", "tooltip-likes")
+      .attr("text-anchor", "middle")
+      .attr("x", -0)
+      .attr("y", -26);
 
     g.append("g")
       .call(xAxis)
@@ -773,27 +781,32 @@ function linegraph(id, data, values, yExtent, time = true, area = false) {
         });
       });
 
-      g.append("rect")
-        .attr("class", "overlay")
-        .attr("width", graph.innerWidth - 20)
-        .attr("height", graph.innerHeight)
-        .on("mouseover", function() { focus.style("display", null); })
-        .on("mouseout", function() { focus.style("display", "none"); })
-        .on("mousemove", mousemove);
+    g.append("rect")
+      .attr("class", "overlay")
+      .attr("width", graph.innerWidth - 20)
+      .attr("height", graph.innerHeight)
+      .on("mouseover", function () {
+        focus.style("display", null);
+      })
+      .on("mouseout", function () {
+        focus.style("display", "none");
+      })
+      .on("mousemove", mousemove);
 
-      function mousemove() {
-        const x0 = d3.mouse(this)[0];
-        const y0 = interp(x0 / x(xmax));
-        focus.attr("transform", "translate(" + x0 + "," + y(y0) + ")");
-        if(time) {
-          focus.select(".tooltip-likes").text(`${Math.round(y0)} Blocks`);
-          focus.select(".tooltip-date").text(dateFormatter(Math.round(x.invert(x0))));
-        } else {
-          focus.select(".tooltip-date").text(`Cycle ${Math.round(x.invert(x0))}`);
-          focus.select(".tooltip-likes").text(`${Math.round(y0)} ꜩ`);
-        }
-        
+    function mousemove() {
+      const x0 = d3.mouse(this)[0];
+      const y0 = interp(x0 / x(xmax));
+      focus.attr("transform", "translate(" + x0 + "," + y(y0) + ")");
+      if (time) {
+        focus.select(".tooltip-likes").text(`${Math.round(y0)} Blocks`);
+        focus
+          .select(".tooltip-date")
+          .text(dateFormatter(Math.round(x.invert(x0))));
+      } else {
+        focus.select(".tooltip-date").text(`Cycle ${Math.round(x.invert(x0))}`);
+        focus.select(".tooltip-likes").text(`${Math.round(y0)} ꜩ`);
       }
+    }
   };
   render(toGraph);
 }

@@ -115,7 +115,7 @@ class BakerPerformance(Base):
     num_nonces_not_revealed = Column(Integer)
     endorsements_in_not_revealed = Column(Integer)
     fees_in_not_revealed = Column(Integer)
-    grade = Column(Numeric)
+    grade = Column(String(255))
 
 
 class Accusations(Base):

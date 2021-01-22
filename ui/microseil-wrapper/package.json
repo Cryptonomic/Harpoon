@@ -1,0 +1,14 @@
+{
+  "name": "microseil-wrapper",
+  "version": "1.0.0",
+  "description": "A typescript wrapper for microseil",
+  "main": "microseil-wrapper.js",
+  "scripts": {
+    "test": "tsc microseil-wrapper.tsx && node microseil-wrapper.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "node-fetch": "^2.6.1"
+  }
+}

@@ -1,22 +1,23 @@
 {
-    "db": {
-	"user":"postgres",
-	"password":"<db_password>",
-	"host":"db",
-	"port":5432,
-	"database":"postgres"
-    },
-    "conseil": {
-	"api_key":"<api_key>",
-	"host":"<conseil_host>",
-	"version":2
-    },
-    "tezos": {
-	"host":"<tezos_host>",
-	"port":<tezos_port>
-    },
-    "cherrypy": {
-	"host":"web",
-	"port":8080
-    }
+  "db": {
+    "user": "postgres",
+    "password": "<db_password>",
+    "host": "db",
+    "port": 5432,
+    "database": "postgres"
+  },
+  "conseil": {
+    "api_key": "<api_key>",
+    "host": "<conseil_host>",
+    "port": <conseil_port>,
+    "version": 2
+  },
+  "tezos": {
+    "host": "<tezos_host>",
+    "port": <tezos_port>
+  },
+  "cherrypy": {
+    "host": "web",
+    "port": 8080
+  }
 }

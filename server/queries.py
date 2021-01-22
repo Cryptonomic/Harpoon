@@ -11,7 +11,7 @@ TEZOS_CONF = NET_CONF["tezos"]
 
 conseil = Client(ConseilApi(
     api_key=CONSEIL_CONF["api_key"],
-    api_host=CONSEIL_CONF["host"],
+    api_host=CONSEIL_CONF["host"] + ":" + str(CONSEIL_CONF["port"]),
     api_version=CONSEIL_CONF["version"]
 ))
 
@@ -36,6 +36,21 @@ SNAPSHOT_BLOCKS = 256
 
 # Arbitrary large value for conseilpy queries
 MAX_LIMIT = 100000000
+
+# TODO: decorate all queries with this
+def log_errors(f):
+    """Decorator to ease the debugging process while in production function
+    that prints the parameters causing erros that may occur while making
+    queries.
+    """
+    
+    def inner(*args, **kwargs):
+        try:
+           return f(*args, **kwargs)
+        except Exception as e:
+            print("%s failed with parameters: (%s)" % (f.__name__, args))
+            raise e
+    return inner
 
 
 def partition_query(partition_size=50):
@@ -196,7 +211,8 @@ def endorsements_missed_between(baker, start_cycle, end_cycle):
     return int(rights) - int(endorsements)
 
 
-@partition_query(5000)
+@partition_query()
+@log_errors
 def sum_endorsements_made_in(block_levels, baker):
     """Returns the number of endorsements made by baker in block_levels"""
 
@@ -301,19 +317,24 @@ def commitments_made_between(baker, start_cycle, end_cycle):
 
 def all_bakers():
     return bakers.query(bakers.pkh).order_by(bakers.staking_balance.desc()) \
-                                   .filter(bakers.deactivated == False) \
                                    .limit(1000).vector()
 
 
 def active_bakers_between(start_cycle, end_cycle):
     """Returns all bakers who've baked a block in [start_cycle, end_cycle]"""
-
-    baker_list = all_bakers()
     active = list(set(blocks.query(blocks.baker)
                       .filter(blocks.meta_cycle.between(start_cycle,
                                                         end_cycle))
-                      .vector()))
-    return [baker for baker in baker_list if baker in active]
+                      .limit(MAX_LIMIT)
+                      .vector() +
+                    operations.query(operations.delegate)
+                    .filter(operations.cycle.between(start_cycle, 
+                                                        end_cycle),
+                            operations.kind == "endorsement")
+                    .limit(MAX_LIMIT)
+                    .vector())
+                    )
+    return active
 
 
 def transaction_sources_in_cycle(destination, cycle):
