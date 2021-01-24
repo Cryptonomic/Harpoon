@@ -98,6 +98,7 @@ def populate_from_cycle(table, after=None):
                         session.add_all(data)
                         session.commit()
                         session.close()                        
+                        print("done")
                         if (after):
                             after(cycle)
                     else:
