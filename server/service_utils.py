@@ -97,9 +97,8 @@ def populate_from_cycle(table, after=None):
                         session = get_session()
                         session.add_all(data)
                         session.commit()
-                        session.close()
-                        print("Done")
-                        if (after != None):
+                        session.close()                        
+                        if (after):
                             after(cycle)
                     else:
                         print("No data for cycle %s. Skipping..." % cycle)
