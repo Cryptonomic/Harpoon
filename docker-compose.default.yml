@@ -10,7 +10,7 @@ services:
       - "<host_db_port>:5432"
     volumes:
       - microseil:/var/lib/postgresql/data
-  
+
   web:
     build: .
     tty: true

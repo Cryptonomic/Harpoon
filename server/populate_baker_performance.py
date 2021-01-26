@@ -22,10 +22,7 @@ def get_baker_performance(baker, current_cycle):
     """
 
     start_cycle = current_cycle - SAMPLE_RANGE
-    delegate = tezos.baker_info_at_level(baker, tezos.cycle_to_level(current_cycle))
-    staking_balance = tezos.utez_to_tez(int(delegate["staking_balance"]))
-    num_delegators = len(delegate["delegated_contracts"])
-
+        
     blocks_baked = tezos.blocks_baked_between(baker, start_cycle, current_cycle)
     blocks_stolen = tezos.blocks_stolen_between(baker, start_cycle, current_cycle)
     blocks_missed = tezos.blocks_missed_between(baker, start_cycle, current_cycle)
@@ -64,22 +61,6 @@ def get_baker_performance(baker, current_cycle):
         sum_endorsements_in_blocks(nonces_not_revealed)
     fees_in_not_revealed = tezos.sum_fees_for_blocks(nonces_not_revealed)
 
-    blocks_per_stake = 0 if staking_balance==0 else \
-        float(num_blocks_baked/staking_balance)
-
-    # TODO: remove grade calculation from server side and move into frontend js
-    # A baker grade is calculated from the data collected. See readme for a
-    # description on the formula used
-
-    grade = (100000 * blocks_per_stake) * \
-        (num_blocks_baked + num_blocks_stolen) / (1 + num_blocks_baked) * \
-        (math.exp(-1 * (num_blocks_missed / (num_blocks_baked + 1)))) * \
-        (1 - (1 / (1 + num_delegators)))
-
-    # alternate formula (not tested):
-    # grade =  (100000 * num_blocks_per_stake) * (num_blocks_baked+5*s)/ \
-    #    (1+num_blocks_missed+num_blocks_baked) \
-    #     *(1-(1/(1+d)))
 
     row = BakerPerformance(baker=baker, cycle=current_cycle,
                            num_baked=num_blocks_baked,
@@ -99,13 +80,13 @@ def get_baker_performance(baker, current_cycle):
                            num_revelations_in_missed=num_revelations_in_missed,
                            num_nonces_not_revealed=num_nonces_not_revealed,
                            endorsements_in_not_revealed=endorsements_in_not_revealed,
-                           fees_in_not_revealed=fees_in_not_revealed,
-                           grade=grade)
+                           fees_in_not_revealed=fees_in_not_revealed)
+    
     return row
 
 
-@service_utils.populate_from_cycle(BakerPerformance)
-def populate_baker_performance(cycle, after=populate_grades):
+@service_utils.populate_from_cycle(BakerPerformance, after=populate_grades)
+def populate_baker_performance(cycle):
     """Populates general columns of the baker_performance table, followed by the
     grades, in each cycle"""
 

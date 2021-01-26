@@ -317,7 +317,7 @@ def commitments_made_between(baker, start_cycle, end_cycle):
 
 def all_bakers():
     return bakers.query(bakers.pkh).order_by(bakers.staking_balance.desc()) \
-                                   .limit(1000).vector()
+                                   .limit(MAX_LIMIT).vector()
 
 
 def active_bakers_between(start_cycle, end_cycle):
